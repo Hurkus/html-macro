@@ -1,4 +1,6 @@
 #include <string>
+#include <vector>
+#include <filesystem>
 #include <stdexcept>
 
 #define PROGRAM_NAME "html-macro"
@@ -12,6 +14,7 @@ extern struct Options {
 	std::string callName = PROGRAM_NAME;
 	bool help = false;
 	bool version = false;
+	std::vector<std::filesystem::path> files;
 } options;
 
 
