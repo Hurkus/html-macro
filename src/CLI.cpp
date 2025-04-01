@@ -8,6 +8,8 @@ extern "C" {
 	#include <getopt.h>
 }
 
+#include "Format.hpp"
+
 
 using namespace std;
 using namespace CLI;
@@ -80,9 +82,18 @@ static void applyOption(OptionID opt, const char* arg = nullptr){
 
 // Handle residual options (eg. file names)
 static void applyPostOptions(int argc, char const* const* argv){
-	for (int i = 0 ; i < argc ; i++){
-		// printf("%s\n", argv[i]);
+	assert(argc >= 0);
+	options.files.reserve(options.files.size() + argc);
+	
+	for (int i = 0 ; i < argc && argv[i] != nullptr ; i++){
+		try {
+			filesystem::path p = argv[i];
+			options.files.emplace_back(p.lexically_normal());
+		} catch (const exception& e){
+			throw cli_error(format("Failed to recognise file path '%s'.", argv[i]));
+		}
 	}
+	
 }
 
 
@@ -108,7 +119,7 @@ void CLI::parse(int argc, char const* const* argv){
 	vector<const char*> v = vector<const char*>(&argv[0], &argv[argc]);
 	
 	int prevOpt = optind;
-	while (true){
+	while (optind < argc && argv[optind] != nullptr){
 		const int c = getopt_long(argc, (char* const*)v.data(), short_options, long_options, NULL);
 		
 		if (c == -1){

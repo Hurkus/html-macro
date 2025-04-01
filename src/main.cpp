@@ -1,4 +1,7 @@
 #include <iostream>
+#include <string_view>
+
+#include "MacroCache.hpp"
 #include "CLI.hpp"
 #include "DEBUG.hpp"
 
@@ -26,16 +29,40 @@ static void help(){
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static bool run(const vector<filesystem::path>& files){
+	if (files.empty()){
+		return true;
+	}
+	
+	
+	Macro* m = MacroCache::load(files[0]);
+	if (m == nullptr){
+		return false;
+	}
+	
+	
+	pugi::xml_node node = m->doc.find_node([](pugi::xml_node node){
+		return (node.name() == "title"sv);
+	});
+	
+	INFO("Title: %s", node.child_value());
+	
+	return true;
+}
+
+
 // --------------------------------- [ Main Function ] -------------------------------------- //
 
 
 int main(int argc, char const* const* argv){
 	try {
 		CLI::parse(argc, argv);
-	} catch (const runtime_error& e){
+	} catch (const exception& e){
 		ERROR("%s\nUse '%s --help' for help.", e.what(), CLI::name());
 	}
-	
 	
 	if (CLI::options.help){
 		help();
@@ -45,8 +72,10 @@ int main(int argc, char const* const* argv){
 		return 0;
 	}
 	
+	if (!run(CLI::options.files)){
+		return 1;
+	}
 	
-	printf(ANSI_BOLD "Hello world!" ANSI_RESET "\n");
 	return 0;
 }
 

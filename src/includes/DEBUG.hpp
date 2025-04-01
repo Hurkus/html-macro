@@ -136,6 +136,18 @@ static void error(const char* fmt, T... arg){
 }
 
 template <typename ...T>
+static void errorf(const char* file, const char* fmt, T... arg){
+	std::fprintf(stderr, ANSI_BOLD "%s: ", file);
+	std::fprintf(stderr, ANSI_RED "error: " ANSI_RESET);
+	std::fprintf(stderr, fmt, arg...);
+	std::fprintf(stderr, "\n");
+	
+	#if DEBUG_THROW_ERROR == 1
+		exit(1);
+	#endif
+}
+
+template <typename ...T>
 static void errorf(const char* file, size_t line, const char* fmt, T... arg){
 	std::fprintf(stderr, ANSI_BOLD "%s:%ld: ", file, line);
 	std::fprintf(stderr, ANSI_RED "error: " ANSI_RESET);
@@ -146,6 +158,9 @@ static void errorf(const char* file, size_t line, const char* fmt, T... arg){
 		exit(1);
 	#endif
 }
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
 template <typename ...T>
