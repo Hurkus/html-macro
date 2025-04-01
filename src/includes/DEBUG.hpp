@@ -1,5 +1,5 @@
 #pragma once
-#include <ostream>
+#include <cstdio>
 #include <cassert>
 #include "ANSI.h"
 

@@ -1,9 +1,9 @@
 #pragma once
-#include "pugixml.hpp"
 #include <memory>
-#include <unordered_map>
 #include <filesystem>
 
+#include "pugixml.hpp"
+#include "string_map.hpp"
 #include "Macro.hpp"
 
 
@@ -11,13 +11,14 @@ namespace MacroCache {
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 
-extern std::unordered_map<std::filesystem::path,std::unique_ptr<Macro>> cache;
+extern string_map<std::unique_ptr<Macro>> cache;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Macro* load(const std::filesystem::path& path);
+Macro* getMacro(std::string_view name);
+Macro* loadFile(const std::filesystem::path& path);
 
 
 // ------------------------------------------------------------------------------------------ //

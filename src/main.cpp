@@ -37,18 +37,14 @@ static bool run(const vector<filesystem::path>& files){
 		return true;
 	}
 	
+	MacroCache::loadFile(files[0]);
 	
-	Macro* m = MacroCache::load(files[0]);
-	if (m == nullptr){
-		return false;
+	cout << "-----------------" << endl;
+	for (auto& p : MacroCache::cache){
+		p.second->root.print(cout);
+		cout << "-----------------" << endl;
 	}
 	
-	
-	pugi::xml_node node = m->doc.find_node([](pugi::xml_node node){
-		return (node.name() == "title"sv);
-	});
-	
-	INFO("Title: %s", node.child_value());
 	
 	return true;
 }
