@@ -1,4 +1,4 @@
-#include "MacroCache.hpp"
+#include "MacroEngine.hpp"
 #include "MacroParser.hpp"
 
 #include "DEBUG.hpp"
@@ -6,18 +6,12 @@
 using namespace std;
 
 
-// ----------------------------------- [ Variables ] ---------------------------------------- //
-
-
-string_map<unique_ptr<Macro>> MacroCache::cache;
-
-
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Macro* MacroCache::getMacro(string_view name){
-	auto p = cache.find(name);
-	if (p != cache.end())
+Macro* MacroEngine::getMacro(string_view name) const {
+	auto p = macros.find(name);
+	if (p != macros.end())
 		return p->second.get();
 	else
 		return nullptr;
@@ -27,7 +21,7 @@ Macro* MacroCache::getMacro(string_view name){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Macro* MacroCache::loadFile(const std::filesystem::path& path){
+Macro* MacroEngine::loadFile(const filesystem::path& path){
 	XHTMLFile dom = {};
 	
 	try {
@@ -41,8 +35,8 @@ Macro* MacroCache::loadFile(const std::filesystem::path& path){
 	}
 	
 	// Check if file is already cached.
-	auto p = cache.find(dom.path);
-	if (p != cache.end()){
+	auto p = macros.find(dom.path);
+	if (p != macros.end()){
 		unique_ptr<Macro>& pmacro = p->second;
 		assert(pmacro != nullptr);
 		return pmacro.get();
@@ -60,13 +54,13 @@ Macro* MacroCache::loadFile(const std::filesystem::path& path){
 	}
 	
 	// Extract and cache all sub-macros
-	vector<std::unique_ptr<Macro>> macros = dom.convertToMacroSet();
+	vector<std::unique_ptr<Macro>> macroList = dom.convertToMacroSet();
 	
 	Macro* ret = nullptr;
-	for (auto& uptr : macros){
+	for (auto& uptr : macroList){
 		assert(uptr != nullptr);
 		ret = uptr.get();
-		cache.emplace(uptr->name, move(uptr));
+		macros.emplace(uptr->name, move(uptr));
 	}
 	
 	return ret;

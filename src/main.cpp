@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string_view>
 
-#include "MacroCache.hpp"
+#include "MacroEngine.hpp"
 #include "CLI.hpp"
 #include "DEBUG.hpp"
 
@@ -37,15 +37,24 @@ static bool run(const vector<filesystem::path>& files){
 		return true;
 	}
 	
-	MacroCache::loadFile(files[0]);
+	MacroEngine engine = {};
+	Macro* root = engine.loadFile(files[0]);
 	
-	cout << "-----------------" << endl;
-	for (auto& p : MacroCache::cache){
-		p.second->root.print(cout);
-		cout << "-----------------" << endl;
+	
+	if (root != nullptr){
+		engine.run(*root, engine.doc);
 	}
 	
 	
+	// cout << "-----------------" << endl;
+	// for (auto& p : engine.macros){
+	// 	cout << ANSI_YELLOW <<  p.second->name << ANSI_RESET << endl;
+	// 	p.second->root.print(cout);
+	// 	cout << "-----------------" << endl;
+	// }
+	
+	// cout << "--------------------------------" << endl;
+	engine.doc.print(cout);
 	return true;
 }
 
