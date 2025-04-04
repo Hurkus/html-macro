@@ -4,6 +4,7 @@
 
 #include "string_map.hpp"
 #include "Macro.hpp"
+#include "Expression.hpp"
 
 
 class MacroEngine {
