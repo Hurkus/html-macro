@@ -19,13 +19,14 @@ public:
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	bool run(const Macro& macro, pugi::xml_node dst);
+	void run(const Macro& macro, pugi::xml_node dst);
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	bool resolve(const pugi::xml_node op, pugi::xml_node dst);
+	void resolve(const pugi::xml_node op, pugi::xml_node dst);
 	pugi::xml_node tag(const pugi::xml_node op, pugi::xml_node dst);
-	bool call(const pugi::xml_node op, pugi::xml_node dst);
+	void call(const pugi::xml_node op, pugi::xml_node dst);
+	void call_inline(const pugi::xml_node op, pugi::xml_node dst);
 	
 // ------------------------------------------------------------------------------------------ //
 };
