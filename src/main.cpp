@@ -83,10 +83,22 @@ int main(int argc, char const* const* argv){
 	
 	using namespace Expression;
 	
-	pExpr e = lt(val("55"), val(3));
+	
+	auto e = fun("int", val(-66.2));
 	Value res = e->eval({});
 	
-	std::visit([](auto const& x){cout << "'" ANSI_GREEN << x << ANSI_RESET "'" << endl;}, res);
+	
+	// Print result
+	std::visit([](const auto& x){
+		cout << "[" ANSI_GREEN;
+		if constexpr (is_same_v<remove_const_t<remove_reference_t<decltype(x)>>,string>)
+			cout <<  ANSI_YELLOW "'" << x << "'" ANSI_GREEN;
+		else
+			cout << x;
+		cout << ANSI_RESET "]" << endl;
+	}, res);
+	
+	
 	return 0;
 }
 

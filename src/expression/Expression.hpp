@@ -32,6 +32,7 @@ struct Expr {
 	struct Var;
 	struct Not;
 	struct Neg;
+	struct Func;
 	
 	struct Add;
 	struct Sub;
@@ -69,6 +70,13 @@ struct Expr::Const : public Expr {
 
 struct Expr::Var : public Expr {
 	std::string var;
+	Value eval(const VariableMap& vars) noexcept override;
+};
+
+
+struct Expr::Func : public Expr {
+	std::string name;
+	std::vector<pExpr> args;
 	Value eval(const VariableMap& vars) noexcept override;
 };
 
@@ -209,6 +217,15 @@ inline std::unique_ptr<Expr::Gt> gt(pExpr&& a, pExpr&& b){
 
 inline std::unique_ptr<Expr::Gte> gte(pExpr&& a, pExpr&& b){
 	return binop<Expr::Gte>(std::move(a), std::move(b));
+}
+
+
+template <typename ...ARG>
+inline std::unique_ptr<Expr::Func> fun(auto&& name, ARG&&... arg){
+	auto f = std::make_unique<Expr::Func>();
+	f->name = std::string(std::forward<decltype(name)>(name));
+	f->args.emplace_back(std::move(arg)...);
+	return f;
 }
 
 

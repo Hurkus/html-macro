@@ -1,4 +1,5 @@
 #include "Expression.hpp"
+#include <cmath>
 
 using namespace std;
 using namespace Expression;
@@ -19,7 +20,6 @@ template <typename T>
 constexpr bool isNum(const T& e){
 	return is_same_v<T,long> || is_same_v<T,double>;
 }
-
 
 template <typename T>
 constexpr bool isStr(const T& e){
@@ -94,16 +94,16 @@ Value Expr::Add::eval(const VariableMap& vars) noexcept {
 	Value _a = _eval(vars, this->a);
 	Value _b = _eval(vars, this->b);
 	
-	auto op = [](const auto& a, const auto& b) -> Value {
+	auto op = [](auto&& a, auto&& b) -> Value {
 		if constexpr (isNum(a) && isStr(b))
-			return to_string(a) + b;
+			return to_string(a) + move(b);
 		else if constexpr (isStr(a) && isNum(b))
-			return a + to_string(b);
+			return move(a) + to_string(b);
 		else
-			return a + b;
+			return move(a) + move(b);
 	};
 	
-	return visit(op, _a, _b);
+	return visit(op, move(_a), move(_b));
 }
 
 
@@ -128,16 +128,16 @@ inline Value _comp_op(const VariableMap& vars, const Expr::BinaryOp& ab){
 	Value _a = _eval(vars, ab.a);
 	Value _b = _eval(vars, ab.b);
 	
-	auto f = [](const auto& a, const auto& b) -> Value {
+	auto f = [](auto&& a, auto&& b) -> Value {
 		if constexpr (isStr(a) && isNum(b))
 			return OP{}(a.length(), b);
 		else if constexpr (isNum(a) && isStr(b))
 			return OP{}(a, b.length());
 		else
-			return OP{}(a, b);
+			return OP{}(move(a), move(b));
 	};
 	
-	return visit(f, _a, _b);
+	return visit(f, move(_a), move(_b));
 }
 
 
@@ -163,6 +163,86 @@ Value Expr::Gt::eval(const VariableMap& vars) noexcept {
 
 Value Expr::Gte::eval(const VariableMap& vars) noexcept {
 	return _comp_op<std::greater_equal<>>(vars, *this);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static Value _f_int(const VariableMap& vars, const vector<pExpr>& args) noexcept {
+	if (args.size() < 1){
+		return Value(0);
+	}
+	
+	auto cast = [](const auto& v) -> Value {
+		if constexpr (isStr(v))
+			return atol(v.c_str());
+		else
+			return long(v);
+	};
+	
+	return visit(cast, _eval(vars, args[0]));
+}
+
+
+static Value _f_float(const VariableMap& vars, const vector<pExpr>& args){
+	if (args.size() < 1){
+		return Value(0.0);
+	}
+	
+	auto cast = [](const auto& v) -> Value {
+		if constexpr (isStr(v))
+			return atof(v.c_str());
+		else
+			return double(v);
+	};
+	
+	return visit(cast, _eval(vars, args[0]));
+}
+
+
+static Value _f_str(const VariableMap& vars, const vector<pExpr>& args){
+	if (args.size() < 1){
+		return Value(in_place_type<string>);
+	}
+	
+	auto cast = [&](auto&& v) -> Value {
+		if constexpr (isStr(v))
+			return move(v);
+		else
+			return to_string(v);
+	};
+	
+	return visit(cast, _eval(vars, args[0]));
+}
+
+
+static Value _f_len(const VariableMap& vars, const vector<pExpr>& args){
+	if (args.size() < 1){
+		return Value(in_place_type<string>);
+	}
+	
+	auto cast = [](auto&& v) -> Value {
+		if constexpr (isStr(v))
+			return long(v.length());
+		else
+			return abs(v);
+	};
+	
+	return visit(cast, _eval(vars, args[0]));
+}
+
+
+Value Expr::Func::eval(const VariableMap& vars) noexcept {
+	if (name == "int")
+		return _f_int(vars, args);
+	else if (name == "float")
+		return _f_float(vars, args);
+	else if (name == "str")
+		return _f_str(vars, args);
+	else if (name == "len" || name == "abs")
+		return _f_len(vars, args);
+	return 0;
 }
 
 
