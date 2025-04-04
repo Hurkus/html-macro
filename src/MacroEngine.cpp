@@ -10,23 +10,32 @@ using namespace pugi;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngine::call(const xml_node op, xml_node dst){
+static void _call(MacroEngine& engine, const char* name, xml_node dst){
+	if (name == nullptr || name[0] == 0){
+		WARNING_L1("CALL: Missing macro name.");
+		return;
+	}
+	
+	Macro* macro = engine.getMacro(name);
+	if (macro == nullptr){
+		WARNING_L1("CALL: Macro '%s' not found.", name);
+		return;
+	}
+	
+	engine.run(*macro, dst);
+}
+
+
+void MacroEngine::call(const xml_node op, xml_node dst){
+	assert(op.root() != dst.root());
+	
 	xml_attribute attr = op.attribute("NAME");
 	if (attr.empty()){
 		WARNING_L1("CALL: Missing 'NAME' attribute.");
-		return true;
+		return;
 	}
 	
-	const char* cname = attr.value();
-	Macro* macro = getMacro(cname);
-	
-	if (macro != nullptr){
-		run(*macro, dst);
-	} else {
-		WARNING_L1("CALL: Macro '%s' not found.", cname);
-	}
-	
-	return true;
+	_call(*this, attr.value(), dst);
 }
 
 
@@ -37,17 +46,30 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	dst = dst.append_child(op.name());
 	
-	// Resolve attributes
+	xml_attribute attr_call = {};
+	
+	// Copy attributes
 	for (const xml_attribute attr : op.attributes()){
 		
-		const char* cname = op.name();
+		const char* cname = attr.name();
 		if (isupper(cname[0])){
 			string_view name = cname;
-			WARNING_L1("Macro: Unknown macro '%s' treated as regular HTML tag.", cname);
+			
+			if (name == "CALL"){
+				attr_call = attr;
+				continue;
+			} else {
+				WARNING_L1("Macro: Unknown macro '%s' treated as regular HTML tag.", cname);
+			}
+			
 		}
 		
 		// Regular attribute
 		dst.append_copy(attr);
+	}
+	
+	if (!attr_call.empty()){
+		_call(*this, attr_call.value(), dst);
 	}
 	
 	// Resolve children
@@ -62,13 +84,13 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngine::resolve(const xml_node op, xml_node dst){
+void MacroEngine::resolve(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
 	// Not tag
 	if (op.type() != xml_node_type::node_element){
 		dst.append_copy(op);
-		return true;
+		return;
 	}
 	
 	// Check for macro
@@ -86,23 +108,20 @@ bool MacroEngine::resolve(const xml_node op, xml_node dst){
 	
 	// Regular tag
 	tag(op, dst);
-	return true;
 }
 
 
-bool MacroEngine::run(const Macro& macro, xml_node dst){
+void MacroEngine::run(const Macro& macro, xml_node dst){
 	const xml_node mroot = macro.root.root();
 	
 	// cout << "[" << ANSI_GREEN;
 	// mroot.print(cout);
 	// cout << ANSI_RESET << "]";
 	
-	bool res = true;
 	for (const xml_node mchild : mroot.children()){
-		res &= resolve(mchild, dst);
+		resolve(mchild, dst);
 	}
 	
-	return res;
 }
 
 
