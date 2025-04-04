@@ -63,24 +63,30 @@ static bool run(const vector<filesystem::path>& files){
 
 
 int main(int argc, char const* const* argv){
-	try {
-		CLI::parse(argc, argv);
-	} catch (const exception& e){
-		ERROR("%s\nUse '%s --help' for help.", e.what(), CLI::name());
-	}
+	// try {
+	// 	CLI::parse(argc, argv);
+	// } catch (const exception& e){
+	// 	ERROR("%s\nUse '%s --help' for help.", e.what(), CLI::name());
+	// }
 	
-	if (CLI::options.help){
-		help();
-		return 0;
-	} else if (CLI::options.version){
-		version();
-		return 0;
-	}
+	// if (CLI::options.help){
+	// 	help();
+	// 	return 0;
+	// } else if (CLI::options.version){
+	// 	version();
+	// 	return 0;
+	// }
 	
-	if (!run(CLI::options.files)){
-		return 1;
-	}
+	// if (!run(CLI::options.files)){
+	// 	return 1;
+	// }
 	
+	using namespace Expression;
+	
+	pExpr e = lt(val("55"), val(3));
+	Value res = e->eval({});
+	
+	std::visit([](auto const& x){cout << "'" ANSI_GREEN << x << ANSI_RESET "'" << endl;}, res);
 	return 0;
 }
 
