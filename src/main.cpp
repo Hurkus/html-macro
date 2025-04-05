@@ -2,6 +2,8 @@
 #include <string_view>
 
 #include "MacroEngine.hpp"
+#include "Expression.hpp"
+#include "ExpressionParser.hpp"
 #include "CLI.hpp"
 #include "DEBUG.hpp"
 
@@ -84,7 +86,22 @@ int main(int argc, char const* const* argv){
 	using namespace Expression;
 	
 	
-	auto e = fun("int", val(-66.2));
+	// string_view expr = "len('hello')";
+	string_view expr = "str(1 + 1 * 2 + 1 / 2.0) + ' | ' + str(10/1.5)";
+	
+	
+	
+	
+	Parser p;
+	auto e = p.parse(expr);
+	if (e == nullptr){
+		ERROR("Nope.");
+		return 1;
+	}
+	
+	
+	// auto e = fun("int", val(-66.2));
+	// auto e = move(p.expr);
 	Value res = e->eval({});
 	
 	

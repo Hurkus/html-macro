@@ -219,7 +219,7 @@ static Value _f_str(const VariableMap& vars, const vector<pExpr>& args){
 
 static Value _f_len(const VariableMap& vars, const vector<pExpr>& args){
 	if (args.size() < 1){
-		return Value(in_place_type<string>);
+		return Value(0);
 	}
 	
 	auto cast = [](auto&& v) -> Value {
