@@ -12,9 +12,6 @@ public:
 	int i = 0;
 	int e = 0;
 	
-public:
-	pExpr expr;
-	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	pExpr parse(std::string_view s);
@@ -22,6 +19,7 @@ public:
 public:
 	static pExpr makeTree(std::vector<pExpr>& args, std::vector<char>& ops);
 	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
 private:
 	std::unique_ptr<Expr> parseExpression();
 	std::unique_ptr<Expr::Const> parseNum();
@@ -39,20 +37,3 @@ private:
 // ------------------------------------------------------------------------------------------ //
 };
 }
-
-
-// class Expression::ParsingException : public std::runtime_error {
-// // ------------------------------------[ Properties ] --------------------------------------- //
-// // public:
-// // 	std::string expr;
-// // 	int i = 0;
-	
-// // // ---------------------------------- [ Constructors ] -------------------------------------- //
-// public:
-// 	using std::runtime_error::runtime_error;
-	
-// // 	ParsingException() = default;
-// // 	ParsingException() = default;
-	
-// // ------------------------------------------------------------------------------------------ //
-// };
