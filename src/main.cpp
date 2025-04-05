@@ -87,7 +87,7 @@ int main(int argc, char const* const* argv){
 	
 	
 	// string_view expr = "len('hello')";
-	string_view expr = "str(1 + 1 * 2 + 1 / 2.0) + ' | ' + str(10/1.5)";
+	string_view expr = "str(1 + 2*(2 + 1)/3.0) + ' | ' + str(10/1.5)";
 	
 	
 	

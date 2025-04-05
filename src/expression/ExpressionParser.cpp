@@ -87,7 +87,7 @@ string Parser::getErrorLine(int from, int to, int ptr){
 	
 	// Add pointer to problematic position
 	str.append(" | ");
-	if (0 <= ptr && ptr < int(line.length())){
+	if (0 <= ptr && ptr <= int(line.length()) + 1){
 		str.append(ptr, ' ');
 		str.append(ANSI_RED).append("^"sv).append(ANSI_RESET);
 	}
@@ -420,10 +420,29 @@ pExpr Parser::parseExpression(){
 		return parseVarOrFun();
 	} else if (isUnop(s[i])){
 		return parseUnaryOp();
-	} else {
-		ERROR_L1("Expression: Unexpected symbol.\n%s", getErrorLine(i).c_str());
 	}
 	
+	else if (s[i] == '('){
+		int _i = i++;
+		i += parseWhiteSpace(s, i, e);
+		
+		pExpr expr = parseExpressionChain();
+		if (expr == nullptr){
+			ERROR_L1("Expression: Missing expression within brackets '()'.\n%s", getErrorLine(_i, i).c_str());
+			return nullptr;
+		}
+		
+		i += parseWhiteSpace(s, i, e);
+		if (i >= e || s[i] != ')'){
+			ERROR_L1("Expression: Missing closing bracket ')'.\n%s", getErrorLine(_i, i, i).c_str());
+			return nullptr;
+		}
+		
+		i++;
+		return expr;
+	}
+	
+	ERROR_L1("Expression: Unexpected symbol.\n%s", getErrorLine(i).c_str());
 	return nullptr;
 }
 
