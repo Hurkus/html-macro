@@ -12,6 +12,7 @@ class MacroEngine {
 public:
 	pugi::xml_document doc;
 	string_map<std::unique_ptr<Macro>> macros;
+	Expression::VariableMap variables;
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
@@ -27,7 +28,7 @@ public:
 	void resolve(const pugi::xml_node op, pugi::xml_node dst);
 	pugi::xml_node tag(const pugi::xml_node op, pugi::xml_node dst);
 	void call(const pugi::xml_node op, pugi::xml_node dst);
-	void call_inline(const pugi::xml_node op, pugi::xml_node dst);
+	void set(const pugi::xml_node op);
 	
 // ------------------------------------------------------------------------------------------ //
 };

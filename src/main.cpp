@@ -42,7 +42,6 @@ static bool run(const vector<filesystem::path>& files){
 	MacroEngine engine = {};
 	Macro* root = engine.loadFile(files[0]);
 	
-	
 	if (root != nullptr){
 		engine.run(*root, engine.doc);
 	}
@@ -65,56 +64,27 @@ static bool run(const vector<filesystem::path>& files){
 
 
 int main(int argc, char const* const* argv){
-	// try {
-	// 	CLI::parse(argc, argv);
-	// } catch (const exception& e){
-	// 	ERROR("%s\nUse '%s --help' for help.", e.what(), CLI::name());
-	// }
-	
-	// if (CLI::options.help){
-	// 	help();
-	// 	return 0;
-	// } else if (CLI::options.version){
-	// 	version();
-	// 	return 0;
-	// }
-	
-	// if (!run(CLI::options.files)){
-	// 	return 1;
-	// }
-	
-	using namespace Expression;
-	
-	
-	// string_view expr = "len('hello')";
-	string_view expr = "str(1 + 2*(2 + 1)/3.0) + ' | ' + str(10/1.5)";
-	
-	
-	
-	
-	Parser p;
-	auto e = p.parse(expr);
-	if (e == nullptr){
-		ERROR("Nope.");
-		return 1;
+	try {
+		CLI::parse(argc, argv);
+	} catch (const exception& e){
+		ERROR("%s\nUse '%s --help' for help.", e.what(), CLI::name());
 	}
 	
+	#ifdef DEBUG
+	CLI::options.files.emplace_back("./assets/test.html");
+	#endif
 	
-	// auto e = fun("int", val(-66.2));
-	// auto e = move(p.expr);
-	Value res = e->eval({});
+	if (CLI::options.help){
+		help();
+		return 0;
+	} else if (CLI::options.version){
+		version();
+		return 0;
+	}
 	
-	
-	// Print result
-	std::visit([](const auto& x){
-		cout << "[" ANSI_GREEN;
-		if constexpr (is_same_v<remove_const_t<remove_reference_t<decltype(x)>>,string>)
-			cout <<  ANSI_YELLOW "'" << x << "'" ANSI_GREEN;
-		else
-			cout << x;
-		cout << ANSI_RESET "]" << endl;
-	}, res);
-	
+	if (!run(CLI::options.files)){
+		return 1;
+	}
 	
 	return 0;
 }

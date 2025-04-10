@@ -17,16 +17,16 @@ public:
 	pExpr parse(std::string_view s);
 	
 public:
-	static pExpr makeTree(std::vector<pExpr>& args, std::vector<char>& ops);
+	static pExpr makeTree(std::vector<pExpr>& args, std::vector<int>& ops);
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 private:
-	std::unique_ptr<Expr> parseExpression();
+	std::unique_ptr<Expr> parseSingleExpression();
 	std::unique_ptr<Expr::Const> parseNum();
 	std::unique_ptr<Expr::Const> parseStr();
 	
-	std::unique_ptr<Expr> parseUnaryOp();
-	std::unique_ptr<Expr> parseExpressionChain();
+	std::unique_ptr<Expr> parseBinopChain();
+	std::unique_ptr<Expr> parseUnaryExpression();
 	
 	std::unique_ptr<Expr::Var> parseVar();
 	std::unique_ptr<Expr::Func> parseFunArgs();
