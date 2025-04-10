@@ -14,14 +14,23 @@ constexpr bool isQuot(char c){
 }
 
 
-constexpr bool isUnop(char c){
+constexpr bool isUnaryOp(char c){
 	return c == '+' || c == '-' || c == '!';
 }
 
 
-constexpr bool isBinop(char c){
-	return c == '+' || c == '-' || c == '*' || c == '/';
-}
+// constexpr bool isBinop(char c){
+// 	switch (c){
+// 		case '+':
+// 		case '-':
+// 		case '*':
+// 		case '/':
+// 		case '>':
+// 		case '<':
+// 		case '=':
+// 			return true;
+// 	}
+// }
 
 
 static int parseWhiteSpace(const char* s, int i, int e) noexcept {
@@ -200,23 +209,6 @@ unique_ptr<Expr::Const> Parser::parseStr(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static unique_ptr<Expr::BinaryOp> _binop(pExpr&& a, pExpr&& b, char op){
-	switch (op){
-		case '+':
-			return add(move(a), move(b));
-		case '-':
-			return sub(move(a), move(b));
-		case '*':
-			return mul(move(a), move(b));
-		case '/':
-			return div(move(a), move(b));
-		default:
-			assert(false);
-			return nullptr;
-	}
-}
-
-
 static unique_ptr<Expr> _unop(pExpr&& e, char op){
 	switch (op){
 		case '-':
@@ -232,12 +224,12 @@ static unique_ptr<Expr> _unop(pExpr&& e, char op){
 }
 
 
-unique_ptr<Expr> Parser::parseUnaryOp(){
+unique_ptr<Expr> Parser::parseUnaryExpression(){
 	assert(s != nullptr && i < e);
 	const int _i = i;
 	
 	const char op = s[i];
-	if (!isUnop(op)){
+	if (!isUnaryOp(op)){
 		ERROR_L1("Expression: Unknown unary operator.\n%s", getErrorLine(_i).c_str());
 		return nullptr;
 	}
@@ -249,7 +241,7 @@ unique_ptr<Expr> Parser::parseUnaryOp(){
 		return nullptr;
 	}
 	
-	pExpr e = parseExpression();
+	pExpr e = parseSingleExpression();
 	if (e == nullptr){
 		return nullptr;
 	}
@@ -258,8 +250,76 @@ unique_ptr<Expr> Parser::parseUnaryOp(){
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
 
-pExpr Parser::makeTree(vector<pExpr>& args, vector<char>& ops){
+
+static int _parseBinaryOp(const char* s, int& i, int e){
+	if (i >= e){
+		return 0;
+	}
+	
+	switch (s[i]){
+		case '+':
+		case '-':
+		case '*':
+		case '/':
+			i++;
+			return s[i-1];
+		
+		case '>':
+		case '<':
+			i++;
+			if (i < e && s[i] == '='){
+				i++;
+				return (s[i-2] << 8) | s[i-1];
+			}
+			return s[i-1];
+		
+		case '!':
+		case '=':
+			if (i+1 < e && s[i+1] == '='){
+				i += 2;
+				return (s[i-2] << 8) | s[i-1];
+			}
+			return 0;
+	}
+	
+	return 0;
+}
+
+
+static unique_ptr<Expr::BinaryOp> _binop(pExpr&& a, pExpr&& b, int op){
+	switch (op){
+		case '+':
+			return add(move(a), move(b));
+		case '-':
+			return sub(move(a), move(b));
+		case '*':
+			return mul(move(a), move(b));
+		case '/':
+			return div(move(a), move(b));
+		
+		case '==':
+			return eq(move(a), move(b));
+		case '!=':
+			return neq(move(a), move(b));
+		case '>=':
+			return gte(move(a), move(b));
+		case '<=':
+			return lte(move(a), move(b));
+		case '>':
+			return gt(move(a), move(b));
+		case '<':
+			return lt(move(a), move(b));
+		
+		default:
+			assert(false);
+			return nullptr;
+	}
+}
+
+
+pExpr Parser::makeTree(vector<pExpr>& args, vector<int>& ops){
 	if (args.size() <= 0 || (args.size() - 1) != ops.size()){
 		return nullptr;
 	} else if (args.size() <= 1){
@@ -291,6 +351,85 @@ pExpr Parser::makeTree(vector<pExpr>& args, vector<char>& ops){
 	
 	assert(args.size() == 1);
 	return move(args[0]);
+}
+
+
+pExpr Parser::parseBinopChain(){
+	i += parseWhiteSpace(s, i, e);
+	if (i >= e){
+		return nullptr;
+	}
+	
+	pExpr first = parseSingleExpression();
+	if (first == nullptr){
+		return nullptr;
+	}
+	
+	i += parseWhiteSpace(s, i, e);
+	if (i >= e){
+		return first;
+	}
+	
+	int binop = _parseBinaryOp(s, i, e);
+	if (binop == 0){
+		return first;
+	}
+	
+	int _i = i;
+	i += parseWhiteSpace(s, i, e);
+	if (i >= e){
+		ERROR_L1("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
+		return nullptr;
+	}
+	
+	pExpr second = parseSingleExpression();
+	if (second == nullptr){
+		ERROR_L1("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
+		return nullptr;
+	}
+	
+	// Lookahead for more operations
+	i += parseWhiteSpace(s, i, e);
+	const int binop2 = _parseBinaryOp(s, i, e);
+	if (binop2 == 0){
+		return _binop(move(first), move(second), binop);
+	}
+	
+	// Chain binops
+	vector<pExpr> args;
+	vector<int> ops;
+	args.reserve(4);
+	args.emplace_back(move(first));
+	args.emplace_back(move(second));
+	ops.reserve(3);
+	ops.push_back(binop);
+	ops.push_back(binop2);
+	
+	// e1 + e2 + ...
+	while (i < e){
+		_i = i-1;	// Error pos at last char of binop symbol.
+		
+		pExpr arg = parseSingleExpression();
+		if (arg != nullptr){
+			args.emplace_back(move(arg));
+		} else {
+			ERROR_L1("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
+			return nullptr;
+		}
+		
+		// Look ahead for more binops
+		i += parseWhiteSpace(s, i, e);
+		binop = _parseBinaryOp(s, i, e);
+		if (binop == 0){
+			break;
+		}
+		
+		_i = i-1;
+		ops.push_back(binop);
+	}
+	
+	assert(args.size() == ops.size()+1);
+	return makeTree(args, ops);
 }
 
 
@@ -355,7 +494,7 @@ unique_ptr<Expr::Func> Parser::parseFunArgs(){
 			i++;
 		}
 		
-		args.emplace_back(parseExpressionChain());
+		args.emplace_back(parseBinopChain());
 		if (args.back() == nullptr){
 			ERROR_L1("Expression: Failed to parse function argument list.\n%s", getErrorLine(_i, i).c_str());
 			return nullptr;
@@ -404,7 +543,7 @@ unique_ptr<Expr> Parser::parseVarOrFun(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-pExpr Parser::parseExpression(){
+pExpr Parser::parseSingleExpression(){
 	assert(s != nullptr);
 	assert(i >= e || !isspace(s[i]));
 	
@@ -418,15 +557,15 @@ pExpr Parser::parseExpression(){
 		return parseStr();
 	} else if (isalpha(s[i])){
 		return parseVarOrFun();
-	} else if (isUnop(s[i])){
-		return parseUnaryOp();
+	} else if (isUnaryOp(s[i])){
+		return parseUnaryExpression();
 	}
 	
 	else if (s[i] == '('){
 		int _i = i++;
 		i += parseWhiteSpace(s, i, e);
 		
-		pExpr expr = parseExpressionChain();
+		pExpr expr = parseBinopChain();
 		if (expr == nullptr){
 			ERROR_L1("Expression: Missing expression within brackets '()'.\n%s", getErrorLine(_i, i).c_str());
 			return nullptr;
@@ -447,92 +586,12 @@ pExpr Parser::parseExpression(){
 }
 
 
-pExpr Parser::parseExpressionChain(){
-	i += parseWhiteSpace(s, i, e);
-	if (i >= e){
-		return nullptr;
-	}
-	
-	pExpr first = parseExpression();
-	if (first == nullptr){
-		return nullptr;
-	}
-	
-	i += parseWhiteSpace(s, i, e);
-	if (i >= e || !isBinop(s[i])){
-		return first;
-	}
-	
-	char op = s[i];
-	int _i = i;
-	i++;
-	
-	i += parseWhiteSpace(s, i, e);
-	if (i >= e){
-		ERROR_L1("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
-		return nullptr;
-	}
-	
-	pExpr second = parseExpression();
-	if (second == nullptr){
-		ERROR_L1("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
-		return nullptr;
-	}
-	
-	// Lookahead for more operations
-	i += parseWhiteSpace(s, i, e);
-	if (i >= e){
-		goto single;
-	}
-	
-	if (isBinop(s[i])){
-		goto chain;
-	} else {
-		goto single;
-	}
-		
-	single:
-	return _binop(move(first), move(second), op);
-	
-	chain: {
-		vector<pExpr> args;
-		vector<char> ops;
-		args.reserve(4);
-		args.emplace_back(move(first));
-		args.emplace_back(move(second));
-		ops.reserve(3);
-		ops.push_back(op);
-		
-		while (i < e && isBinop(s[i])){
-			ops.push_back(s[i]);
-			i++;
-			
-			_i = i;
-			i += parseWhiteSpace(s, i, e);
-			if (i >= e){
-				break;
-			}
-			
-			pExpr arg = parseExpression();
-			if (arg == nullptr){
-				return nullptr;
-			}
-			
-			args.emplace_back(move(arg));
-			i += parseWhiteSpace(s, i, e);
-		}
-		
-		return makeTree(args, ops);;
-	}
-}
-
-
 pExpr Parser::parse(string_view str){
 	this->s = str.data();
 	this->e = int(str.length());
 	this->i = 0;
 	
-	pExpr expr = parseExpressionChain();
+	pExpr expr = parseBinopChain();
 	if (expr == nullptr || i >= e){
 		return expr;
 	}

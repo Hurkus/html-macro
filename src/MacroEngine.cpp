@@ -1,7 +1,6 @@
 #include "MacroEngine.hpp"
+#include "ExpressionParser.hpp"
 #include "DEBUG.hpp"
-
-#include <iostream>
 
 using namespace std;
 using namespace pugi;
@@ -84,6 +83,34 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+void MacroEngine::set(const xml_node op){
+	using namespace Expression;
+	Parser parser = {};
+	
+	for (const xml_attribute attr : op.attributes()){
+		string_view name = attr.name();
+		string_view value = attr.value();
+		
+		if (value.empty()){
+			continue;
+		}
+		
+		pExpr expr = parser.parse(value);
+		if (expr == nullptr){
+			WARNING_L1("SET: Failed to parse expression [%s].", attr.value());
+			continue;
+		}
+		
+		Value v = expr->eval(variables);
+		variables.emplace(name, move(v));
+	}
+	
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 void MacroEngine::resolve(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
@@ -100,6 +127,8 @@ void MacroEngine::resolve(const xml_node op, xml_node dst){
 		
 		if (name == "CALL"){
 			return call(op, dst);
+		} else if (name == "SET"){
+			return set(op);
 		} else {
 			WARNING_L1("Macro: Unknown macro '%s' treated as regular HTML tag.", cname);
 		}
