@@ -31,6 +31,8 @@ public:
 	void resolve(const pugi::xml_node op, pugi::xml_node dst);
 	
 	pugi::xml_node tag(const pugi::xml_node op, pugi::xml_node dst);
+	void text(const pugi::xml_node op, pugi::xml_node dst);
+	
 	void call(const pugi::xml_node op, pugi::xml_node dst);
 	void set(const pugi::xml_node op);
 	

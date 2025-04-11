@@ -85,6 +85,17 @@ bool Expression::boolEval(const Value& val){
 }
 
 
+void Expression::str(const Value& val, string& buff){
+	auto f = [&](const auto& val){
+		if constexpr (isStr(val))
+			buff.append(val);
+		else
+			buff.append(to_string(val));
+	};
+	visit(f, val);
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
