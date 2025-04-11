@@ -141,6 +141,7 @@ struct Expr::Gte : public Expr::BinaryOp {
 
 
 bool boolEval(const Value& val);
+std::string str(const Expr* expr);
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //

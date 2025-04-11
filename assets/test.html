@@ -6,9 +6,18 @@
 	<title>Macro example!</title>
 </head>
 <body>
-	<SET z="" x="2" y="3" cond="x > y" />
-	<CALL NAME="title"/>
+	<CALL NAME="title" />
 	<h2 CALL="subtitle"></h2>
+	
+	<SET z="" x="2" y="3" cond="x > y" />
+	<IF TRUE="x+1 <= y">
+		<WARN>passed</WARN>
+	</IF>
+	<ELSE>
+		<WARN>failed</WARN>
+	</ELSE>
+	
+	
 </body>
 </html>
 

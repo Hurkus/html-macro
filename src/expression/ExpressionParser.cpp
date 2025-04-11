@@ -13,9 +13,26 @@ constexpr bool isQuot(char c){
 	return c == '"' || c == '\'' || c == '`';
 }
 
-
 constexpr bool isUnaryOp(char c){
 	return c == '+' || c == '-' || c == '!';
+}
+
+constexpr bool isArithOp(int c){
+	return c == '+' || c == '-' || c == '*' || c == '/' || c == '%';
+}
+
+constexpr bool isCompOp(int c){
+	switch (c){
+		case '==':
+		case '!=':
+		case '<=':
+		case '>=':
+		case '<':
+		case '>':
+			return true;
+		default:
+			return false;
+	}
 }
 
 
@@ -313,30 +330,47 @@ pExpr Parser::makeTree(vector<pExpr>& args, vector<int>& ops){
 	}
 	
 	// Merge multiplications
-	for (int i = int(ops.size()) - 1 ; i >= 0 ; i--){
-		assert(i < ops.size());
+	for (int i = 0 ; i < int(ops.size()) ; i++){
+		assert(i+1 < args.size());
 		
-		assert(i < args.size() - 1);
-		if (ops[i] == '*' || ops[i] == '/'){
+		if (ops[i] == '*' || ops[i] == '/' || ops[i] == '%'){
 			pExpr e = _binop(move(args[i]), move(args[i+1]), ops[i]);
 			args[i] = move(e);
 			
 			ops.erase(ops.begin() + i);
 			args.erase(args.begin() + i + 1);
+			i--;
 		}
 		
 	}
 	
 	// Merge additions
-	for (int i = int(ops.size()) - 1 ; i >= 0 ; i--){
-		assert(args.size() >= 2);
-		pExpr e = _binop(move(*(args.end() - 2)), move(*(args.end() - 1)), ops[i]);
-		args.pop_back();
-		args.back() = move(e);
+	for (int i = 0 ; i < int(ops.size()) ; i++){
+		assert(i+1 < args.size());
+		
+		if (ops[i] == '+' || ops[i] == '-'){
+			pExpr e = _binop(move(args[i]), move(args[i+1]), ops[i]);
+			args[i] = move(e);
+			
+			ops.erase(ops.begin() + i);
+			args.erase(args.begin() + i + 1);
+			i--;
+		}
+		
 	}
 	
-	assert(args.size() == 1);
-	return move(args[0]);
+	// Merge comparisons
+	for (int i = 0 ; i < int(ops.size()) ; i++){
+		assert(i+1 < args.size());
+		// `args[0]` is cummulative expression
+		pExpr e = _binop(move(args[0]), move(args[i+1]), ops[i]);
+		args[0] = move(e);
+	}
+	
+	auto res = move(args[0]);
+	ops.clear();
+	args.clear();
+	return res;
 }
 
 
