@@ -1,4 +1,6 @@
 #include "MacroEngine.hpp"
+#include <cstring>
+
 #include "ExpressionParser.hpp"
 #include "DEBUG.hpp"
 
@@ -84,6 +86,49 @@ void MacroEngine::call(const xml_node op, xml_node dst){
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void MacroEngine::text(const xml_node op, xml_node dst){
+	xml_node pcdata = dst.append_child(xml_node_type::node_pcdata);
+	const char* str = op.value();
+	
+	const char* beg = strchrnul(str, '{');
+	if (*beg == 0){
+		pcdata.set_value(str, beg - str);
+		return;
+	}
+	
+	const char* end = strchrnul(str, '}');
+	if (*end == 0){
+		pcdata.set_value(str, end - str);
+		return;
+	}
+	
+	using namespace Expression;
+	Parser parser = {};
+	string buff = {};
+	
+	while (*beg != 0 && *end != 0){
+		buff.append(str, beg);
+		
+		string_view exprstr = string_view(beg + 1, end);
+		pExpr expr = parser.parse(exprstr);
+		if (expr != nullptr){
+			Value val = expr->eval(this->variables);
+			Expression::str(val, buff);
+		} else {
+			WARNING_L1("TEXT: Failed to parse expression [%s].", string(beg, end+1).c_str());
+		}
+		
+		// Next expression
+		str = end + 1;
+		beg = strchrnul(str, '{');
+		end = strchrnul(beg, '}');
+	}
+	
+	buff.append(str, end);
+	pcdata.set_value(buff.c_str(), buff.length());
+}
 
 
 xml_node MacroEngine::tag(const xml_node op, xml_node dst){
@@ -233,8 +278,12 @@ void MacroEngine::resolve(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
 	// Not tag
-	if (op.type() != xml_node_type::node_element){
-		dst.append_copy(op);
+	xml_node_type type = op.type();
+	if (type != xml_node_type::node_element){
+		if (type == xml_node_type::node_pcdata)
+			text(op, dst);
+		else
+			dst.append_copy(op);
 		return;
 	}
 	
