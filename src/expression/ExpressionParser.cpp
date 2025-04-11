@@ -19,20 +19,6 @@ constexpr bool isUnaryOp(char c){
 }
 
 
-// constexpr bool isBinop(char c){
-// 	switch (c){
-// 		case '+':
-// 		case '-':
-// 		case '*':
-// 		case '/':
-// 		case '>':
-// 		case '<':
-// 		case '=':
-// 			return true;
-// 	}
-// }
-
-
 static int parseWhiteSpace(const char* s, int i, int e) noexcept {
 	assert(s != nullptr);
 	
@@ -408,6 +394,7 @@ pExpr Parser::parseBinopChain(){
 	// e1 + e2 + ...
 	while (i < e){
 		_i = i-1;	// Error pos at last char of binop symbol.
+		i += parseWhiteSpace(s, i, e);
 		
 		pExpr arg = parseSingleExpression();
 		if (arg != nullptr){

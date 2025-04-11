@@ -47,9 +47,9 @@ Macro* MacroEngine::loadFile(const filesystem::path& path){
 		parseMacro(dom.path.c_str(), dom.doc);
 	} catch (const ParsingException& e){
 		if (e.row > 0)
-			errorf(path.c_str(), e.row, "%s", e.what());
+			::errorf(path.c_str(), e.row, "%s", e.what());
 		else
-			error(path.c_str(), "%s", e.what());
+			::error(path.c_str(), "%s", e.what());
 		return nullptr;
 	}
 	

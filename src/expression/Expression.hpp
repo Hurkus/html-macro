@@ -140,6 +140,12 @@ struct Expr::Gte : public Expr::BinaryOp {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+bool boolEval(const Value& val);
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 template <typename C>
 inline std::unique_ptr<Expr::Const> val(C&& c){
 	auto pconst = std::make_unique<Expr::Const>();

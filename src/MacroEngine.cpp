@@ -9,6 +9,51 @@ using namespace pugi;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+void MacroEngine::info(const pugi::xml_node op){
+	for (const xml_node child : op){
+		switch (child.type()){
+			case xml_node_type::node_cdata:
+			case xml_node_type::node_pcdata:
+				INFO(ANSI_BOLD "INFO: " ANSI_RESET "%s", child.value());
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+
+void MacroEngine::warn(const pugi::xml_node op){
+	for (const xml_node child : op){
+		switch (child.type()){
+			case xml_node_type::node_cdata:
+			case xml_node_type::node_pcdata:
+				INFO(ANSI_BOLD ANSI_YELLOW "WARN: " ANSI_RESET "%s", child.value());
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+
+void MacroEngine::error(const pugi::xml_node op){
+	for (const xml_node child : op){
+		switch (child.type()){
+			case xml_node_type::node_cdata:
+			case xml_node_type::node_pcdata:
+				INFO(ANSI_BOLD ANSI_RED "ERROR: " ANSI_RESET "%s", child.value());
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 static void _call(MacroEngine& engine, const char* name, xml_node dst){
 	if (name == nullptr || name[0] == 0){
 		WARNING_L1("CALL: Missing macro name.");
@@ -90,7 +135,6 @@ void MacroEngine::set(const xml_node op){
 	for (const xml_attribute attr : op.attributes()){
 		string_view name = attr.name();
 		string_view value = attr.value();
-		
 		if (value.empty()){
 			continue;
 		}
@@ -111,6 +155,80 @@ void MacroEngine::set(const xml_node op){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+bool MacroEngine::branch_if(const xml_node op, xml_node dst){
+	assert(op.root() != dst.root());
+	
+	using namespace Expression;
+	Parser parser = {};
+	bool pass = true;
+	
+	// Chain of `&&` statements
+	for (const xml_attribute attr : op.attributes()){
+		string_view name = attr.name();
+		bool expected;
+		
+		if (name == "TRUE"){
+			expected = true;
+		} else if (name == "FALSE"){
+			expected = false;
+		} else {
+			WARNING_L1("IF: Ignored attribute '%s'.", attr.name());
+			continue;
+		}
+		
+		pExpr expr = parser.parse(attr.value());
+		if (expr == nullptr){
+			WARNING_L1("IF: Invalid expression [%s].", attr.value());
+			pass = false;
+			break;
+		}
+		
+		Value val = expr->eval(variables);
+		if (Expression::boolEval(val) != expected){
+			pass = false;
+			break;
+		}
+		
+	}
+	
+	if (pass){
+		for (const xml_node child_op : op.children()){
+			this->branch = true;	// Each child gets a fresh result.
+			resolve(child_op, dst);
+		}
+	}
+	
+	this->branch = pass;
+	return pass;
+}
+
+
+bool MacroEngine::branch_elif(const xml_node op, xml_node dst){
+	if (!this->branch)
+		return branch_if(op, dst);
+	return false;
+}
+
+
+bool MacroEngine::branch_else(const xml_node op, xml_node dst){
+	assert(op.root() != dst.root());
+	if (this->branch){
+		return false;
+	}
+	
+	for (const xml_node child_op : op.children()){
+		this->branch = true;	// Each child gets a fresh result.
+		resolve(child_op, dst);
+	}
+	
+	this->branch = true;
+	return true;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 void MacroEngine::resolve(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
@@ -125,17 +243,36 @@ void MacroEngine::resolve(const xml_node op, xml_node dst){
 	if (isupper(cname[0])){
 		string_view name = cname;
 		
-		if (name == "CALL"){
-			return call(op, dst);
-		} else if (name == "SET"){
-			return set(op);
-		} else {
-			WARNING_L1("Macro: Unknown macro '%s' treated as regular HTML tag.", cname);
+		if (name == "IF"){
+			branch_if(op, dst);
+		} else if (name == "ELSE-IF"){
+			branch_elif(op, dst);
+		} else if (name == "ELSE"){
+			branch_else(op, dst);
 		}
 		
+		else if (name == "CALL"){
+			call(op, dst);
+		} else if (name == "SET"){
+			set(op);
+		}
+		
+		else if (name == "INFO"){
+			info(op);
+		} else if (name == "WARN"){
+			warn(op);
+		} else if (name == "ERROR"){
+			error(op);
+		} else {
+			WARNING_L1("Macro: Unknown macro '%s' treated as regular HTML tag.", cname);
+			goto __tag;
+		}
+		
+		return;
 	}
 	
 	// Regular tag
+	__tag:
 	tag(op, dst);
 }
 
