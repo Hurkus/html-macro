@@ -14,6 +14,9 @@ public:
 	string_map<std::unique_ptr<Macro>> macros;
 	Expression::VariableMap variables;
 	
+public:
+	bool branch = false;
+	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	Macro* getMacro(std::string_view name) const;
@@ -26,9 +29,18 @@ public:
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	void resolve(const pugi::xml_node op, pugi::xml_node dst);
+	
 	pugi::xml_node tag(const pugi::xml_node op, pugi::xml_node dst);
 	void call(const pugi::xml_node op, pugi::xml_node dst);
 	void set(const pugi::xml_node op);
+	
+	bool branch_if(const pugi::xml_node op, pugi::xml_node dst);
+	bool branch_elif(const pugi::xml_node op, pugi::xml_node dst);
+	bool branch_else(const pugi::xml_node op, pugi::xml_node dst);
+	
+	void info(const pugi::xml_node op);
+	void warn(const pugi::xml_node op);
+	void error(const pugi::xml_node op);
 	
 // ------------------------------------------------------------------------------------------ //
 };

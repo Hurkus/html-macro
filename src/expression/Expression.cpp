@@ -1,5 +1,6 @@
 #include "Expression.hpp"
 #include <cmath>
+#include <cassert>
 
 using namespace std;
 using namespace Expression;
@@ -66,6 +67,20 @@ Value Expr::Not::eval(const VariableMap& vars) noexcept {
 	}
 	
 	return e;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+bool Expression::boolEval(const Value& val){
+	auto f = [](const auto& val) -> bool {
+		if constexpr (isStr(val))
+			return bool(val.length() != 0);
+		else
+			return bool(val != 0);
+	};
+	return visit(f, val);
 }
 
 
