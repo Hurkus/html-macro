@@ -26,6 +26,7 @@ public:
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	std::vector<std::unique_ptr<Macro>> convertToMacroSet();
+	static std::vector<std::unique_ptr<Macro>> extractMacros(pugi::xml_document&& doc);
 	
 // ------------------------------------------------------------------------------------------ //
 };

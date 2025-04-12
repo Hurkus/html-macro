@@ -64,14 +64,13 @@ static unique_ptr<Macro> extractMacroDef(xml_node node){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-vector<unique_ptr<Macro>> XHTMLFile::convertToMacroSet(){
+static vector<unique_ptr<Macro>> _extract(xml_document&& doc, shared_ptr<filesystem::path> src){
 	// Find all MACRO tags.
 	vector<xml_node> nodes;
 	findMacroDefs(doc, nodes);
 	
 	vector<unique_ptr<Macro>> macros;
-	macros.reserve(macros.size() + nodes.size() + 1);
-	shared_ptr<filesystem::path> src = make_shared<filesystem::path>(move(this->path));
+	macros.reserve(nodes.size() + 1);
 	
 	// Create new macro sub-documents and remove from original document.
 	for (int i = 0 ; i < int(nodes.size()) ; i++){
@@ -84,11 +83,24 @@ vector<unique_ptr<Macro>> XHTMLFile::convertToMacroSet(){
 	
 	// Add self
 	Macro& m = *macros.emplace_back(make_unique<Macro>());
-	m.root = move(this->doc);
+	m.root = move(doc);
 	m.srcFile = move(src);
-	m.name = *m.srcFile;
+	
+	if (m.srcFile != nullptr){
+		m.name = *m.srcFile;
+	}
 	
 	return macros;
+}
+
+
+vector<unique_ptr<Macro>> XHTMLFile::convertToMacroSet(){
+	return _extract(move(this->doc), make_shared<filesystem::path>(move(this->path)));
+}
+
+
+vector<unique_ptr<Macro>> XHTMLFile::extractMacros(xml_document&& doc){
+	return _extract(move(doc), nullptr);
 }
 
 

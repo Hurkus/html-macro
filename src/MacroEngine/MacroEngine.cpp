@@ -24,7 +24,7 @@ void MacroEngine::call(const char* name, xml_node dst){
 		return;
 	}
 	
-	run(*macro, dst);
+	exec(*macro, dst);
 }
 
 
@@ -83,10 +83,12 @@ void MacroEngine::run(const xml_node op, xml_node dst){
 			branch_else(op, dst);
 		}
 		
-		else if (name == "CALL"){
-			call(op, dst);
-		} else if (name == "SET"){
+		else if (name == "SET"){
 			set(op);
+		} else if (name == "CALL"){
+			call(op, dst);
+		}  else if (name == "SHELL"){
+			shell(op, dst);
 		}
 		
 		else if (name == "INFO"){
@@ -109,7 +111,7 @@ void MacroEngine::run(const xml_node op, xml_node dst){
 }
 
 
-void MacroEngine::run(const Macro& macro, xml_node dst){
+void MacroEngine::exec(const Macro& macro, xml_node dst){
 	const xml_node mroot = macro.root.root();
 	
 	// cout << "[" << ANSI_GREEN;

@@ -14,16 +14,23 @@
 	
 	<!-- Branching test -->
 	<IF TRUE="x+1 <= y">
-		<WARN>passed with x={x} and y={y}</WARN>
+		<INFO>passed with x={x} and y={y}</INFO>
 	</IF>
 	<ELSE>
-		<WARN>failed with x={x} and y={y}</WARN>
+		<INFO>failed with x={x} and y={y}</INFO>
 	</ELSE>
 	
 	<!-- Attr conditional test -->
 	<WARN IF="z == 0">z not set</WARN>
 	<p IF="z">z-index of page is {z}</p>
 	<p IF="!z">z-index of page is missing!</p>
+	
+	<!-- Shell tests -->
+	<p>
+		<SHELL VARS="x,y">echo -n "$x * $y == $((x * y))"</SHELL>
+	</p>
+	<SHELL VARS="x,y" STDOUT="z">echo "$((x * y))"</SHELL>
+	<SHELL VARS="x,y" STDOUT="HTML">echo -n '<span CALL="print-z"></span>'</SHELL>
 	
 </body>
 </html>
@@ -33,3 +40,6 @@
 </MACRO>
 
 <MACRO NAME="subtitle">Pages {x} and {y + 0.1}</MACRO>
+
+<MACRO NAME="print-z">new z index is {int(z)}</MACRO>
+
