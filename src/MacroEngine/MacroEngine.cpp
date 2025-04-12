@@ -44,7 +44,20 @@ void MacroEngine::call(const xml_node op, xml_node dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::resolve(const xml_node op, xml_node dst){
+void MacroEngine::runChildren(const xml_node parent, xml_node dst){
+	assert(parent.root() != dst.root());
+	auto _branch = this->branch;
+	this->branch = nullptr;
+	
+	for (const xml_node mchild : parent.children()){
+		run(mchild, dst);
+	}
+	
+	this->branch = _branch;
+}
+
+
+void MacroEngine::run(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
 	// Not tag
@@ -103,10 +116,7 @@ void MacroEngine::run(const Macro& macro, xml_node dst){
 	// mroot.print(cout);
 	// cout << ANSI_RESET << "]";
 	
-	for (const xml_node mchild : mroot.children()){
-		resolve(mchild, dst);
-	}
-	
+	runChildren(macro.root, dst);
 }
 
 
