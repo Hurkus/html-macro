@@ -25,7 +25,8 @@ public:
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	void run(const Macro& macro, pugi::xml_node dst);
+	void exec(const Macro& macro, pugi::xml_node dst);
+	bool execBuff(std::string_view buff, pugi::xml_node dst);
 	
 	/**
 	 * @brief Evaluate node as a macro.
@@ -82,6 +83,9 @@ public:
 public:
 	void call(const char* name, pugi::xml_node dst);
 	void call(const pugi::xml_node op, pugi::xml_node dst);
+	
+public:
+	bool shell(const pugi::xml_node op, pugi::xml_node dst);
 	
 public:
 	void info(const pugi::xml_node op);

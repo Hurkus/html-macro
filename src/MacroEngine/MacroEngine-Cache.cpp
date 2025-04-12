@@ -4,6 +4,7 @@
 #include "DEBUG.hpp"
 
 using namespace std;
+using namespace pugi;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -15,6 +16,15 @@ Macro* MacroEngine::getMacro(string_view name) const {
 		return p->second.get();
 	else
 		return nullptr;
+}
+
+
+static void cacheMacros(MacroEngine& self, vector<unique_ptr<Macro>>&& newMacros){
+	for (auto& pmacro : newMacros){
+		assert(pmacro != nullptr);
+		self.macros.emplace(pmacro->name, move(pmacro));
+	}
+	newMacros.clear();
 }
 
 
@@ -43,27 +53,37 @@ Macro* MacroEngine::loadFile(const filesystem::path& path){
 	}
 	
 	// Parse new file
-	try {
-		parseMacro(dom.path.c_str(), dom.doc);
-	} catch (const ParsingException& e){
-		if (e.row > 0)
-			::errorf(path.c_str(), e.row, "%s", e.what());
-		else
-			::error(path.c_str(), "%s", e.what());
+	if (!parseFile(dom.path.c_str(), dom.doc)){
 		return nullptr;
 	}
 	
 	// Extract and cache all sub-macros
-	vector<std::unique_ptr<Macro>> macroList = dom.convertToMacroSet();
-	
-	Macro* ret = nullptr;
-	for (auto& uptr : macroList){
-		assert(uptr != nullptr);
-		ret = uptr.get();
-		macros.emplace(uptr->name, move(uptr));
-	}
+	vector<unique_ptr<Macro>> macroList = dom.convertToMacroSet();
+	Macro* ret = macroList.back().get();
+	cacheMacros(*this, move(macroList));
 	
 	return ret;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+bool MacroEngine::execBuff(string_view buff, xml_node dst){
+	xml_document doc;
+	if (!parseBuffer(buff, doc)){
+		return false;
+	}
+	
+	vector<unique_ptr<Macro>> macroList = XHTMLFile::extractMacros(move(doc));
+	unique_ptr<Macro> main = move(macroList.back());
+	macroList.pop_back();
+	
+	cacheMacros(*this, move(macroList));
+	
+	assert(main != nullptr);
+	exec(*main, dst);
+	return true;
 }
 
 

@@ -176,7 +176,7 @@ static Value _f_int(const VariableMap& vars, const vector<pExpr>& args) noexcept
 		return Value(0);
 	}
 	
-	auto cast = [](const auto& v) -> Value {
+	auto cast = [](const auto& v) -> long {
 		if constexpr (isStr(v))
 			return atol(v.c_str());
 		else
@@ -192,7 +192,7 @@ static Value _f_float(const VariableMap& vars, const vector<pExpr>& args){
 		return Value(0.0);
 	}
 	
-	auto cast = [](const auto& v) -> Value {
+	auto cast = [](const auto& v) -> double {
 		if constexpr (isStr(v))
 			return atof(v.c_str());
 		else
@@ -208,7 +208,7 @@ static Value _f_str(const VariableMap& vars, const vector<pExpr>& args){
 		return Value(in_place_type<string>);
 	}
 	
-	auto cast = [&](auto&& v) -> Value {
+	auto cast = [&](auto&& v) -> string {
 		if constexpr (isStr(v))
 			return move(v);
 		else

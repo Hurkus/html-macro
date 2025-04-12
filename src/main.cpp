@@ -43,7 +43,7 @@ static bool run(const vector<filesystem::path>& files){
 	Macro* root = engine.loadFile(files[0]);
 	
 	if (root != nullptr){
-		engine.run(*root, engine.doc);
+		engine.exec(*root, engine.doc);
 	}
 	
 	
