@@ -31,8 +31,10 @@ public:
 	void resolve(const pugi::xml_node op, pugi::xml_node dst);
 	
 	pugi::xml_node tag(const pugi::xml_node op, pugi::xml_node dst);
-	void text(const pugi::xml_node op, pugi::xml_node dst);
+	pugi::xml_attribute attribute(const pugi::xml_attribute attribute, pugi::xml_node dst);
+	pugi::xml_text text(const char* pcdata, pugi::xml_node dst);
 	
+	void call(const char* name, pugi::xml_node dst);
 	void call(const pugi::xml_node op, pugi::xml_node dst);
 	void set(const pugi::xml_node op);
 	
