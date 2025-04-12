@@ -25,10 +25,32 @@ static void log(const char* str, const VariableMap& vars, FILE* out, const char*
 }
 
 
+static bool checkCond(const MacroEngine& self, const xml_node node){
+	for (const xml_attribute attr : node.attributes()){
+		if (attr.name() == "IF"sv){
+			optbool val = self.evalCond(attr.value());
+			
+			if (val.empty()){
+				WARNING_L1("%s: Invalid expression in macro attribute [IF=\"%s\". Defaulting to false.", node.name(), attr.value());
+				return false;
+			} else if (val == false){
+				return false;
+			}
+			
+		}
+	}
+	return true;
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::info(const pugi::xml_node op){
+void MacroEngine::info(const xml_node op){
+	if (!checkCond(*this, op)){
+		return;
+	}
+	
 	for (const xml_node child : op){
 		switch (child.type()){
 			case xml_node_type::node_cdata:
@@ -38,10 +60,15 @@ void MacroEngine::info(const pugi::xml_node op){
 				break;
 		}
 	}
+	
 }
 
 
 void MacroEngine::warn(const pugi::xml_node op){
+	if (!checkCond(*this, op)){
+		return;
+	}
+	
 	for (const xml_node child : op){
 		switch (child.type()){
 			case xml_node_type::node_cdata:
@@ -51,10 +78,15 @@ void MacroEngine::warn(const pugi::xml_node op){
 				break;
 		}
 	}
+	
 }
 
 
 void MacroEngine::error(const pugi::xml_node op){
+	if (!checkCond(*this, op)){
+		return;
+	}
+	
 	for (const xml_node child : op){
 		switch (child.type()){
 			case xml_node_type::node_cdata:
@@ -64,6 +96,7 @@ void MacroEngine::error(const pugi::xml_node op){
 				break;
 		}
 	}
+	
 }
 
 

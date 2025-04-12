@@ -112,4 +112,24 @@ bool MacroEngine::branch_else(const xml_node op, xml_node dst){
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+optbool MacroEngine::evalCond(const char* exprstr) const {
+	assert(exprstr != nullptr);
+	if (exprstr[0] == 0){
+		return nullptr;
+	}
+	
+	Expression::Parser parser = {};
+	pExpr expr = parser.parse(exprstr);
+	if (expr == nullptr){
+		return nullptr;
+	}
+	
+	Value val = expr->eval(variables);
+	return boolEval(val);
+}
+
+
 // ------------------------------------------------------------------------------------------ //

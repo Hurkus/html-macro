@@ -8,9 +8,11 @@
 <body>
 	<SET z="" x="2" y="x + 1" />
 	
+	<!-- Call tests -->
 	<CALL NAME="title" />
 	<h2 CALL="subtitle"></h2>
 	
+	<!-- Branching test -->
 	<IF TRUE="x+1 <= y">
 		<WARN>passed with x={x} and y={y}</WARN>
 	</IF>
@@ -18,6 +20,10 @@
 		<WARN>failed with x={x} and y={y}</WARN>
 	</ELSE>
 	
+	<!-- Attr conditional test -->
+	<WARN IF="z == 0">z not set</WARN>
+	<p IF="z">z-index of page is {z}</p>
+	<p IF="!z">z-index of page is missing!</p>
 	
 </body>
 </html>

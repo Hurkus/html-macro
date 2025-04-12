@@ -55,37 +55,52 @@ xml_attribute MacroEngine::attribute(const xml_attribute src, xml_node dst){
 
 xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
-	dst = dst.append_child(op.name());
 	
+	xml_node node = dst.append_child(op.name());
 	xml_attribute attr_call = {};
 	
 	// Copy attributes
 	for (const xml_attribute attr : op.attributes()){
-		
 		const char* cname = attr.name();
-		if (isupper(cname[0])){
-			string_view name = cname;
-			
-			if (name == "CALL"){
-				attr_call = attr;
-				continue;
-			} else {
-				WARNING_L1("Macro: Unknown macro '%s' treated as regular HTML tag.", cname);
-			}
-			
-		}
 		
 		// Regular attribute
-		attribute(attr, dst);
+		if (!isupper(cname[0])){
+			__copy:
+			attribute(attr, node);
+			continue;
+		}
+		
+		string_view name = cname;
+		
+		if (name == "CALL"){
+			attr_call = attr;
+		} else if (name == "IF"){
+			optbool val = evalCond(attr.value());
+			
+			if (val.empty()){
+				WARNING_L1("%s: Invalid expression in macro attribute [IF=\"%s\". Defaulting to false.", op.name(), attr.value());
+				return {};
+			} else if (val == false){
+				dst.remove_child(node);
+				return {};
+			} else {
+				continue;
+			}
+			
+		} else {
+			WARNING_L1("Macro: Unknown macro '%s' treated as regular HTML tag.", cname);
+			goto __copy;
+		}
+		
 	}
 	
 	if (!attr_call.empty()){
-		call(attr_call.value(), dst);
+		call(attr_call.value(), node);
 	}
 	
 	// Resolve children
-	runChildren(op, dst);
-	return dst;
+	runChildren(op, node);
+	return node;
 }
 
 
