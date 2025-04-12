@@ -35,10 +35,10 @@
 	#endif
 #else
 	#ifndef DEBUG_L0
-		#define DEBUG_L0 0
+		#define DEBUG_L0 1
 	#endif
 	#ifndef DEBUG_L1
-		#define DEBUG_L1 0
+		#define DEBUG_L1 1
 	#endif
 	#ifndef DEBUG_L2
 		#define DEBUG_L2 0

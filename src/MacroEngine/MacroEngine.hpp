@@ -88,5 +88,9 @@ public:
 	void warn(const pugi::xml_node op);
 	void error(const pugi::xml_node op);
 	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+public:
+	optbool evalCond(const char* exprstr) const;
+	
 // ------------------------------------------------------------------------------------------ //
 };
