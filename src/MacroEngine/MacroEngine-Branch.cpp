@@ -14,7 +14,6 @@ void MacroEngine::set(const xml_node op){
 	Expression::Parser parser = {};
 	
 	for (const xml_attribute attr : op.attributes()){
-		string_view name = attr.name();
 		string_view value = attr.value();
 		if (value.empty()){
 			continue;
@@ -27,7 +26,7 @@ void MacroEngine::set(const xml_node op){
 		}
 		
 		Value v = expr->eval(variables);
-		variables.emplace(name, move(v));
+		variables.emplace(attr.name(), move(v));
 	}
 	
 }
@@ -39,9 +38,8 @@ void MacroEngine::set(const xml_node op){
 bool MacroEngine::branch_if(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
-	using namespace Expression;
 	Parser parser = {};
-	bool pass = true;
+	bool hasExpr = false;
 	
 	// Chain of `&&` statements
 	for (const xml_attribute attr : op.attributes()){
@@ -60,49 +58,56 @@ bool MacroEngine::branch_if(const xml_node op, xml_node dst){
 		pExpr expr = parser.parse(attr.value());
 		if (expr == nullptr){
 			WARNING_L1("IF: Invalid expression [%s].", attr.value());
-			pass = false;
-			break;
+			goto fail;
 		}
 		
 		Value val = expr->eval(variables);
 		if (Expression::boolEval(val) != expected){
-			pass = false;
-			break;
+			goto fail;
 		}
 		
+		hasExpr = true;
 	}
 	
-	if (pass){
-		for (const xml_node child_op : op.children()){
-			this->branch = true;	// Each child gets a fresh result.
-			resolve(child_op, dst);
-		}
+	if (hasExpr){
+		runChildren(op, dst);
+		this->branch = true;
+		return true;
+	} else {
+		WARNING_L1("IF: Missing any TRUE or FALSE expression attributes.");
+		goto fail;
 	}
 	
-	this->branch = pass;
-	return pass;
+	fail:
+	this->branch = false;
+	return false;
 }
 
 
 bool MacroEngine::branch_elif(const xml_node op, xml_node dst){
-	if (!this->branch)
+	if (this->branch.empty()){
+		WARNING_L1("ELSE-IF: Missing preceding IF tag.");
+		return false;
+	} else if (this->branch == true){
+		return false;
+	} else {
 		return branch_if(op, dst);
-	return false;
+	}
 }
 
 
 bool MacroEngine::branch_else(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
-	if (this->branch){
+	
+	if (branch.empty()){
+		WARNING_L1("ELSE: Missing preceding IF tag.");
+		return false;
+	} else if (branch == true){
 		return false;
 	}
 	
-	for (const xml_node child_op : op.children()){
-		this->branch = true;	// Each child gets a fresh result.
-		resolve(child_op, dst);
-	}
-	
-	this->branch = true;
+	runChildren(op, dst);
+	this->branch = nullptr;
 	return true;
 }
 

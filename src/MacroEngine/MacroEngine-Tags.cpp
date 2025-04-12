@@ -56,12 +56,14 @@ static void interpolate(const char* str, const VariableMap& vars, string& buff){
 xml_text MacroEngine::text(const char* str, xml_node dst){
 	xml_text txtnode = dst.append_child(xml_node_type::node_pcdata).text();
 	
+	// Check if value requires interpolation
 	const char* p = strchrnul(str, '{');
 	if (*p == 0){
 		txtnode.set(str, p - str);
 		return txtnode;
 	}
 	
+	// Interpolate
 	string buff = {};
 	buff.append(str, p);
 	interpolate(p, this->variables, buff);
@@ -73,14 +75,16 @@ xml_text MacroEngine::text(const char* str, xml_node dst){
 
 xml_attribute MacroEngine::attribute(const xml_attribute src, xml_node dst){
 	xml_attribute attr = dst.append_attribute(src.name());
-	const char* str = dst.value();
+	const char* str = src.value();
 	
+	// Check if value requires interpolation
 	const char* p = strchrnul(str, '{');
 	if (*p == 0){
 		attr.set_value(str, p - str);
 		return attr;
 	}
 	
+	// Interpolate
 	string buff = {};
 	buff.append(str, p);
 	interpolate(p, this->variables, buff);
@@ -116,7 +120,7 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 		}
 		
 		// Regular attribute
-		dst.append_copy(attr);
+		attribute(attr, dst);
 	}
 	
 	if (!attr_call.empty()){
@@ -124,10 +128,7 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 	}
 	
 	// Resolve children
-	for (const xml_node opc : op.children()){
-		resolve(opc, dst);
-	}
-	
+	runChildren(op, dst);
 	return dst;
 }
 
