@@ -74,31 +74,6 @@ Value Expr::Not::eval(const VariableMap& vars) noexcept {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool Expression::boolEval(const Value& val){
-	auto f = [](const auto& val) -> bool {
-		if constexpr (isStr(val))
-			return bool(val.length() != 0);
-		else
-			return bool(val != 0);
-	};
-	return visit(f, val);
-}
-
-
-void Expression::str(const Value& val, string& buff){
-	auto f = [&](const auto& val){
-		if constexpr (isStr(val))
-			buff.append(val);
-		else
-			buff.append(to_string(val));
-	};
-	visit(f, val);
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
 template <typename OP>
 inline Value _arith_op(const VariableMap& vars, const Expr::BinaryOp& ab){
 	Value _a = _eval(vars, ab.a);
@@ -273,83 +248,4 @@ Value Expr::Func::eval(const VariableMap& vars) noexcept {
 }
 
 
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-#ifdef DEBUG
-
-
-static void _str(const Value& value, string& s){
-	auto f = [&](const auto& v){
-		if constexpr (isStr(v))
-			s += v;
-		else
-			s += to_string(v);
-	};
-	visit(f, value);
-}
-
-
-static void _str(const Expr* expr, string& s){
-	auto __binstr = [&](const Expr::BinaryOp* b, const char* op){
-		s.push_back('(');
-		_str(b->a.get(), s);
-		s.append(op);
-		_str(b->b.get(), s);
-		s.push_back(')');
-	};
-	
-	if (const Expr::Const* e = dynamic_cast<const Expr::Const*>(expr)){
-		_str(e->value, s);
-	} else if (const Expr::Var* e = dynamic_cast<const Expr::Var*>(expr)){
-		s.append(e->var);
-	} else if (const Expr::Not* e = dynamic_cast<const Expr::Not*>(expr)){
-		s.append("!(");
-		_str(e->e.get(), s);
-		s.push_back(')');
-	} else if (const Expr::Neg* e = dynamic_cast<const Expr::Neg*>(expr)){
-		s.append("-(");
-		_str(e->e.get(), s);
-		s.push_back(')');
-	} else if (const Expr::Add* e = dynamic_cast<const Expr::Add*>(expr)){
-		__binstr(e, "+");
-	} else if (const Expr::Sub* e = dynamic_cast<const Expr::Sub*>(expr)){
-		__binstr(e, "-");
-	} else if (const Expr::Mul* e = dynamic_cast<const Expr::Mul*>(expr)){
-		__binstr(e, "*");
-	} else if (const Expr::Div* e = dynamic_cast<const Expr::Div*>(expr)){
-		__binstr(e, "/");
-	} else if (const Expr::Eq* e = dynamic_cast<const Expr::Eq*>(expr)){
-		__binstr(e, "==");
-	} else if (const Expr::Neq* e = dynamic_cast<const Expr::Neq*>(expr)){
-		__binstr(e, "!=");
-	} else if (const Expr::Lt* e = dynamic_cast<const Expr::Lt*>(expr)){
-		__binstr(e, "<");
-	} else if (const Expr::Lte* e = dynamic_cast<const Expr::Lte*>(expr)){
-		__binstr(e, "<=");
-	} else if (const Expr::Gt* e = dynamic_cast<const Expr::Gt*>(expr)){
-		__binstr(e, ">");
-	} else if (const Expr::Gte* e = dynamic_cast<const Expr::Gte*>(expr)){
-		__binstr(e, ">=");
-	} else if (const Expr::Func* e = dynamic_cast<const Expr::Func*>(expr)){
-		s.append(e->name).push_back('(');
-		for (size_t i = 0 ; i < e->args.size() ; i++){
-			if (i > 0)
-				s.push_back(',');
-			_str(e->args[i].get(), s);
-		}
-		s.push_back(')');
-		
-	} else {
-		s.append("null");
-	}
-}
-
-
-string Expression::str(const Expr* expr){
-	string s = {};
-	_str(expr, s);
-	return s;
-}
-
-
-#endif
 // ------------------------------------------------------------------------------------------ //

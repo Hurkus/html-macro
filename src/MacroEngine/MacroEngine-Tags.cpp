@@ -1,7 +1,4 @@
 #include "MacroEngine.hpp"
-#include <cstring>
-
-#include "ExpressionParser.hpp"
 #include "DEBUG.hpp"
 
 using namespace std;
@@ -12,61 +9,20 @@ using namespace Expression;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static void interpolate(const char* str, const VariableMap& vars, string& buff){
-	assert(str != nullptr);
-	
-	const char* beg = strchrnul(str, '{');
-	if (*beg == 0){
-		buff.append(str, beg);
-		return;
-	}
-	
-	const char* end = strchrnul(beg + 1, '}');
-	if (*end == 0){
-		buff.append(str, end);
-		return;
-	}
-	
-	Expression::Parser parser = {};
-	
-	while (*beg != 0 && *end != 0){
-		buff.append(str, beg);
-		
-		pExpr expr = parser.parse(string_view(beg + 1, end));
-		if (expr != nullptr){
-			Value val = expr->eval(vars);
-			Expression::str(val, buff);
-		} else {
-			WARNING_L1("TEXT: Failed to parse expression [%s].", string(beg, end+1).c_str());
-		}
-		
-		// Next expression
-		str = end + 1;
-		beg = strchrnul(str, '{');
-		end = strchrnul(beg, '}');
-	}
-	
-	buff.append(str, end);
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
 xml_text MacroEngine::text(const char* str, xml_node dst){
 	xml_text txtnode = dst.append_child(xml_node_type::node_pcdata).text();
 	
 	// Check if value requires interpolation
-	const char* p = strchrnul(str, '{');
-	if (*p == 0){
-		txtnode.set(str, p - str);
+	size_t len;
+	if (!hasInterpolation(str, &len)){
+		txtnode.set(str, len);
 		return txtnode;
 	}
 	
 	// Interpolate
 	string buff = {};
-	buff.append(str, p);
-	interpolate(p, this->variables, buff);
+	buff.append(str, len);
+	interpolate(str + len, this->variables, buff);
 	
 	txtnode.set(buff.c_str(), buff.length());
 	return txtnode;
@@ -78,16 +34,16 @@ xml_attribute MacroEngine::attribute(const xml_attribute src, xml_node dst){
 	const char* str = src.value();
 	
 	// Check if value requires interpolation
-	const char* p = strchrnul(str, '{');
-	if (*p == 0){
-		attr.set_value(str, p - str);
+	size_t len;
+	if (!hasInterpolation(str, &len)){
+		attr.set_value(str, len);
 		return attr;
 	}
 	
 	// Interpolate
 	string buff = {};
-	buff.append(str, p);
-	interpolate(p, this->variables, buff);
+	buff.append(str, len);
+	interpolate(str + len, this->variables, buff);
 	
 	attr.set_value(buff.c_str(), buff.length());
 	return attr;
