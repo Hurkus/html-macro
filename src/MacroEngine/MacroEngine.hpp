@@ -17,11 +17,13 @@ public:
 	
 public:
 	optbool branch = nullptr;
+	bool interpolateText = true;
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	Macro* getMacro(std::string_view name) const;
 	Macro* loadFile(const std::filesystem::path& path);
+	void setVariableConstants();
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
