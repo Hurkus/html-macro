@@ -296,7 +296,7 @@ bool MacroEngine::shell(const xml_node op, xml_node dst){
 		
 		case Capture::VAR: {
 			if (!captureVar.empty())
-				this->variables.emplace(captureVar, move(result));
+				variables[string(captureVar)] = move(result);
 			return true;
 		}
 		

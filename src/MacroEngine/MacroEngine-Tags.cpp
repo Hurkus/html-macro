@@ -78,7 +78,7 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 			optbool val = evalCond(attr.value());
 			
 			if (val.empty()){
-				WARNING_L1("%s: Invalid expression in macro attribute [IF=\"%s\". Defaulting to false.", op.name(), attr.value());
+				WARNING_L1("%s: Invalid expression in macro attribute [IF=\"%s\"]. Defaulting to false.", op.name(), attr.value());
 				return {};
 			} else if (val == false){
 				dst.remove_child(node);
