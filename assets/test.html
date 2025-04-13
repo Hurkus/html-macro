@@ -32,6 +32,17 @@
 	<SHELL VARS="x,y" STDOUT="z">echo "$((x * y))"</SHELL>
 	<SHELL VARS="x,y" STDOUT="HTML">echo -n '<span CALL="print-z"></span>'</SHELL>
 	
+	<!-- Loop tests -->
+	<ul>
+		<FOR i="0" TRUE="i <= 2" i="i+1">
+			<li>Item: {i}</li>
+		</FOR>
+		<WHILE TRUE="i < 5">
+			<li>Item: {i}</li>
+			<SET i="i+1" />
+		</WHILE>
+	</ul>
+	
 </body>
 </html>
 

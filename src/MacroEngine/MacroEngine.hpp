@@ -79,6 +79,8 @@ public:
 	bool branch_if(const pugi::xml_node op, pugi::xml_node dst);
 	bool branch_elif(const pugi::xml_node op, pugi::xml_node dst);
 	bool branch_else(const pugi::xml_node op, pugi::xml_node dst);
+	int loop_for(const pugi::xml_node op, pugi::xml_node dst);
+	int loop_while(const pugi::xml_node op, pugi::xml_node dst);
 	
 public:
 	void call(const char* name, pugi::xml_node dst);

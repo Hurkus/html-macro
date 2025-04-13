@@ -75,17 +75,21 @@ void MacroEngine::run(const xml_node op, xml_node dst){
 	if (isupper(cname[0])){
 		string_view name = cname;
 		
-		if (name == "IF"){
+		if (name == "SET"){
+			set(op);
+		} else if (name == "IF"){
 			branch_if(op, dst);
 		} else if (name == "ELSE-IF"){
 			branch_elif(op, dst);
 		} else if (name == "ELSE"){
 			branch_else(op, dst);
+		} else if (name == "FOR"){
+			loop_for(op, dst);
+		} else if (name == "WHILE"){
+			loop_while(op, dst);
 		}
 		
-		else if (name == "SET"){
-			set(op);
-		} else if (name == "CALL"){
+		else if (name == "CALL"){
 			call(op, dst);
 		}  else if (name == "SHELL"){
 			shell(op, dst);
