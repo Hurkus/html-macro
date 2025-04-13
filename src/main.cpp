@@ -40,6 +40,7 @@ static bool run(const vector<filesystem::path>& files){
 	}
 	
 	MacroEngine engine = {};
+	engine.setVariableConstants();
 	Macro* root = engine.loadFile(files[0]);
 	
 	if (root != nullptr){
@@ -71,7 +72,8 @@ int main(int argc, char const* const* argv){
 	}
 	
 	#ifdef DEBUG
-	CLI::options.files.emplace_back("./assets/test.html");
+	// CLI::options.files.emplace_back("./assets/test.html");
+	CLI::options.files.emplace_back("./assets/style-test.html");
 	#endif
 	
 	if (CLI::options.help){

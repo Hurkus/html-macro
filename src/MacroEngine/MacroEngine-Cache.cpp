@@ -1,6 +1,7 @@
 #include "MacroEngine.hpp"
-#include "MacroParser.hpp"
+#include <cmath>
 
+#include "MacroParser.hpp"
 #include "DEBUG.hpp"
 
 using namespace std;
@@ -84,6 +85,16 @@ bool MacroEngine::execBuff(string_view buff, xml_node dst){
 	assert(main != nullptr);
 	exec(*main, dst);
 	return true;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void MacroEngine::setVariableConstants(){
+	variables["false"] = 0L;
+	variables["true"] = 1L;
+	variables["pi"] = M_PI;
 }
 
 

@@ -12,6 +12,11 @@ using namespace Expression;
 xml_text MacroEngine::text(const char* str, xml_node dst){
 	xml_text txtnode = dst.append_child(xml_node_type::node_pcdata).text();
 	
+	if (!interpolateText){
+		txtnode.set(str);
+		return txtnode;
+	}
+	
 	// Check if value requires interpolation
 	size_t len;
 	if (!hasInterpolation(str, &len)){
@@ -58,6 +63,11 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 	
 	xml_node node = dst.append_child(op.name());
 	xml_attribute attr_call = {};
+	bool _interpolateText = this->interpolateText;
+	
+	if (op.name() == "style"sv){
+		_interpolateText = false;
+	}
 	
 	// Copy attributes
 	for (const xml_attribute attr : op.attributes()){
@@ -78,7 +88,7 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 			optbool val = evalCond(attr.value());
 			
 			if (val.empty()){
-				WARNING_L1("%s: Invalid expression in macro attribute [IF=\"%s\"]. Defaulting to false.", op.name(), attr.value());
+				WARNING_L1("%s: Invalid expression in macro attribute [%s=\"%s\"]. Defaulting to false.", op.name(), attr.name(), attr.value());
 				return {};
 			} else if (val == false){
 				dst.remove_child(node);
@@ -87,6 +97,14 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 				continue;
 			}
 			
+		} else if (name == "INTERPOLATE"){
+			optbool val = evalCond(attr.value());
+			
+			if (val.empty()){
+				WARNING_L1("%s: Invalid expression in macro attribute [%s=\"%s\"].", op.name(), attr.name(), attr.value());
+			}
+			
+			_interpolateText = val.get();
 		} else {
 			WARNING_L1("Macro: Unknown macro '%s' treated as regular HTML tag.", cname);
 			goto __copy;
@@ -94,12 +112,14 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 		
 	}
 	
+	swap(this->interpolateText, _interpolateText);
 	if (!attr_call.empty()){
 		call(attr_call.value(), node);
 	}
 	
 	// Resolve children
 	runChildren(op, node);
+	this->interpolateText = _interpolateText;
 	return node;
 }
 

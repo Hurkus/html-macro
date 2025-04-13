@@ -39,6 +39,7 @@ Value Expr::Var::eval(const VariableMap& vars) noexcept {
 			return p->second;
 	} catch (const exception& e){}
 	
+	WARNING_L1("Undefined varialbe '%s' defaulted to 0.", this->var.c_str());
 	return Value(0);
 }
 
