@@ -1,8 +1,7 @@
 #include "MacroEngine.hpp"
 #include <cstring>
 
-#include "ExpressionParser.hpp"
-#include "DEBUG.hpp"
+#include "MacroEngine-Common.hpp"
 
 using namespace std;
 using namespace pugi;
@@ -14,7 +13,7 @@ using namespace Expression;
 
 void MacroEngine::call(const char* name, xml_node dst){
 	if (name == nullptr || name[0] == 0){
-		WARNING_L1("CALL: Missing macro name.");
+		ERROR_L1("CALL: Missing macro name.");
 		return;
 	}
 	
@@ -30,14 +29,25 @@ void MacroEngine::call(const char* name, xml_node dst){
 
 void MacroEngine::call(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
+	xml_attribute name_attr;
 	
-	xml_attribute attr = op.attribute("NAME");
-	if (attr.empty()){
-		WARNING_L1("CALL: Missing 'NAME' attribute.");
-		return;
+	for (const xml_attribute attr : op.attributes()){
+		string_view name = attr.name();
+		
+		if (name == "NAME"){
+			name_attr = attr;
+		} else {
+			_attr_ignore(op, attr);
+		}
+		
 	}
 	
-	call(attr.value(), dst);
+	if (!name_attr.empty()){
+		call(name_attr.value(), dst);
+	} else {
+		WARNING_L1("CALL: Missing 'NAME' attribute.");
+	}
+	
 }
 
 
@@ -102,27 +112,29 @@ void MacroEngine::run(const xml_node op, xml_node dst){
 		} else if (name == "ERROR"){
 			error(op);
 		} else {
-			WARNING_L1("Macro: Unknown macro '%s' treated as regular HTML tag.", cname);
-			goto __tag;
+			WARNING_L1("%s: Unknown macro treated as regular HTML tag.", cname);
+			tag(op, dst);
 		}
 		
 		return;
 	}
 	
 	// Regular tag
-	__tag:
 	tag(op, dst);
 }
 
 
 void MacroEngine::exec(const Macro& macro, xml_node dst){
-	const xml_node mroot = macro.root.root();
+	const bool _interp = this->interpolateText;
+	this->interpolateText = true;
 	
-	// cout << "[" << ANSI_GREEN;
-	// mroot.print(cout);
-	// cout << ANSI_RESET << "]";
+	const optbool _branch = this->branch;
+	this->branch = nullptr;
 	
 	runChildren(macro.root, dst);
+	
+	this->interpolateText = _interp;
+	this->branch = _branch;
 }
 
 

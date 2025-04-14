@@ -9,7 +9,7 @@ extern "C" {
 }
 
 #include "MacroParser.hpp"
-#include "DEBUG.hpp"
+#include "MacroEngine-Common.hpp"
 
 using namespace std;
 using namespace pugi;
@@ -210,15 +210,8 @@ bool MacroEngine::shell(const xml_node op, xml_node dst){
 		string_view name = attr.name();
 		
 		if (name == "IF"){
-			optbool val = evalCond(attr.value());
-			
-			if (val.empty()){
-				WARNING_L1("SHELL: Invalid expression in macro attribute [IF=\"%s\". Defaulting to false.", attr.value());
+			if (!_attr_if(*this, op, attr))
 				return true;
-			} else if (val == false){
-				return true;
-			}
-			
 		}
 		else if (name == "VARS"){
 			_extractVars(attr.value(), vars);

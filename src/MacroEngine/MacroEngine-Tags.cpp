@@ -1,5 +1,5 @@
 #include "MacroEngine.hpp"
-#include "DEBUG.hpp"
+#include "MacroEngine-Common.hpp"
 
 using namespace std;
 using namespace pugi;
@@ -60,13 +60,15 @@ xml_attribute MacroEngine::attribute(const xml_attribute src, xml_node dst){
 
 xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
+	const char* tag_cname = op.name();
+	string_view tag_name = tag_cname;
 	
-	xml_node node = dst.append_child(op.name());
+	xml_node node = dst.append_child(tag_cname);
 	xml_attribute attr_call = {};
-	bool _interpolateText = this->interpolateText;
 	
-	if (op.name() == "style"sv){
-		_interpolateText = false;
+	bool _interp = this->interpolateText;
+	if (tag_name == "style" || tag_name == "script"){
+		_interp = false;
 	}
 	
 	// Copy attributes
@@ -75,51 +77,38 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 		
 		// Regular attribute
 		if (!isupper(cname[0])){
-			__copy:
 			attribute(attr, node);
 			continue;
 		}
 		
 		string_view name = cname;
-		
-		if (name == "CALL"){
-			attr_call = attr;
-		} else if (name == "IF"){
-			optbool val = evalCond(attr.value());
-			
-			if (val.empty()){
-				WARNING_L1("%s: Invalid expression in macro attribute [%s=\"%s\"]. Defaulting to false.", op.name(), attr.name(), attr.value());
-				return {};
-			} else if (val == false){
+		if (name == "IF"){
+			if (!_attr_if(*this, op, attr)){
 				dst.remove_child(node);
 				return {};
-			} else {
-				continue;
 			}
-			
 		} else if (name == "INTERPOLATE"){
-			optbool val = evalCond(attr.value());
-			
-			if (val.empty()){
-				WARNING_L1("%s: Invalid expression in macro attribute [%s=\"%s\"].", op.name(), attr.name(), attr.value());
-			}
-			
-			_interpolateText = val.get();
+			_attr_interpolate(*this, op, attr, _interp);
+		} else if (name == "CALL"){
+			attr_call = attr;
 		} else {
-			WARNING_L1("Macro: Unknown macro '%s' treated as regular HTML tag.", cname);
-			goto __copy;
+			WARNING_L1("%s: Unknown attribute '%s' treated as regular HTML attribute.", op.name(), cname);
+			attribute(attr, node);
 		}
 		
 	}
 	
-	swap(this->interpolateText, _interpolateText);
+	const bool _interp2 = this->interpolateText;
+	
 	if (!attr_call.empty()){
+		this->interpolateText = _interp;
 		call(attr_call.value(), node);
 	}
 	
 	// Resolve children
+	this->interpolateText = _interp;
 	runChildren(op, node);
-	this->interpolateText = _interpolateText;
+	this->interpolateText = _interp2;
 	return node;
 }
 
