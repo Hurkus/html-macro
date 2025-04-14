@@ -43,9 +43,34 @@ void Expression::str(const Value& val, string& buff){
 
 
 bool Expression::hasInterpolation(const char* str, size_t* out_len){
-	const char* p = strchrnul(str, '{');
-	if (out_len != nullptr)
+	assert(str != nullptr);
+	
+	const char* p = str;
+	while (*p != 0){
+		p = strchrnul(p, '{');
+		if (*p == 0 || p == str || p[-1] != '\\'){
+			break;
+		}
+		
+		// Count escapes
+		size_t n = 0;
+		const char* esc = p - 1;
+		while (esc != str && *esc == '\\'){
+			esc--;
+			n++;
+		}
+		
+		if (n % 2 == 0){
+			break;
+		}
+		
+		p++;
+	}
+	
+	if (out_len != nullptr){
 		*out_len = p - str;
+	}
+	
 	return (*p == '{');
 }
 

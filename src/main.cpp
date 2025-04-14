@@ -72,6 +72,7 @@ int main(int argc, char const* const* argv){
 	}
 	
 	#ifdef DEBUG
+	CLI::options.files.clear();
 	// CLI::options.files.emplace_back("./assets/test.html");
 	CLI::options.files.emplace_back("./assets/style-test.html");
 	#endif

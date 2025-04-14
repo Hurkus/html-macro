@@ -1,6 +1,6 @@
 #include "MacroEngine.hpp"
 #include "ExpressionParser.hpp"
-#include "DEBUG.hpp"
+#include "MacroEngine-Common.hpp"
 
 using namespace std;
 using namespace pugi;
@@ -38,38 +38,44 @@ bool MacroEngine::branch_if(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
 	Parser parser = {};
+	bool _interp = this->interpolateText;
 	bool hasExpr = false;
+	
+	auto __eval = [&](const xml_attribute attr, bool expected){
+		hasExpr = true;
+		
+		pExpr expr = parser.parse(attr.value());
+		if (expr == nullptr){
+			ERROR_L1("%s: Invalid expression in attribute [%s=\"%s\"].", op.name(), attr.name(), attr.value());
+			return false;
+		}
+		
+		Value val = expr->eval(variables);
+		return Expression::boolEval(val) == expected;
+	};
 	
 	// Chain of `&&` statements
 	for (const xml_attribute attr : op.attributes()){
 		string_view name = attr.name();
-		bool expected;
 		
 		if (name == "TRUE"){
-			expected = true;
+			if (!__eval(attr, true))
+				goto fail;
 		} else if (name == "FALSE"){
-			expected = false;
+			if (!__eval(attr, false))
+				goto fail;
+		} else if (name == "INTERPOLATE"){
+			_attr_interpolate(*this, op, attr, _interp);
 		} else {
-			WARNING_L1("IF: Ignored attribute '%s'.", attr.name());
-			continue;
+			_attr_ignore(op, attr);
 		}
 		
-		pExpr expr = parser.parse(attr.value());
-		if (expr == nullptr){
-			WARNING_L1("IF: Invalid expression [%s].", attr.value());
-			goto fail;
-		}
-		
-		Value val = expr->eval(variables);
-		if (Expression::boolEval(val) != expected){
-			goto fail;
-		}
-		
-		hasExpr = true;
 	}
 	
 	if (hasExpr){
+		swap(this->interpolateText, _interp);
 		runChildren(op, dst);
+		this->interpolateText = _interp;
 		this->branch = true;
 		return true;
 	} else {
@@ -102,11 +108,25 @@ bool MacroEngine::branch_else(const xml_node op, xml_node dst){
 		WARNING_L1("ELSE: Missing preceding IF tag.");
 		return false;
 	} else if (branch == true){
+		this->branch = nullptr;
 		return false;
 	}
 	
+	bool _interp = this->interpolateText;
+	
+	for (xml_attribute attr : op.attributes()){
+		if (attr.name() == "INTERPOLATE"sv)
+			_attr_interpolate(*this, op, attr, _interp);
+		else
+			_attr_ignore(op, attr);
+	}
+	
+	// Run
+	swap(this->interpolateText, _interp);
 	runChildren(op, dst);
+	this->interpolateText = _interp;
 	this->branch = nullptr;
+	
 	return true;
 }
 
@@ -116,6 +136,7 @@ bool MacroEngine::branch_else(const xml_node op, xml_node dst){
 
 int MacroEngine::loop_for(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
+	bool _interpolate = this->interpolateText;
 	xml_attribute setup_attr;
 	xml_attribute cond_attr;
 	xml_attribute inc_attr;
@@ -123,22 +144,18 @@ int MacroEngine::loop_for(const xml_node op, xml_node dst){
 	for (const xml_attribute attr : op.attributes()){
 		string_view name = attr.name();
 		
-		if (name == "IF"sv){
-			optbool val = evalCond(attr.value());
-			
-			if (val.empty()){
-				WARNING_L1("FOR: Invalid expression in macro attribute [IF=\"%s\"]. Defaulting to false.", attr.value());
+		if (name == "IF"){
+			if (!_attr_if(*this, op, attr))
 				return 0;
-			} else if (val == false){
-				return 0;
-			}
-			
 		}
 		else if (name == "TRUE" || name == "FALSE"){
 			if (cond_attr.empty())
 				cond_attr = attr;
 			else
 				WARNING_L1("FOR: Duplicate condition attribute [%s=\"%s\"] and [%s=\"%s\"].", cond_attr.name(), cond_attr.value(), attr.name(), attr.value());
+		}
+		else if (name == "INTERPOLATE"){
+			_attr_interpolate(*this, op, attr, _interpolate);
 		}
 		else if (cond_attr.empty()){
 			if (setup_attr.empty())
@@ -196,9 +213,12 @@ int MacroEngine::loop_for(const xml_node op, xml_node dst){
 		variables[setup_attr.name()] = setup_expr->eval(variables);
 	}
 	
+	const bool _interpolate2 = this->interpolateText; 
 	int i = 0;
+	
 	assert(cond_expr != nullptr);
 	while (boolEval(cond_expr->eval(variables))){
+		this->interpolateText = _interpolate;
 		this->runChildren(op, dst);
 		
 		if (inc_expr != nullptr){
@@ -208,33 +228,31 @@ int MacroEngine::loop_for(const xml_node op, xml_node dst){
 		i++;
 	}
 	
+	this->interpolateText = _interpolate2;
 	return i;
 }
 
 
 int MacroEngine::loop_while(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
+	bool _interpolate = this->interpolateText;
 	xml_attribute cond_attr;
 	
 	for (const xml_attribute attr : op.attributes()){
 		string_view name = attr.name();
 		
-		if (name == "IF"sv){
-			optbool val = evalCond(attr.value());
-			
-			if (val.empty()){
-				WARNING_L1("WHILE: Invalid expression in macro attribute [IF=\"%s\"]. Defaulting to false.", attr.value());
+		if (name == "IF"){
+			if (!_attr_if(*this, op, attr))
 				return 0;
-			} else if (val == false){
-				return 0;
-			}
-			
 		}
 		else if (name == "TRUE" || name == "FALSE"){
 			if (cond_attr.empty())
 				cond_attr = attr;
 			else
 				WARNING_L1("WHILE: Duplicate condition attribute [%s=\"%s\"] and [%s=\"%s\"].", cond_attr.name(), cond_attr.value(), attr.name(), attr.value());
+		}
+		else if (name == "INTERPOLATE"){
+			_attr_interpolate(*this, op, attr, _interpolate);
 		}
 		else {
 			WARNING_L1("WHILE: Ignored unknown macro attribute [%s=\"%s\"].", attr.name(), attr.value());
@@ -261,34 +279,18 @@ int MacroEngine::loop_while(const xml_node op, xml_node dst){
 	
 	
 	// Run
+	const bool _interpolate2 = this->interpolateText;
 	int i = 0;
+	
 	assert(cond_expr != nullptr);
 	while (boolEval(cond_expr->eval(variables))){
+		this->interpolateText = _interpolate;
 		this->runChildren(op, dst);
 		i++;
 	}
 	
+	this->interpolateText = _interpolate2;
 	return i;
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-optbool MacroEngine::evalCond(const char* exprstr) const {
-	assert(exprstr != nullptr);
-	if (exprstr[0] == 0){
-		return nullptr;
-	}
-	
-	Expression::Parser parser = {};
-	pExpr expr = parser.parse(exprstr);
-	if (expr == nullptr){
-		return nullptr;
-	}
-	
-	Value val = expr->eval(variables);
-	return boolEval(val);
 }
 
 
