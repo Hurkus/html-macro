@@ -23,7 +23,8 @@ Options CLI::options;
 static enum OptionID : int {
 	NONE,
 	HELP,
-	VERSION
+	VERSION,
+	OUTPUT
 } selected_opt;
 
 
@@ -31,12 +32,13 @@ static enum OptionID : int {
 
 
 // First char must be ':'
-const char* const short_options = ":" "h" "v";
+const char* const short_options = ":" "h" "v" "o:";
 
 
 const struct option long_options[] = {
-	{"help",    no_argument, (int*)&selected_opt, OptionID::HELP    },
-	{"version", no_argument, (int*)&selected_opt, OptionID::VERSION },
+	{"help",    no_argument,       (int*)&selected_opt, OptionID::HELP    },
+	{"version", no_argument,       (int*)&selected_opt, OptionID::VERSION },
+	{"output",  required_argument, (int*)&selected_opt, OptionID::OUTPUT  },
 	{0, 0, 0, 0}
 };
 
@@ -50,6 +52,8 @@ static OptionID shortOptionToLong(char c){
 			return OptionID::HELP;
 		case 'v':
 			return OptionID::VERSION;
+		case 'o':
+			return OptionID::OUTPUT;
 		default:
 			return OptionID::NONE;
 	}
@@ -66,6 +70,11 @@ static void applyOption(OptionID opt, const char* arg = nullptr){
 		case OptionID::VERSION:
 			options.version = true;
 			break;
+		
+		case OptionID::OUTPUT: {
+			assert(arg != nullptr);
+			options.outPath = arg;
+		} break;
 		
 		// case OptionID::N: {
 		// 	int n;
@@ -116,10 +125,10 @@ void CLI::parse(int argc, char const* const* argv){
 	optind = (optind == 0) ? 0 : 1;
 	
 	// Initialize and create modifyable copy of argv.
-	vector<const char*> v = vector<const char*>(&argv[0], &argv[argc]);
+	vector<const char*> v = vector<const char*>(argv, argv + argc);
 	
 	int prevOpt = optind;
-	while (optind < argc && argv[optind] != nullptr){
+	while (true){
 		const int c = getopt_long(argc, (char* const*)v.data(), short_options, long_options, NULL);
 		
 		if (c == -1){
@@ -138,7 +147,7 @@ void CLI::parse(int argc, char const* const* argv){
 	
 	// Non-option arguments
 	if (optind < argc){
-		applyPostOptions(argc - optind, &(v.data())[optind]);
+		applyPostOptions(argc - optind, v.data() + optind);
 	}
 	
 	return;

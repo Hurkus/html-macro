@@ -196,13 +196,13 @@ unique_ptr<Expr::Const> Parser::parseStr(){
 		
 	}
 	
-	fail:
+	// Fail
 	ERROR_L1("Expression: Missing closing quote in expression.\n%s", getErrorLine(i, ii).c_str());
 	return nullptr;
 	
 	success:
 	unique_ptr<Expr::Const> expr = make_unique<Expr::Const>();
-	string& str = expr->value.emplace<string>(s + i + 1, s + ii - 1);
+	expr->value.emplace<string>(s + i + 1, s + ii - 1);
 	
 	this->i = ii;
 	return expr;
