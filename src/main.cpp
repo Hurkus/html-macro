@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string_view>
 
 #include "MacroEngine.hpp"
@@ -24,10 +25,11 @@ static void version(){
 
 static void help(){
 	version();
-	INFO(ANSI_BOLD "Usage:" ANSI_RESET " %s [options] <file>", CLI::name());
+	INFO(ANSI_BOLD "Usage:" ANSI_RESET " %s [options] <files>", CLI::name());
 	INFO(ANSI_BOLD "Options:" ANSI_RESET);
-	INFO("  " Y("--help") ", " Y("-h") " ...... Print help.");
-	INFO("  " Y("--version") ", " Y("-v") " ... Print program version.");
+	INFO("  " Y("--help") ", " Y("-h") " .................... Print help.");
+	INFO("  " Y("--version") ", " Y("-v") " ................. Print program version.");
+	INFO("  " Y("--output <path>") ", " Y("-o <path>") " .... Write output to file instead of stdout.");
 	INFO("");
 }
 
@@ -36,17 +38,32 @@ static void help(){
 
 
 static bool run(const vector<filesystem::path>& files){
-	if (files.empty()){
-		return true;
+	
+	// Open output file
+	ofstream outf;
+	if (!CLI::options.outPath.empty()){
+		outf = ofstream(CLI::options.outPath);
+		if (outf.fail()){
+			ERROR("Failed to open file '%s'.", CLI::options.outPath.c_str());
+			return false;
+		}
 	}
 	
-	MacroEngine engine = {};
-	engine.setVariableConstants();
-	Macro* root = engine.loadFile(files[0]);
+	// Select output stream
+	ostream& out = (outf.is_open()) ? outf : cout;
 	
-	if (root != nullptr){
-		engine.exec(*root, engine.doc);
-		write(engine.doc, cout);
+	// Execute all macro files
+	for (const filesystem::path& file : files){
+		MacroEngine engine = {};
+		engine.setVariableConstants();
+		
+		shared_ptr<Macro> main = engine.loadFile(file);
+		if (main == nullptr){
+			return false;
+		}
+		
+		engine.exec(*main, engine.doc);
+		write(engine.doc, out);
 	}
 	
 	return true;
@@ -64,9 +81,11 @@ int main(int argc, char const* const* argv){
 	}
 	
 	#ifdef DEBUG
-	CLI::options.files.clear();
-	// CLI::options.files.emplace_back("./assets/test.html");
-	CLI::options.files.emplace_back("./assets/style-test.html");
+		// CLI::options.outPath = "obj/main.html";
+		if (CLI::options.files.empty()){
+			CLI::options.files.emplace_back("./assets/test-1.html");
+			// CLI::options.files.emplace_back("./assets/test-2.html");
+		}
 	#endif
 	
 	if (CLI::options.help){
@@ -75,6 +94,9 @@ int main(int argc, char const* const* argv){
 	} else if (CLI::options.version){
 		version();
 		return 0;
+	} else if (CLI::options.files.empty()){
+		ERROR("No input files.\nUse '%s --help' for help.", CLI::options.callName.c_str());
+		return 1;
 	}
 	
 	if (!run(CLI::options.files)){

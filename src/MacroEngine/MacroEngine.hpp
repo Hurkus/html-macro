@@ -12,7 +12,7 @@ class MacroEngine {
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 public:
 	pugi::xml_document doc;
-	string_map<std::unique_ptr<Macro>> macros;
+	string_map<std::shared_ptr<Macro>> macros;
 	Expression::VariableMap variables;
 	
 public:
@@ -21,8 +21,8 @@ public:
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	Macro* getMacro(std::string_view name) const;
-	Macro* loadFile(const std::filesystem::path& path);
+	std::shared_ptr<Macro> getMacro(std::string_view name) const;
+	std::shared_ptr<Macro> loadFile(const std::filesystem::path& path);
 	void setVariableConstants();
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //

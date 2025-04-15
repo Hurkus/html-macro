@@ -17,7 +17,7 @@ void MacroEngine::call(const char* name, xml_node dst){
 		return;
 	}
 	
-	Macro* macro = getMacro(name);
+	shared_ptr<Macro> macro = getMacro(name);
 	if (macro == nullptr){
 		WARNING_L1("CALL: Macro '%s' not found.", name);
 		return;

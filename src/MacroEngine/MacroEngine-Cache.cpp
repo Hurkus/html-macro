@@ -11,12 +11,14 @@ using namespace pugi;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Macro* MacroEngine::getMacro(string_view name) const {
+shared_ptr<Macro> MacroEngine::getMacro(string_view name) const {
 	auto p = macros.find(name);
-	if (p != macros.end())
-		return p->second.get();
-	else
+	if (p != macros.end()){
+		assert(p->second != nullptr);
+		return p->second;
+	} else {
 		return nullptr;
+	}
 }
 
 
@@ -32,7 +34,7 @@ static void cacheMacros(MacroEngine& self, vector<unique_ptr<Macro>>&& newMacros
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Macro* MacroEngine::loadFile(const filesystem::path& path){
+shared_ptr<Macro> MacroEngine::loadFile(const filesystem::path& path){
 	XHTMLFile dom = {};
 	
 	try {
@@ -46,11 +48,9 @@ Macro* MacroEngine::loadFile(const filesystem::path& path){
 	}
 	
 	// Check if file is already cached.
-	auto p = macros.find(dom.path);
-	if (p != macros.end()){
-		unique_ptr<Macro>& pmacro = p->second;
-		assert(pmacro != nullptr);
-		return pmacro.get();
+	shared_ptr<Macro> p = getMacro(dom.path.native());
+	if (p != nullptr){
+		return p;
 	}
 	
 	// Parse new file
@@ -60,10 +60,13 @@ Macro* MacroEngine::loadFile(const filesystem::path& path){
 	
 	// Extract and cache all sub-macros
 	vector<unique_ptr<Macro>> macroList = dom.convertToMacroSet();
-	Macro* ret = macroList.back().get();
-	cacheMacros(*this, move(macroList));
+	p = move(macroList.back());
+	macroList.pop_back();
 	
-	return ret;
+	cacheMacros(*this, move(macroList));
+	macros.emplace(p->name, p);
+	
+	return p;
 }
 
 

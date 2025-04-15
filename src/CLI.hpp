@@ -14,6 +14,7 @@ extern struct Options {
 	std::string callName = PROGRAM_NAME;
 	bool help = false;
 	bool version = false;
+	std::filesystem::path outPath;
 	std::vector<std::filesystem::path> files;
 } options;
 
