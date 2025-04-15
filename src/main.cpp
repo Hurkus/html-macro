@@ -2,6 +2,7 @@
 #include <string_view>
 
 #include "MacroEngine.hpp"
+#include "MacroParser.hpp"
 #include "Expression.hpp"
 #include "ExpressionParser.hpp"
 #include "CLI.hpp"
@@ -45,18 +46,9 @@ static bool run(const vector<filesystem::path>& files){
 	
 	if (root != nullptr){
 		engine.exec(*root, engine.doc);
+		write(engine.doc, cout);
 	}
 	
-	
-	// cout << "-----------------" << endl;
-	// for (auto& p : engine.macros){
-	// 	cout << ANSI_YELLOW <<  p.second->name << ANSI_RESET << endl;
-	// 	p.second->root.print(cout);
-	// 	cout << "-----------------" << endl;
-	// }
-	
-	// cout << "--------------------------------" << endl;
-	engine.doc.print(cout);
 	return true;
 }
 
