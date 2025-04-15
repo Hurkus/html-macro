@@ -3285,7 +3285,9 @@ PUGI_IMPL_NS_BEGIN
 			xml_node_struct* cursor = root;
 			char_t* mark = s;
 			char_t* merged_pcdata = s;
-
+			char_t* parsed_pcdata;
+			std::string_view name_sv;
+			
 			while (*s != 0)
 			{
 				if (*s == '<')
@@ -3298,13 +3300,23 @@ PUGI_IMPL_NS_BEGIN
 						PUGI_IMPL_PUSHNODE(node_element); // Append a new node to the tree.
 
 						cursor->name = s;
-
+						
 						PUGI_IMPL_SCANWHILE_UNROLL(PUGI_IMPL_IS_CHARTYPE(ss, ct_symbol)); // Scan for a terminator.
 						PUGI_IMPL_ENDSEG(); // Save char in 'ch', terminate & step over.
-
+						
+						// HTML SPECIALISATION
+						name_sv = std::string_view(cursor->name, s - 1);
+						
 						if (ch == '>')
 						{
-							// end of tag
+							
+							// HTML SPECIALISATION
+							if (name_sv == "script"){
+								goto __html_script;
+							} else if (name_sv == "style"){
+								goto __html_style;
+							}
+							
 						}
 						else if (PUGI_IMPL_IS_CHARTYPE(ch, ct_space))
 						{
@@ -3371,14 +3383,27 @@ PUGI_IMPL_NS_BEGIN
 									}
 									else PUGI_IMPL_THROW_ERROR(status_bad_start_element, s);
 								}
-								else if (*s == '>')
-								{
+								else if (*s == '>'){
 									++s;
+									
+									// HTML SPECIALISATION
+									if (name_sv == "script"){
+										goto __html_script;
+									} else if (name_sv == "style"){
+										goto __html_style;
+									}
 
 									break;
 								}
-								else if (*s == 0 && endch == '>')
-								{
+								else if (*s == 0 && endch == '>'){
+									
+									// HTML SPECIALISATION
+									if (name_sv == "script"){
+										goto __html_script;
+									} else if (name_sv == "style"){
+										goto __html_style;
+									}
+									
 									break;
 								}
 								else PUGI_IMPL_THROW_ERROR(status_bad_start_element, s);
@@ -3456,52 +3481,74 @@ PUGI_IMPL_NS_BEGIN
 				else
 				{
 					mark = s; // Save this offset while searching for a terminator.
-
 					PUGI_IMPL_SKIPWS(); // Eat whitespace if no genuine PCDATA here.
 
-					if (*s == '<' || !*s)
-					{
+					if (*s == '<' || !*s){
 						// We skipped some whitespace characters because otherwise we would take the tag branch instead of PCDATA one
 						assert(mark != s);
 
-						if (!PUGI_IMPL_OPTSET(parse_ws_pcdata | parse_ws_pcdata_single) || PUGI_IMPL_OPTSET(parse_trim_pcdata))
-						{
+						if (!PUGI_IMPL_OPTSET(parse_ws_pcdata | parse_ws_pcdata_single) || PUGI_IMPL_OPTSET(parse_trim_pcdata)){
 							continue;
 						}
-						else if (PUGI_IMPL_OPTSET(parse_ws_pcdata_single))
-						{
+						else if (PUGI_IMPL_OPTSET(parse_ws_pcdata_single)){
 							if (s[0] != '<' || s[1] != '/' || cursor->first_child) continue;
 						}
 					}
 
-					if (!PUGI_IMPL_OPTSET(parse_trim_pcdata))
+					if (!PUGI_IMPL_OPTSET(parse_trim_pcdata)){
 						s = mark;
+					}
 
-					if (cursor->parent || PUGI_IMPL_OPTSET(parse_fragment))
-					{
-						char_t* parsed_pcdata = s;
-
+					if (cursor->parent || PUGI_IMPL_OPTSET(parse_fragment)){
+						parsed_pcdata = s;
 						s = strconv_pcdata(s);
+						
+						// HTML SPECIALISATION
+						goto __html_script_style_end;
+						__html_script: {
+							parsed_pcdata = s;
+							
+							while (*s != 0){
+								char c = *(s++);
+								if (c == '<' && strncmp(s, "/script", sizeof("/script") - 1) == 0){
+									s[-1] = 0;
+									break;
+								}
+							}
+							
+							goto __html_script_style_end;
+						}
+						__html_style: {
+							parsed_pcdata = s;
+							
+							while (*s != 0){
+								char c = *(s++);
+								if (c == '<' && strncmp(s, "/style", sizeof("/style") - 1) == 0){
+									s[-1] = 0;
+									break;
+								}
+							}
+							
+							goto __html_script_style_end;
+						}
+						__html_script_style_end:
+						
 
-						if (PUGI_IMPL_OPTSET(parse_embed_pcdata) && cursor->parent && !cursor->first_child && !cursor->value)
-						{
+						if (PUGI_IMPL_OPTSET(parse_embed_pcdata) && cursor->parent && !cursor->first_child && !cursor->value){
 							cursor->value = parsed_pcdata; // Save the offset.
 						}
-						else if (PUGI_IMPL_OPTSET(parse_merge_pcdata) && cursor->first_child && PUGI_IMPL_NODETYPE(cursor->first_child->prev_sibling_c) == node_pcdata)
-						{
+						else if (PUGI_IMPL_OPTSET(parse_merge_pcdata) && cursor->first_child && PUGI_IMPL_NODETYPE(cursor->first_child->prev_sibling_c) == node_pcdata){
 							assert(merged_pcdata >= cursor->first_child->prev_sibling_c->value);
 
 							// Catch up to the end of last parsed value; only needed for the first fragment.
 							merged_pcdata += strlength(merged_pcdata);
-
 							size_t length = strlength(parsed_pcdata);
 
 							// Must use memmove instead of memcpy as this move may overlap
 							memmove(merged_pcdata, parsed_pcdata, (length + 1) * sizeof(char_t));
 							merged_pcdata += length;
 						}
-						else
-						{
+						else {
 							xml_node_struct* prev_cursor = cursor;
 							PUGI_IMPL_PUSHNODE(node_pcdata); // Append a new node on the tree.
 
@@ -3517,7 +3564,6 @@ PUGI_IMPL_NS_BEGIN
 					{
 						PUGI_IMPL_SCANFOR(*s == '<'); // '...<'
 						if (!*s) break;
-
 						++s;
 					}
 
@@ -3528,7 +3574,6 @@ PUGI_IMPL_NS_BEGIN
 
 			// check that last tag is closed
 			if (cursor != root) PUGI_IMPL_THROW_ERROR(status_end_element_mismatch, s);
-
 			return s;
 		}
 
