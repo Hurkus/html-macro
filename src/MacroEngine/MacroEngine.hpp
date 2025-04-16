@@ -16,6 +16,7 @@ public:
 	Expression::VariableMap variables;
 	
 public:
+	const Macro* currentMacro = nullptr;
 	optbool branch = nullptr;
 	bool interpolateText = true;
 	
@@ -95,6 +96,7 @@ public:
 public:
 	void call(const char* name, pugi::xml_node dst);
 	void call(const pugi::xml_node op, pugi::xml_node dst);
+	bool include(const pugi::xml_node op, pugi::xml_node dst);
 	
 public:
 	bool shell(const pugi::xml_node op, pugi::xml_node dst);

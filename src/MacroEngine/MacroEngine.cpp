@@ -36,6 +36,9 @@ void MacroEngine::call(const xml_node op, xml_node dst){
 		
 		if (name == "NAME"){
 			name_attr = attr;
+		} else if (name == "IF"){
+			if (!_attr_if(*this, op, attr))
+				return;
 		} else {
 			_attr_ignore(op, attr);
 		}
@@ -48,6 +51,65 @@ void MacroEngine::call(const xml_node op, xml_node dst){
 		WARNING_L1("CALL: Missing 'NAME' attribute.");
 	}
 	
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+bool MacroEngine::include(const xml_node op, xml_node dst){
+	assert(op.root() != dst.root());
+	xml_attribute src_attr;
+	
+	for (const xml_attribute attr : op.attributes()){
+		string_view name = attr.name();
+		
+		if (name == "SRC"){
+			src_attr = attr;
+		} else if (name == "IF"){
+			if (!_attr_if(*this, op, attr))
+				return false;
+		} else {
+			_attr_ignore(op, attr);
+		}
+		
+	}
+	
+	if (src_attr.empty()){
+		_attr_missing(op, "SRC");
+		return false;
+	}
+	
+	// Modify relative path to current macro file path.
+	filesystem::path path;
+	try {
+		path = src_attr.value();
+		
+		if (!path.is_absolute()){
+			assert(currentMacro != nullptr);
+			if (currentMacro == nullptr || currentMacro->srcFile == nullptr){
+				ERROR("%s: Missing macro relative path.", op.name());
+				return false;
+			}
+			
+			filesystem::path dir = *currentMacro->srcFile;
+			dir.remove_filename();
+			path = dir / filesystem::proximate(move(path), dir);
+		}
+		
+	} catch (const exception& e){
+		ERROR_L1("%s: Failed to construct path '%s'.", op.name(), src_attr.value());
+		return false;
+	}
+	
+	// Fetch and execute macro
+	shared_ptr<Macro> macro = loadFile(path);
+	if (macro == nullptr){
+		return false;
+	}
+	
+	exec(*macro, dst);
+	return true;
 }
 
 
@@ -113,6 +175,8 @@ void MacroEngine::run(const xml_node op, xml_node dst){
 		
 		else if (name == "CALL"){
 			call(op, dst);
+		} else if (name == "INCLUDE"){
+			include(op, dst);
 		}  else if (name == "SHELL"){
 			shell(op, dst);
 		}
@@ -143,10 +207,14 @@ void MacroEngine::exec(const Macro& macro, xml_node dst){
 	const optbool _branch = this->branch;
 	this->branch = nullptr;
 	
+	const Macro* _currentMacro = this->currentMacro;
+	this->currentMacro = &macro;
+	
 	runChildren(macro.root, dst);
 	
-	this->interpolateText = _interp;
+	this->currentMacro = _currentMacro;
 	this->branch = _branch;
+	this->interpolateText = _interp;
 }
 
 
