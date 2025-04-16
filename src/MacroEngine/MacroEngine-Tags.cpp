@@ -132,7 +132,7 @@ bool MacroEngine::delAttr(const xml_node op, xml_node dst){
 	for (const xml_attribute attr : op.attributes()){
 		const char* cname = attr.name();
 		if (cname != "IF"sv)
-			dst.remove_attribute(cname);
+			dst.remove_attribute(attr.value());
 	}
 	
 	return true;
