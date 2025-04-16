@@ -23,6 +23,11 @@ Example, parse and evaluate `main.html` and pipe into output file `index.html`: 
 
 
 
+# Compile
+
+`make -j all`
+
+
 
 # Macros
 
