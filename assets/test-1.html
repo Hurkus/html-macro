@@ -43,6 +43,18 @@
 		</WHILE>
 	</ul>
 	
+	<!-- Set* tests -->
+	<div class="box">
+		<SET x="x-1" />
+		<SET-TAG NAME="img"/>
+		<SET-ATTR IF="x < 2" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Nokota_Horses_cropped.jpg/250px-Nokota_Horses_cropped.jpg"/>
+		<SET-ATTR IF="x >= 2" src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Bucephala-albeola-010.jpg/960px-Bucephala-albeola-010.jpg"/>
+		<DEL-ATTR NAME="class"/>
+		<GET-ATTR src="src"/>
+		<CALL NAME="ff-size"/>
+		<SET-ATTR width="{int(w)}" height="{int(h)}"/>
+	</div>
+	
 </body>
 </html>
 
@@ -54,3 +66,9 @@
 
 <MACRO NAME="print-z">new z index is {int(z)}</MACRO>
 
+<MACRO NAME="ff-size">
+	<!-- w and h have newline after because of ffprobe, use int(w) or int(h) to cast to integer -->
+	<SHELL VARS="src" STDOUT="w">ffprobe -v error -hide_banner -show_entries stream=width -of csv=p=0 -i "$src"</SHELL>
+	<SHELL VARS="src" STDOUT="h">ffprobe -v error -hide_banner -show_entries stream=height -of csv=p=0 -i "$src"</SHELL>
+	<INFO>{src}: {int(w)},{int(h)}</INFO>
+</MACRO>

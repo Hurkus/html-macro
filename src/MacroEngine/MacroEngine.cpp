@@ -99,6 +99,18 @@ void MacroEngine::run(const xml_node op, xml_node dst){
 			loop_while(op, dst);
 		}
 		
+		else if (name == "SET-ATTR"){
+			setAttr(op, dst);
+		} else if (name == "GET-ATTR"){
+			getAttr(op, dst);
+		} else if (name == "DEL-ATTR"){
+			delAttr(op, dst);
+		} else if (name == "SET-TAG"){
+			setTag(op, dst);
+		} else if (name == "GET-TAG"){
+			getTag(op, dst);
+		}
+		
 		else if (name == "CALL"){
 			call(op, dst);
 		}  else if (name == "SHELL"){

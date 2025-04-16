@@ -85,6 +85,14 @@ public:
 	int loop_while(const pugi::xml_node op, pugi::xml_node dst);
 	
 public:
+	bool setAttr(const pugi::xml_node op, pugi::xml_node dst);
+	bool getAttr(const pugi::xml_node op, pugi::xml_node dst);
+	bool delAttr(const pugi::xml_node op, pugi::xml_node dst);
+	bool setTag(const pugi::xml_node op, pugi::xml_node dst);
+	bool getTag(const pugi::xml_node op, pugi::xml_node dst);
+	bool delTag(const pugi::xml_node op, pugi::xml_node dst);
+	
+public:
 	void call(const char* name, pugi::xml_node dst);
 	void call(const pugi::xml_node op, pugi::xml_node dst);
 	
@@ -95,6 +103,15 @@ public:
 	void info(const pugi::xml_node op);
 	void warn(const pugi::xml_node op);
 	void error(const pugi::xml_node op);
+	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+public:
+	/**
+	 * @brief Interpolate string for any expressions and store result into the attribute value.
+	 * @param str String for interpolation.
+	 * @param dst Attribute of which the value is set to the interpolated string.
+	 */
+	void interpolateAttr(const char* str, pugi::xml_attribute dst);
 	
 // ------------------------------------------------------------------------------------------ //
 };
