@@ -15,11 +15,12 @@ using namespace std;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-#define Y(s)	ANSI_YELLOW s ANSI_RESET
+#define Y(s)		ANSI_YELLOW s ANSI_RESET
+#define VERSION 	"Alpha v0.1.0"
 
 
 static void version(){
-	INFO(ANSI_BOLD PROGRAM_NAME ": " ANSI_RESET ANSI_YELLOW "v0.0" ANSI_RESET ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
+	INFO(ANSI_BOLD PROGRAM_NAME ": " ANSI_RESET ANSI_YELLOW VERSION ANSI_RESET ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
 }
 
 
@@ -81,13 +82,13 @@ int main(int argc, char const* const* argv){
 		ERROR("%s\nUse '%s --help' for help.", e.what(), CLI::name());
 	}
 	
-	#ifdef DEBUG
-		// CLI::options.outPath = "obj/main.html";
-		if (CLI::options.files.empty()){
-			CLI::options.files.emplace_back("./assets/test-1.html");
-			// CLI::options.files.emplace_back("./assets/test-2.html");
-		}
-	#endif
+	// #ifdef DEBUG
+	// 	// CLI::options.outPath = "obj/main.html";
+	// 	if (CLI::options.files.empty()){
+	// 		CLI::options.files.emplace_back("./assets/test-1.html");
+	// 		// CLI::options.files.emplace_back("./assets/test-2.html");
+	// 	}
+	// #endif
 	
 	if (CLI::options.help){
 		help();
