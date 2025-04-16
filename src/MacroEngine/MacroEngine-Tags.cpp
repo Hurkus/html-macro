@@ -139,28 +139,6 @@ bool MacroEngine::delAttr(const xml_node op, xml_node dst){
 }
 
 
-bool MacroEngine::getTag(const xml_node op, xml_node dst){
-	// Check IF conditional
-	for (const xml_attribute attr : op.attributes()){
-		if (attr.name() == "IF"sv){
-			if (!_attr_if(*this, op, attr))
-				return false;
-		}
-	}
-	
-	for (const xml_attribute attr : op.attributes()){
-		const char* var_name = attr.name();
-		if (var_name == "IF"sv){
-			continue;
-		}
-		
-		variables[var_name] = dst.name();
-	}
-	
-	return true;
-}
-
-
 bool MacroEngine::setTag(const xml_node op, xml_node dst){
 	xml_attribute name_attr;
 	
@@ -193,7 +171,31 @@ bool MacroEngine::setTag(const xml_node op, xml_node dst){
 		return false;
 	}
 	
-	return dst.set_name(cname);
+	string buff;
+	interpolate(cname, variables, buff);
+	return dst.set_name(buff.c_str(), buff.length());
+}
+
+
+bool MacroEngine::getTag(const xml_node op, xml_node dst){
+	// Check IF conditional
+	for (const xml_attribute attr : op.attributes()){
+		if (attr.name() == "IF"sv){
+			if (!_attr_if(*this, op, attr))
+				return false;
+		}
+	}
+	
+	for (const xml_attribute attr : op.attributes()){
+		const char* var_name = attr.name();
+		if (var_name == "IF"sv){
+			continue;
+		}
+		
+		variables[var_name] = dst.name();
+	}
+	
+	return true;
 }
 
 

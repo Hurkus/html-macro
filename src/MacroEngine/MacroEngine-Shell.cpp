@@ -219,7 +219,7 @@ bool MacroEngine::shell(const xml_node op, xml_node dst){
 		else if (name == "STDOUT"){
 			string_view val = attr.value();
 			
-			if (val == ""){
+			if (val == "" || val == "VOID"){
 				capture = Capture::VOID;
 			} else if (val == "HTML"){
 				capture = Capture::HTML;

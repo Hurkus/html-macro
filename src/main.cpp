@@ -38,19 +38,7 @@ static void help(){
 
 
 static bool run(const vector<filesystem::path>& files){
-	
-	// Open output file
-	ofstream outf;
-	if (!CLI::options.outPath.empty()){
-		outf = ofstream(CLI::options.outPath);
-		if (outf.fail()){
-			ERROR("Failed to open file '%s'.", CLI::options.outPath.c_str());
-			return false;
-		}
-	}
-	
-	// Select output stream
-	ostream& out = (outf.is_open()) ? outf : cout;
+	ofstream outf;	// Delay opening of file.
 	
 	// Execute all macro files
 	for (const filesystem::path& file : files){
@@ -63,7 +51,20 @@ static bool run(const vector<filesystem::path>& files){
 		}
 		
 		engine.exec(*main, engine.doc);
+		
+		// Open output file
+		if (!outf.is_open() && !CLI::options.outPath.empty()){
+			outf = ofstream(CLI::options.outPath);
+			if (outf.fail()){
+				ERROR("Failed to open file '%s'.", CLI::options.outPath.c_str());
+				return false;
+			}
+		}
+		
+		// Select output stream and write
+		ostream& out = (outf.is_open()) ? outf : cout;
 		write(engine.doc, out);
+		out.flush();
 	}
 	
 	return true;
