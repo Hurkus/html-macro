@@ -3,12 +3,12 @@ config = release
 
 CC       = gcc
 CXX      = g++
-CFLAGS   = -O2 -Wno-multichar -DNDEBUG
-CXXFLAGS = -O2 -Wno-multichar -DNDEBUG -std=c++2a
+CFLAGS   = -O2 -Wno-error $(NO_WARN) -DNDEBUG
+CXXFLAGS = -O2 -Wno-error $(NO_WARN) -DNDEBUG -std=c++2a
 
 ifeq ($(config),debug)
-	CFLAGS   = -O0 -Wall $(WARN) -Wswitch -g
-	CXXFLAGS = -O0 -Wall $(WARN) -Wswitch -g -std=c++2a
+	CFLAGS   = -O0 -Wno-error -Wall $(WARN) -Wswitch -g
+	CXXFLAGS = -O0 -Wno-error -Wall $(WARN) -Wswitch -g -std=c++2a
 endif
 
 
@@ -23,9 +23,10 @@ LIB_LNK    =
 EXTERN_OBJ = 
 
 
-WARN = $(W_FMT) -Wno-multichar
+NO_WARN = -Wno-multichar -Wno-format-security
 W_FMT = -Wformat=1 -Wformat-contains-nul -Wformat-diag -Wformat-extra-args \
-		-Wformat-overflow=1 -Wformat-truncation=1 -Wformat-zero-length -Wno-format-security
+		-Wformat-overflow=1 -Wformat-truncation=1 -Wformat-zero-length
+WARN = $(W_FMT) $(NO_WARN)
 
 
 ################################################################
