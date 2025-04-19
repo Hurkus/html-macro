@@ -4,6 +4,8 @@
 
 HTML Macro is a CLI tool for generating static website HTML files.
 
+Currently in alpha release.
+
 
 # Usage
 
