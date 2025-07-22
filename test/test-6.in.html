@@ -1,0 +1,18 @@
+<html>
+<head>
+	<title>Test 4 -- Shell</title>
+</head>
+<body>
+	<SET x="2" y="x + 1" />
+	
+	<p>
+		<SHELL VARS="x,y">echo -n "$x * $y == $((x * y))"</SHELL>
+	</p>
+	
+	<SHELL VARS="x,y" STDOUT="z">echo "$((x * y))"</SHELL>
+	<SHELL VARS="x,y" STDOUT="HTML">echo -n '<span CALL="print-z"></span>'</SHELL>
+	
+</body>
+</html>
+
+<MACRO NAME="print-z">new z index is {int(z)}</MACRO>

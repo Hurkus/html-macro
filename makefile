@@ -81,6 +81,6 @@ makefile-targets.mk: $(shell find "$(src)" -type d)
 
 ifeq (,$(MAKECMDGOALS))
 include makefile-targets.mk
-else ifneq ( , $(filter all run $(obj)/%.o , $(MAKECMDGOALS)))
+else ifneq ( , $(filter all run test $(obj)/%.o , $(MAKECMDGOALS)))
 include makefile-targets.mk
 endif

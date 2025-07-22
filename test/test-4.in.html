@@ -1,0 +1,31 @@
+<html>
+<head>
+	<title>Test 3 -- Expressions</title>
+</head>
+<body>
+	<SET z="" x="2" y="x + 1" _pi="pi" />
+	
+	<!-- Branching test -->
+	<IF TRUE="x+1 <= y">
+		<p>passed with x={x} and y={y}</p>
+	</IF><ELSE>
+		<p>failed with x={x} and y={y}</p>
+	</ELSE>
+	
+	<!-- Attr conditional test -->
+	<p IF="z">z-index of page is {z}</p>
+	<p IF="!z">z-index of page is missing!</p>
+	
+	<!-- Loop tests -->
+	<ul>
+		<FOR i="0" TRUE="i <= 2" i="i+1">
+			<li>Item: {i}</li>
+		</FOR>
+		<WHILE TRUE="i < 5">
+			<li>Item: {i}</li>
+			<SET i="i+1" />
+		</WHILE>
+	</ul>
+	
+</body>
+</html>
