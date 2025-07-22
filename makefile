@@ -46,6 +46,21 @@ clean:
 	@echo "Project cleaned."
 
 
+################################################################
+
+
+$(bin)/test-$(program): test/test.cpp | $(bin)
+	@basename "$@"
+	@$(CXX) $(filter %.cpp, $^) $(CXXFLAGS) $(INCLUDES) -o "$@"
+
+.PHONY: test
+test: $(bin)/$(program) $(bin)/test-$(program)
+	./$(bin)/test-$(program)
+
+
+################################################################
+
+
 $(bin) $(obj):
 	mkdir -p "$@"
 

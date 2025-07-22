@@ -33,6 +33,47 @@ struct ShellCmd {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+static size_t _slurp(int fd, string& out){
+	// Array chunks that are concatenated into final string after EOF.
+	size_t totalSize = 0;
+	vector<vector<char>> buffs = {};
+	buffs.reserve(4);
+	
+	while (true){
+		vector<char>& buff = buffs.emplace_back();
+		buff.resize(buffs.size() * STDIN_CHUNK_SIZE);	// Each larger than previous.
+		
+		size_t space = buff.size();
+		size_t offset = 0;
+		
+		// Fill one buffer
+		while (space > 0){
+			const ssize_t n = read(fd, buff.data() + offset, space);
+			if (n <= 0){
+				buff.resize(offset);
+				goto eof;
+			}
+			
+			space -= size_t(n);
+			offset += size_t(n);
+			totalSize += size_t(n);
+		}
+		
+	} eof:
+	
+	// Concatenate buffers
+	out.reserve(out.length() + totalSize);
+	for (const vector<char>& buff : buffs){
+		out.append(buff.begin(), buff.end());
+	}
+	
+	return totalSize;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 // Called from child process
 static void _setEnv(const Expression::VariableMap& vars, const vector<string_view>& env){
 	string buff = {};
@@ -105,45 +146,8 @@ static int _shell(const ShellCmd& cmd) noexcept {
 	else if (pid > 0){
 		if (cmd.capture != nullptr){
 			close(fd[1]);
-			
-			// Fill array of buffers of STDIN_CHUNK_SIZE that are combined into final string after EOF.
-			size_t totalSize = 0;
-			vector<vector<char>> buffs = {};
-			buffs.reserve(4);
-			
-			while (true){
-				vector<char>& buff = buffs.emplace_back();
-				buff.resize(STDIN_CHUNK_SIZE);
-				
-				size_t space = buff.size();
-				size_t offset = 0;
-				
-				// Fill one buffer
-				while (space > 0){
-					
-					const ssize_t n = read(fd[0], buff.data() + offset, space);
-					if (n <= 0){
-						buff.resize(offset);
-						goto __closed;
-					}
-					
-					space -= n;
-					offset += n;
-					totalSize += n;
-				}
-				
-			}
-			
-			__closed:
+			_slurp(fd[0], *cmd.capture);
 			close(fd[0]);
-			
-			// Build result from intermediate STDIN_CHUNK_SIZE buffers.
-			string& out = *cmd.capture;
-			out.reserve(out.size() + totalSize);
-			for (const vector<char>& buff : buffs){
-				out.append(buff.begin(), buff.end());
-			}
-			
 		}
 		
 		// Exit child
