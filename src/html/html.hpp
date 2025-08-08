@@ -1,12 +1,13 @@
 #pragma once
 #include <cstdint>
 #include <string_view>
+#include <memory>
 
 
 namespace html {
 	enum class node_type : uint8_t;
 	struct rd_node;
-	struct rd_attribute;
+	struct rd_attr;
 	class rd_document;
 	
 	enum class parse_status;
@@ -61,7 +62,7 @@ public:
 	html::rd_node* child = nullptr;		// First child in linked list.
 	html::rd_node* next = nullptr;		// Linked list.
 	
-	html::rd_attribute* attribute = nullptr;	// First attribute in linked list.
+	html::rd_attr* attribute = nullptr;	// First attribute in linked list.
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
@@ -79,7 +80,7 @@ public:
 
 
 
-struct html::rd_attribute {
+struct html::rd_attr {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
 	const char* name_p = nullptr;
@@ -87,7 +88,7 @@ public:
 	uint32_t name_len = 0;
 	uint32_t value_len = 0;
 	
-	html::rd_attribute* next = nullptr;	// Linked list.
+	html::rd_attr* next = nullptr;	// Linked list.
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
@@ -106,9 +107,21 @@ public:
 
 
 class html::rd_document {
+// ----------------------------------- [ Structures ] --------------------------------------- //
+public:
+	template<typename T>
+	struct allocation {
+		std::unique_ptr<T[]> alloc;				// Allocation array.
+		std::unique_ptr<allocation<T>> next;	// Linked list of allocations.
+	};
+	
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
+	std::unique_ptr<char[]> buffer;		// Terminated input text.
+	std::size_t buffer_len;				// Length of `buffer`.
 	
+	std::unique_ptr<allocation<rd_node>> nodeAlloc; // Allocations for node structs.
+	std::unique_ptr<allocation<rd_attr>> attrAlloc;
 	
 // ------------------------------------------------------------------------------------------ //
 };

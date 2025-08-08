@@ -1,10 +1,7 @@
 #include "html.hpp"
-#include <cstdint>
-
-#include "Buffer.hpp"
-
-#include "DEBUG.hpp"
-#include <iostream>
+#include <cassert>
+#include <vector>
+#include <fstream>
 
 using namespace std;
 using namespace html;
@@ -13,12 +10,14 @@ using namespace html;
 // ----------------------------------- [ Constants ] ---------------------------------------- //
 
 
-constexpr uint64_t MASK_EOF   = (uint64_t(1) << '\0');	// \0
+constexpr int PAGE_SIZE = 32;
 
-constexpr uint64_t MASK_SPACE = (uint64_t(1) << ' ');	// [ ]
-constexpr uint64_t MASK_TAB   = (uint64_t(1) << '\t');	// \t
-constexpr uint64_t MASK_CR    = (uint64_t(1) << '\r');	// \r
-constexpr uint64_t MASK_LF    = (uint64_t(1) << '\n');	// \n
+constexpr uint64_t MASK_EOF   = (uint64_t(1) << '\0');		// \0
+
+constexpr uint64_t MASK_SPACE = (uint64_t(1) << ' ');		// [ ]
+constexpr uint64_t MASK_TAB   = (uint64_t(1) << '\t');		// \t
+constexpr uint64_t MASK_CR    = (uint64_t(1) << '\r');		// \r
+constexpr uint64_t MASK_LF    = (uint64_t(1) << '\n');		// \n
 constexpr uint64_t MASK_QUOTE_1 = (uint64_t(1) << '\'');	// '
 constexpr uint64_t MASK_QUOTE_2 = (uint64_t(1) << '"');		// "
 constexpr uint64_t MASK_QUESTION = (uint64_t(1) << '?');	// ?
@@ -35,21 +34,47 @@ constexpr uint64_t MASK_QUOTE = MASK_QUOTE_1 | MASK_QUOTE_2;	// ' "
 
 
 struct State {
-	uint32_t row = 0;
+	uint32_t row;
 	
-	vector<html::rd_node> nodeBuffer;
-	vector<html::rd_attribute> attributeBuffer;
+	rd_document::allocation<rd_node>* nodeAlloc;
+	rd_document::allocation<rd_attr>* attrAlloc;
+	uint32_t nodeAlloc_n = 0;
+	uint32_t nodeAlloc_i = 0;
+	uint32_t attrAlloc_n = 0;
+	uint32_t attrAlloc_i = 0;
 	
-	vector<html::rd_node*> lastChild;	// Stack of last child of `current`.
 	html::rd_node* parent;				// Current parsing parent node.
+	vector<html::rd_node*> lastChild;	// Stack of last child of `current`.
 };
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+inline rd_attr& allocAttr(State& state){
+	// Allocate new page.
+	if (state.attrAlloc_i >= state.attrAlloc_n){
+		state.attrAlloc_i = 0;
+		state.attrAlloc->next = make_unique<rd_document::allocation<rd_attr>>();
+		state.attrAlloc = state.attrAlloc->next.get();
+		state.attrAlloc->alloc = make_unique<rd_attr[]>(state.attrAlloc_n);
+	}
+	
+	return state.attrAlloc->alloc[state.attrAlloc_i++];
+}
+
+
 inline rd_node& addChild(State& state, node_type type){
-	rd_node& node = state.nodeBuffer.emplace_back(type);
+	// Allocate new page.
+	if (state.nodeAlloc_i >= state.nodeAlloc_n){
+		state.nodeAlloc_i = 0;
+		state.nodeAlloc->next = make_unique<rd_document::allocation<rd_node>>();
+		state.nodeAlloc = state.nodeAlloc->next.get();
+		state.nodeAlloc->alloc = make_unique<rd_node[]>(state.nodeAlloc_n);
+	}
+	
+	rd_node& node = state.nodeAlloc->alloc[state.nodeAlloc_i++];
+	node.type = type;
 	node.parent = state.parent;
 	
 	// Append sibling
@@ -250,7 +275,7 @@ static const char* parse_exclamation(State& state, const char* s){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static const char* parse_attribute(State& state, const char* s, rd_attribute& attr){
+static const char* parse_attribute(State& state, const char* s, rd_attr& attr){
 	assert(isTagChar(s[0]));
 	
 	// Parse name
@@ -287,8 +312,8 @@ static const char* parse_openTag(State& state, const char* s){
 	while (isTagChar(*(++s))) continue;
 	const uint32_t name_len = uint32_t(s - name_p);
 	
-	rd_attribute* firstAttr = nullptr;
-	rd_attribute* lastAttr = nullptr;
+	rd_attr* firstAttr = nullptr;
+	rd_attr* lastAttr = nullptr;
 	
 	// Self close
 	if (s[0] == '/'){ tag_self_close:
@@ -332,7 +357,7 @@ static const char* parse_openTag(State& state, const char* s){
 		}
 		
 		// Attribute
-		rd_attribute& attr = state.attributeBuffer.emplace_back();
+		rd_attr& attr = allocAttr(state);
 		s = parse_attribute(state, s, attr);
 		
 		if (firstAttr == nullptr){
@@ -435,37 +460,77 @@ void parse(State& state, const char* s){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-template<int bits>
-static string bin(auto n){
-	string s;
-	for (int i = bits-1 ; i >= 0 ; i--)
-		s += to_string((n >> i) & 1);
-	return s;
+static bool readFile(const char* path, rd_document& doc){
+	ifstream in = ifstream(path);
+	if (!in){
+		return false;
+	}
+	
+	if (!in.seekg(0, ios_base::end)){
+		return false;
+	}
+	
+	const streampos pos = in.tellg();
+	if (pos < 0 || !in.seekg(0, ios_base::beg)){
+		return false;
+	}
+	
+	const size_t size = size_t(pos);
+	size_t total = 0;
+	doc.buffer = make_unique<char[]>(size + 1);
+	
+	while (total < size && in.read(doc.buffer.get(), size - total)){
+		
+		const streamsize n = in.gcount();
+		if (n <= 0){
+			break;
+		}
+		
+		total += size_t(n);
+	}
+	
+	if (total <= size){
+		doc.buffer_len = total;
+	}
+	
+	doc.buffer[total] = 0;
+	return true;
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 parse_result html::parse(const char* path){
-	Buffer buff;
+	rd_document doc;
 	State state;
 	parse_status status;
 	
 	try {
-		if (!readFile(path, buff)){
+		if (!readFile(path, doc)){
 			status = parse_status::IO;
 			goto end;
 		}
 		
+		doc.nodeAlloc = make_unique<rd_document::allocation<rd_node>>();
+		doc.attrAlloc = make_unique<rd_document::allocation<rd_attr>>();
+		doc.nodeAlloc->alloc = make_unique<rd_node[]>(PAGE_SIZE);
+		doc.attrAlloc->alloc = make_unique<rd_attr[]>(PAGE_SIZE);
+		
 		State p = {
-			.row = 1
+			.row = 1,
+			.nodeAlloc = doc.nodeAlloc.get(),
+			.attrAlloc = doc.attrAlloc.get(),
+			.nodeAlloc_n = PAGE_SIZE,
+			.nodeAlloc_i = 1,	// Allocated root.
+			.attrAlloc_n = PAGE_SIZE,
+			.attrAlloc_i = 0,
+			.parent = &doc.nodeAlloc->alloc[0],	// Allocated Root.
+			.lastChild = { nullptr }			// Initial root child.
 		};
 		
-		p.nodeBuffer.reserve(16);
-		p.attributeBuffer.reserve(16);
+		parse(p, doc.buffer.get());
 		
-		p.parent = &p.nodeBuffer.emplace_back();
-		p.lastChild.emplace_back(nullptr);
-		
-		parse(p, buff.data);
 		status = parse_status::OK;
 	} catch (const bad_alloc&){
 		status = parse_status::MEMORY;
