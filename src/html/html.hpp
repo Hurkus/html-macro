@@ -45,7 +45,8 @@ enum class html::node_type : uint8_t {
 
 struct html::parse_result {
 	parse_status status;
-	uint32_t row;	// Last parsed row.
+	const char* s = nullptr;	// Last parsing position.
+	uint32_t row;				// Last parsed row.
 };
 
 

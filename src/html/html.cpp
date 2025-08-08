@@ -12,14 +12,13 @@ using namespace html;
 
 constexpr int PAGE_SIZE = 32;
 
-constexpr uint64_t MASK_EOF   = (uint64_t(1) << '\0');		// \0
-
-constexpr uint64_t MASK_SPACE = (uint64_t(1) << ' ');		// [ ]
-constexpr uint64_t MASK_TAB   = (uint64_t(1) << '\t');		// \t
-constexpr uint64_t MASK_CR    = (uint64_t(1) << '\r');		// \r
-constexpr uint64_t MASK_LF    = (uint64_t(1) << '\n');		// \n
-constexpr uint64_t MASK_QUOTE_1 = (uint64_t(1) << '\'');	// '
-constexpr uint64_t MASK_QUOTE_2 = (uint64_t(1) << '"');		// "
+constexpr uint64_t MASK_EOF      = (uint64_t(1) << '\0');	// \0
+constexpr uint64_t MASK_SPACE    = (uint64_t(1) << ' ');	// [ ]
+constexpr uint64_t MASK_TAB      = (uint64_t(1) << '\t');	// \t
+constexpr uint64_t MASK_CR       = (uint64_t(1) << '\r');	// \r
+constexpr uint64_t MASK_LF       = (uint64_t(1) << '\n');	// \n
+constexpr uint64_t MASK_QUOTE_1  = (uint64_t(1) << '\'');	// '
+constexpr uint64_t MASK_QUOTE_2  = (uint64_t(1) << '"');	// "
 constexpr uint64_t MASK_QUESTION = (uint64_t(1) << '?');	// ?
 constexpr uint64_t MASK_MINUS    = (uint64_t(1) << '-');	// -
 constexpr uint64_t MASK_SLASH    = (uint64_t(1) << '/');	// /
@@ -33,9 +32,8 @@ constexpr uint64_t MASK_QUOTE = MASK_QUOTE_1 | MASK_QUOTE_2;	// ' "
 // ----------------------------------- [ Structures ] --------------------------------------- //
 
 
-struct State {
-	uint32_t row;
-	
+namespace html {
+struct Parser {
 	rd_document::allocation<rd_node>* nodeAlloc;
 	rd_document::allocation<rd_attr>* attrAlloc;
 	uint32_t nodeAlloc_n = 0;
@@ -45,13 +43,16 @@ struct State {
 	
 	html::rd_node* parent;				// Current parsing parent node.
 	vector<html::rd_node*> lastChild;	// Stack of last child of `current`.
+	
+	parse_result result;
 };
+}
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-inline rd_attr& allocAttr(State& state){
+inline rd_attr& allocAttr(Parser& state){
 	// Allocate new page.
 	if (state.attrAlloc_i >= state.attrAlloc_n){
 		state.attrAlloc_i = 0;
@@ -64,7 +65,7 @@ inline rd_attr& allocAttr(State& state){
 }
 
 
-inline rd_node& addChild(State& state, node_type type){
+inline rd_node& addChild(Parser& state, node_type type){
 	// Allocate new page.
 	if (state.nodeAlloc_i >= state.nodeAlloc_n){
 		state.nodeAlloc_i = 0;
@@ -93,7 +94,7 @@ inline rd_node& addChild(State& state, node_type type){
 }
 
 
-inline rd_node& pushNew(State& state){
+inline rd_node& pushNew(Parser& state){
 	rd_node& node = addChild(state, node_type::TAG);
 	state.lastChild.emplace_back(node.child);
 	state.parent = &node;
@@ -101,7 +102,7 @@ inline rd_node& pushNew(State& state){
 }
 
 
-inline rd_node& pop(State& state){
+inline rd_node& pop(Parser& state){
 	state.parent = state.parent->parent;
 	state.lastChild.pop_back();
 	return *state.parent;
@@ -148,21 +149,21 @@ constexpr bool isTagChar(char c){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-inline const char* parse_whiteSpace(State& state, const char* s){
+inline const char* parse_whiteSpace(Parser& state, const char* s){
 	while (isWhitespace(*s)){
 		if (*s == '\n')
-			state.row++;
+			state.result.row++;
 		s++;
 	}
 	return s;
 }
 
 
-inline const char* parse_text(State& state, const char* s){
+inline const char* parse_text(Parser& state, const char* s){
 	while (true){
 		if (*s < 64 && isMasked(*s, MASK_LF | MASK_LT | MASK_EOF)){
 			if (*s == '\n')
-				state.row++;
+				state.result.row++;
 			else if (*s == '<' || *s == 0)
 				break;
 		}
@@ -172,7 +173,7 @@ inline const char* parse_text(State& state, const char* s){
 }
 
 
-static const char* parse_string(State& state, const char* s){
+inline const char* parse_string(Parser& state, const char* s){
 	assert(isQuote(*s));
 	const char quote = *s;
 	s++;
@@ -180,11 +181,13 @@ static const char* parse_string(State& state, const char* s){
 	while (true){
 		if (*s < 64 && isMasked(*s, MASK_LF | MASK_QUOTE | MASK_EOF)){
 			if (*s == '\n')
-				state.row++;
+				state.result.row++;
 			else if (*s == quote)
 				break;
-			else if (*s == 0)
+			else if (*s == 0){
+				state.result.s = s;
 				throw parse_status::UNCLOSED_STRING;
+			}
 		}
 		s++;
 	}
@@ -193,7 +196,7 @@ static const char* parse_string(State& state, const char* s){
 }
 
 
-static const char* parse_question(State& state, const char* s){
+static const char* parse_question(Parser& state, const char* s){
 	assert(*s == '?');
 	const char* beg = ++s;
 	
@@ -204,12 +207,13 @@ static const char* parse_question(State& state, const char* s){
 			else if (isMasked(*s, MASK_QUESTION | MASK_EOF))
 				break;
 			else if (*s == '\n')
-				state.row++;
+				state.result.row++;
 		}
 		s++;
 	}
 	
 	if (s[0] != '?' || s[1] != '>'){
+		state.result.s = s;
 		throw parse_status::UNCLOSED_QUESTION;
 	}
 	
@@ -220,7 +224,7 @@ static const char* parse_question(State& state, const char* s){
 }
 
 
-static const char* parse_comment(State& state, const char* s){
+static const char* parse_comment(Parser& state, const char* s){
 	assert(s[0] == '!' && s[1] == '-' && s[2] == '-');
 	const char* beg = s + 1;
 	s += 3;
@@ -230,6 +234,7 @@ static const char* parse_comment(State& state, const char* s){
 	}
 	
 	if (*s == 0){
+		state.result.s = s;
 		throw parse_status::UNCLOSED_COMMENT;
 	}
 	
@@ -240,7 +245,7 @@ static const char* parse_comment(State& state, const char* s){
 }
 
 
-static const char* parse_exclamation(State& state, const char* s){
+static const char* parse_exclamation(Parser& state, const char* s){
 	assert(s[0] == '!');
 	
 	// Parse comment
@@ -258,9 +263,11 @@ static const char* parse_exclamation(State& state, const char* s){
 			else if (isMasked(*s, MASK_QUOTE))
 				s = parse_string(state, s);
 			else if (*s == '\n')
-				state.row++;
-			else if (*s == 0)
+				state.result.row++;
+			else if (*s == 0){
+				state.result.s = s;
 				throw parse_status::UNCLOSED_TAG;
+			}
 		}
 		s++;
 	}
@@ -275,7 +282,7 @@ static const char* parse_exclamation(State& state, const char* s){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static const char* parse_attribute(State& state, const char* s, rd_attr& attr){
+static const char* parse_attribute(Parser& state, const char* s, rd_attr& attr){
 	assert(isTagChar(s[0]));
 	
 	// Parse name
@@ -302,7 +309,7 @@ static const char* parse_attribute(State& state, const char* s, rd_attr& attr){
 }
 
 
-static const char* parse_openTag(State& state, const char* s){
+static const char* parse_openTag(Parser& state, const char* s){
 	if (!isTagChar(*s)){
 		throw parse_status::INVALID_TAG_NAME;
 	}
@@ -324,6 +331,7 @@ static const char* parse_openTag(State& state, const char* s){
 			node.attribute = firstAttr;
 			return s + 2; 
 		} else {
+			state.result.s = s;
 			throw parse_status::MISSING_TAG_GT;
 		}
 	}
@@ -339,6 +347,7 @@ static const char* parse_openTag(State& state, const char* s){
 	
 	// Check for attributes
 	else if (!isWhitespace(s[0])){
+		state.result.s = s;
 		throw (s[0] == 0) ? parse_status::MISSING_TAG_GT : parse_status::INVALID_TAG_NAME;
 	}
 	
@@ -353,6 +362,7 @@ static const char* parse_openTag(State& state, const char* s){
 		}
 		
 		else if (!isTagChar(s[0])){
+			state.result.s = s;
 			throw parse_status::INVALID_TAG_CHAR;
 		}
 		
@@ -370,11 +380,12 @@ static const char* parse_openTag(State& state, const char* s){
 		continue;
 	}
 	
+	state.result.s = s;
 	throw parse_status::UNCLOSED_TAG;
 }
 
 
-static const char* parse_closeTag(State& state, const char* s){
+static const char* parse_closeTag(Parser& state, const char* s){
 	assert(s[0] == '/');
 	s++;
 	
@@ -382,6 +393,7 @@ static const char* parse_closeTag(State& state, const char* s){
 	const char* name = state.parent->value_p;
 	
 	if (len <= 0){
+		state.result.s = s;
 		throw parse_status::INVALID_TAG_CLOSE;
 	} else {
 		assert(name != nullptr);
@@ -389,6 +401,7 @@ static const char* parse_closeTag(State& state, const char* s){
 	
 	while (len > 0){
 		if (*s != *name){
+			state.result.s = s;
 			throw parse_status::INVALID_TAG_CLOSE;
 		}
 		len--;
@@ -399,6 +412,7 @@ static const char* parse_closeTag(State& state, const char* s){
 	s = parse_whiteSpace(state, s);
 	
 	if (*s != '>'){
+		state.result.s = s;
 		throw parse_status::INVALID_TAG_CLOSE;
 	}
 	
@@ -410,7 +424,7 @@ static const char* parse_closeTag(State& state, const char* s){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void parse(State& state, const char* s){
+void parse_all(Parser& state, const char* s){
 	while (true){
 		const char* beg = s;
 		s = parse_whiteSpace(state, s);
@@ -503,13 +517,11 @@ static bool readFile(const char* path, rd_document& doc){
 
 parse_result html::parse(const char* path){
 	rd_document doc;
-	State state;
-	parse_status status;
+	Parser parser;
 	
 	try {
 		if (!readFile(path, doc)){
-			status = parse_status::IO;
-			goto end;
+			throw parse_status::IO;
 		}
 		
 		doc.nodeAlloc = make_unique<rd_document::allocation<rd_node>>();
@@ -517,34 +529,33 @@ parse_result html::parse(const char* path){
 		doc.nodeAlloc->alloc = make_unique<rd_node[]>(PAGE_SIZE);
 		doc.attrAlloc->alloc = make_unique<rd_attr[]>(PAGE_SIZE);
 		
-		State p = {
-			.row = 1,
+		parser = {
 			.nodeAlloc = doc.nodeAlloc.get(),
 			.attrAlloc = doc.attrAlloc.get(),
 			.nodeAlloc_n = PAGE_SIZE,
-			.nodeAlloc_i = 1,	// Allocated root.
+			.nodeAlloc_i = 1,					// Allocated root.
 			.attrAlloc_n = PAGE_SIZE,
 			.attrAlloc_i = 0,
 			.parent = &doc.nodeAlloc->alloc[0],	// Allocated Root.
-			.lastChild = { nullptr }			// Initial root child.
+			.lastChild = { nullptr },			// Initial root child.
+			.result = {
+				.s = doc.buffer.get(),
+				.row = 1
+			}
 		};
 		
-		parse(p, doc.buffer.get());
+		parse_all(parser, doc.buffer.get());
+		parser.result.status = parse_status::OK;
 		
-		status = parse_status::OK;
 	} catch (const bad_alloc&){
-		status = parse_status::MEMORY;
+		parser.result.status = parse_status::MEMORY;
 	} catch (const parse_status& err){
-		status = err;
+		parser.result.status = err;
 	} catch (...){
-		status = parse_status::ERROR;
+		parser.result.status = parse_status::ERROR;
 	}
 	
-	end:
-	return parse_result {
-		.status = status,
-		.row = state.row,
-	};
+	return parser.result;
 }
 
 
