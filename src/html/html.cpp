@@ -10,7 +10,7 @@ using namespace html;
 // ----------------------------------- [ Constants ] ---------------------------------------- //
 
 
-constexpr int PAGE_SIZE = 32;
+constexpr int PAGE_SIZE = 64;
 
 constexpr uint64_t MASK_EOF      = (uint64_t(1) << '\0');	// \0
 constexpr uint64_t MASK_SPACE    = (uint64_t(1) << ' ');	// [ ]
