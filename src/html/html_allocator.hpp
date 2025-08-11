@@ -8,10 +8,9 @@
 namespace html {
 	class char_allocator;
 	
-	template<typename T>
+	template<typename T> requires std::is_trivially_destructible<T>::value
 	class block_allocator;
 }
-
 
 
 /**
@@ -54,3 +53,47 @@ public:
 // ------------------------------------------------------------------------------------------ //
 };
 
+
+
+
+/**
+ * @brief Allocator for larger structs where allocations are fast and deallocations are slow.
+ */
+template<typename T> requires std::is_trivially_destructible<T>::value
+class html::block_allocator {
+// ----------------------------------- [ Constants ] ---------------------------------------- //
+public:
+	static constexpr size_t MIN_PAGE_SIZE = 32;
+	static constexpr size_t MAX_PAGE_SIZE = 2048;
+	static constexpr size_t PAGE_SIZE_INC = 32;
+	
+// ----------------------------------- [ Structures ] --------------------------------------- //
+public:
+	union block {
+		struct {
+			int16_t next;
+			uint16_t size;
+		};
+		T element;
+	};
+	
+	struct page {
+		int count;
+		int free_idx;
+		int size;
+		block memory[];
+	};
+	
+// ------------------------------------[ Properties ] --------------------------------------- //
+public:
+	std::vector<std::unique_ptr<page>> pages;
+	int pageHint = 0;
+	int pageSize = MIN_PAGE_SIZE;
+	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+public:
+	T* alloc() noexcept;
+	bool dealloc(T* element) noexcept;
+	
+// ------------------------------------------------------------------------------------------ //	
+};

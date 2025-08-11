@@ -1,4 +1,5 @@
 #include "html_allocator.hpp"
+#include "wr_html.hpp"
 #include <cstring>
 
 using namespace std;
@@ -144,6 +145,143 @@ bool char_allocator::dealloc(char* str) noexcept {
 	
 	return true;
 }
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+template<typename T>
+static bool addPage(block_allocator<T>& self) noexcept {
+	using SELF = block_allocator<T>;
+	using page = block_allocator<T>::page;
+	
+	size_t size = self.pageSize + SELF::PAGE_SIZE_INC;
+	size = (size > SELF::MAX_PAGE_SIZE) ? SELF::MAX_PAGE_SIZE : size;
+	size = (size < SELF::MIN_PAGE_SIZE) ? SELF::MIN_PAGE_SIZE : size;
+	
+	// Try alloc page at different sizes
+	page* p;
+	while (true){
+		p = static_cast<page*>(::operator new(sizeof(page) + sizeof(T)*size));
+		
+		if (p != nullptr)
+			break;
+		else if (size == SELF::MIN_PAGE_SIZE)
+			return false;
+		else
+			size = (size/2 < SELF::MIN_PAGE_SIZE) ? SELF::MIN_PAGE_SIZE : size/2;
+		
+	}
+	
+	try {
+		self.pages.emplace_back(p);
+		self.pageSize = size;
+	} catch (...){
+		delete p;
+		return false;
+	}
+	
+	p->count = 0;
+	p->size = size;
+	p->free_idx = 0;
+	p->memory[0].next = -1;
+	p->memory[0].size = size;
+	return true;
+}
+
+
+template<typename T> requires std::is_trivially_destructible<T>::value
+T* block_allocator<T>::alloc() noexcept {
+	// Find page with free block
+	assert(pageHint >= 0);
+	while (pageHint < int(pages.size())){
+		if (pages[pageHint]->free_idx >= 0)
+			goto emplace;
+		pageHint++;
+	}
+	
+	// New page
+	if (!addPage<T>(*this)){
+		return nullptr;
+	} else {
+		pageHint = int(pages.size()) - 1;
+	}
+	
+	emplace:
+	assert(pageHint < int(pages.size()));
+	assert(pages[pageHint]->free_idx >= 0);
+	page& p = *pages[pageHint];
+	block& b = p.memory[p.free_idx];
+	
+	// Shrink block
+	assert(b.size > 0);
+	if (b.size > 1){
+		p.free_idx++;
+		block& b2 = p.memory[p.free_idx];
+		b2.next = b.next;
+		b2.size = b.size - 1;
+	} else {
+		p.free_idx = b.next;
+	}
+	
+	// Construct element
+	p.count++;
+	T* element = new (&b.element) T();
+	return element;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+template<typename T> requires std::is_trivially_destructible<T>::value
+bool block_allocator<T>::dealloc(T* element) noexcept {
+	assert(element != nullptr);
+	block* b = (block*)element;
+	
+	int pi;
+	int bi;
+	for (pi = 0 ; pi < int(pages.size()) ; pi++){
+		const block* beg = pages[pi]->memory;
+		const block* end = beg + pages[pi]->size;
+		
+		if (beg <= b && b < end){
+			bi = b - beg;
+			goto found;
+		}
+		
+	}
+	
+	return false;
+	found:
+	page& p = *pages[pi];
+	
+	// Destroy element
+	element->~T();
+	b->size = 1;
+	b->next = p.free_idx;
+	p.free_idx = bi;
+	p.count--;
+	
+	// Destroy page
+	assert(p.count >= 0);
+	if (p.count <= 0){
+		pages[pi] = move(pages.back());
+		pages.pop_back();
+	}
+	
+	pageHint = (pi < pageHint) ? pi : pageHint;
+	return true;
+}
+
+
+// ------------------------------------------------------------------------------------------ //
+
+
+template wr_node* block_allocator<wr_node>::alloc();
+template wr_attr* block_allocator<wr_attr>::alloc();
+template bool block_allocator<wr_node>::dealloc(wr_node*);
+template bool block_allocator<wr_attr>::dealloc(wr_attr*);
 
 
 // ------------------------------------------------------------------------------------------ //

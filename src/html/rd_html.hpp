@@ -6,6 +6,7 @@
 
 namespace html {
 	enum class node_type : uint8_t;
+	
 	struct rd_node;
 	struct rd_attr;
 	class rd_document;
@@ -33,14 +34,16 @@ enum class html::parse_status {
 	ERROR					// Unknown error.
 };
 
+#ifndef H_HTML_NODE_TYPE
+#define H_HTML_NODE_TYPE
 enum class html::node_type : uint8_t {
-	NONE,		// null
 	TAG,		// <tag ... >
 	PI,			// <? ... ?>
 	DIRECTIVE,	// <! ... >
 	COMMENT,	// <!-- ... -->
 	TEXT,		// <...>text</...>
 };
+#endif
 
 
 struct html::parse_result {
@@ -52,10 +55,11 @@ struct html::parse_result {
 
 
 
+/* Readonly node for marking HTML structure in a source text. */
 struct html::rd_node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	node_type type = node_type::NONE;
+	node_type type = node_type::TAG;
 	uint32_t value_len = 0;				// Length of `value_p`.
 	const char* value_p = nullptr;		// Unterminated name/value string.
 	
@@ -67,18 +71,16 @@ public:
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	std::string_view name() const {
-		return std::string_view(value_p, value_len);
-	}
-	
 	std::string_view value() const {
 		return std::string_view(value_p, value_len);
 	}
 	
+	std::string_view name() const {
+		return value();
+	}
+	
 // ------------------------------------------------------------------------------------------ //
 };
-
-
 
 
 struct html::rd_attr {
@@ -105,8 +107,6 @@ public:
 };
 
 
-
-
 class html::rd_document {
 // ----------------------------------- [ Structures ] --------------------------------------- //
 public:
@@ -123,6 +123,15 @@ public:
 	
 	std::unique_ptr<allocation<rd_node>> nodeAlloc; // Allocations for node structs.
 	std::unique_ptr<allocation<rd_attr>> attrAlloc;
+	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+public:
+	const rd_node* root() const {
+		if (nodeAlloc != nullptr)
+			return &nodeAlloc->alloc[0];
+		else
+			return nullptr;
+	}
 	
 // ------------------------------------------------------------------------------------------ //
 };
