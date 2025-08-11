@@ -4,12 +4,17 @@
 #include <memory>
 #include <type_traits>
 
+#include "html-allocator.hpp"
+
 
 namespace html {
 	class char_allocator;
 	
 	template<typename T> requires std::is_trivially_destructible<T>::value
 	class block_allocator;
+	
+	template<typename T> requires std::is_trivially_destructible<T>::value
+	class const_allocator;
 }
 
 
@@ -94,6 +99,53 @@ public:
 public:
 	T* alloc() noexcept;
 	bool dealloc(T* element) noexcept;
+	
+// ------------------------------------------------------------------------------------------ //	
+};
+
+
+
+
+/**
+ * @brief Allocator that only allows allocations.
+ */
+template<typename T> requires std::is_trivially_destructible<T>::value
+class html::const_allocator {
+// ----------------------------------- [ Constants ] ---------------------------------------- //
+public:
+	static constexpr size_t MIN_PAGE_SIZE = 32;
+	static constexpr size_t MAX_PAGE_SIZE = 2048;
+	static constexpr size_t PAGE_SIZE_INC = 32;
+	
+// ----------------------------------- [ Structures ] --------------------------------------- //
+public:
+	struct page {
+		page* next;	// Linked list.
+		int size;
+		int count;
+		T memory[];
+	};
+	
+// ------------------------------------[ Properties ] --------------------------------------- //
+public:
+	page* rootPage;
+	
+// ---------------------------------- [ Constructors ] -------------------------------------- //
+public:
+	~const_allocator(){
+		page* p = rootPage;
+		
+		while (p != nullptr){
+			page* _p = p->next;
+			delete p;
+			p = _p;
+		}
+		
+	}
+	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+public:
+	T* alloc() noexcept;
 	
 // ------------------------------------------------------------------------------------------ //	
 };

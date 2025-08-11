@@ -1,5 +1,6 @@
-#include "html_allocator.hpp"
-#include "wr_html.hpp"
+#include "html-allocator.hpp"
+#include "html-wr.hpp"
+#include "html-rd.hpp"
 #include <cstring>
 
 using namespace std;
@@ -25,18 +26,14 @@ static bool newPage(char_allocator& self, size_t minSize){
 	page* p;
 	while (true){
 		p = (page*) ::operator new (sizeof(page) + size, align_val_t(alignof(page)), nothrow_t());
-		if (p != nullptr){
+		
+		if (p != nullptr)
 			break;
-		}
+		else if (size > minSize)
+			size = (size/2 < minSize) ? minSize : size/2;
+		else
+			return false;
 		
-		// Reduce size
-		if (size > minSize){
-			size /= 2;
-			size = (size < minSize ? minSize : size);
-			continue;
-		}
-		
-		return false;
 	}
 
 	try {
@@ -166,10 +163,10 @@ static bool addPage(block_allocator<T>& self) noexcept {
 		
 		if (p != nullptr)
 			break;
-		else if (size == SELF::MIN_PAGE_SIZE)
-			return false;
-		else
+		else if (size > SELF::MIN_PAGE_SIZE)
 			size = (size/2 < SELF::MIN_PAGE_SIZE) ? SELF::MIN_PAGE_SIZE : size/2;
+		else
+			return false;
 		
 	}
 	
@@ -275,6 +272,44 @@ bool block_allocator<T>::dealloc(T* element) noexcept {
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+template<typename T> requires std::is_trivially_destructible<T>::value
+T* const_allocator<T>::alloc() noexcept {
+	// New page
+	if (rootPage == nullptr || rootPage->count >= rootPage->size){
+		size_t size = (rootPage != nullptr) ? rootPage->size : 0;
+		size += PAGE_SIZE_INC;
+		size = (size > MAX_PAGE_SIZE) ? MAX_PAGE_SIZE : size;
+		size = (size < MIN_PAGE_SIZE) ? MIN_PAGE_SIZE : size;
+		
+		// Try alloc page at different sizes
+		page* p;
+		while (true){
+			p = static_cast<page*>(::operator new(sizeof(page) + sizeof(T)*size));
+			
+			if (p != nullptr)
+				break;
+			else if (size > MIN_PAGE_SIZE)
+				size = (size/2 < MIN_PAGE_SIZE) ? MIN_PAGE_SIZE : size/2;
+			else
+				return nullptr;
+			
+		}
+		
+		// Link
+		p->size = size;
+		p->count = 0;
+		p->next = rootPage;
+		rootPage = p;
+	}
+	
+	T* mem = &rootPage->memory[rootPage->count++];
+	return new (mem) T();
+}
+
+
 // ------------------------------------------------------------------------------------------ //
 
 
@@ -282,6 +317,9 @@ template wr_node* block_allocator<wr_node>::alloc();
 template wr_attr* block_allocator<wr_attr>::alloc();
 template bool block_allocator<wr_node>::dealloc(wr_node*);
 template bool block_allocator<wr_attr>::dealloc(wr_attr*);
+
+template rd_node* const_allocator<rd_node>::alloc();
+template rd_attr* const_allocator<rd_attr>::alloc();
 
 
 // ------------------------------------------------------------------------------------------ //

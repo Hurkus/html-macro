@@ -1,20 +1,39 @@
 #pragma once
 #include <cstdint>
 #include <string_view>
-#include <memory>
-#include <vector>
 
-#include "html_allocator.hpp"
+#include "html-allocator.hpp"
 
 
 namespace html {
 	enum class node_type : uint8_t;
 	
-	struct wr_node;
-	struct wr_attr;
-	class wr_document;
+	struct rd_node;
+	struct rd_attr;
+	class rd_document;
+	
+	enum class parse_status;
+	struct parse_result;
+	
+	parse_result parse(const char* path);
 }
 
+
+enum class html::parse_status {
+	OK,
+	UNCLOSED_TAG,
+	UNCLOSED_STRING,
+	UNCLOSED_QUESTION,		// ?>
+	UNCLOSED_COMMENT,		// -->
+	MISSING_TAG_GT,			// />
+	INVALID_TAG_NAME,		// <...
+	INVALID_TAG_CHAR,		// <...>
+	INVALID_TAG_CLOSE,
+	MISSING_ATTR_VALUE,		// attr=
+	MEMORY,					// Out of memory.
+	IO,						// Failed to read file.
+	ERROR					// Unknown error.
+};
 
 #ifndef H_HTML_NODE_TYPE
 #define H_HTML_NODE_TYPE
@@ -28,19 +47,28 @@ enum class html::node_type : uint8_t {
 #endif
 
 
-/* Writeable node for building an HTML structure. */
-struct html::wr_node {
+struct html::parse_result {
+	parse_status status;
+	const char* s = nullptr;	// Last parsing position.
+	uint32_t row;				// Last parsed row.
+};
+
+
+
+
+/* Readonly node for marking HTML structure in a source text. */
+struct html::rd_node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
 	node_type type = node_type::TAG;
 	uint32_t value_len = 0;				// Length of `value_p`.
 	const char* value_p = nullptr;		// Unterminated name/value string.
 	
-	html::wr_node* parent = nullptr;
-	html::wr_node* child = nullptr;		// Last child in linked list.
-	html::wr_node* prev = nullptr;		// Linked list.
+	html::rd_node* parent = nullptr;
+	html::rd_node* child = nullptr;		// First child in linked list.
+	html::rd_node* next = nullptr;		// Linked list.
 	
-	html::wr_attr* attribute = nullptr;	// Last attribute in linked list.
+	html::rd_attr* attribute = nullptr;	// First attribute in linked list.
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
@@ -52,20 +80,11 @@ public:
 		return value();
 	}
 	
-	void value(std::string_view value);	// Set name.
-	void name(std::string_view value);	// Set value.
-	
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-public:
-	wr_node* appendChild(std::string_view value = "", node_type type = node_type::TAG);
-	wr_attr* appendAttr(std::string_view name = "", std::string_view value = "");
-	
 // ------------------------------------------------------------------------------------------ //
 };
 
 
-
-struct html::wr_attr {
+struct html::rd_attr {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
 	const char* name_p = nullptr;
@@ -73,7 +92,7 @@ public:
 	uint32_t name_len = 0;
 	uint32_t value_len = 0;
 	
-	html::wr_attr* prev = nullptr;	// Linked list.
+	html::rd_attr* next = nullptr;	// Linked list.
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
@@ -89,34 +108,17 @@ public:
 };
 
 
-
-
-class html::wr_document {
-	template<typename T>
-	struct allocator;
+class html::rd_document {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	// allocator<wr_node> nodeAlloc;
-	// allocator<wr_attr> attrAlloc;
-	// allocator<char> strAlloc;
-	wr_node* _root = nullptr;
+	std::unique_ptr<char[]> buffer;		// Terminated input text.
+	std::size_t buffer_len;				// Length of `buffer`.
 	
-// ---------------------------------- [ Constructors ] -------------------------------------- //
-public:
-	~wr_document();
-	
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-public:
-	wr_node* allocNode();
-	wr_attr* allocAttr();
-	// char* allocStr(size_t length);
+	html::const_allocator<rd_node> nodeAlloc;	// Node memory.
+	html::const_allocator<rd_attr> attrAlloc;	// Attribute memory.
 	
 public:
-	wr_node* root(){
-		// if (_root == nullptr)
-			// _root = allocNode();
-		return _root;
-	}
+	rd_node root;
 	
 // ------------------------------------------------------------------------------------------ //
 };

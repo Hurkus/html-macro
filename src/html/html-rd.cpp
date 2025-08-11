@@ -1,4 +1,4 @@
-#include "rd_html.hpp"
+#include "html-rd.hpp"
 #include <cassert>
 #include <vector>
 #include <fstream>
@@ -34,12 +34,8 @@ constexpr uint64_t MASK_QUOTE = MASK_QUOTE_1 | MASK_QUOTE_2;	// ' "
 
 namespace html {
 struct Parser {
-	rd_document::allocation<rd_node>* nodeAlloc;
-	rd_document::allocation<rd_attr>* attrAlloc;
-	uint32_t nodeAlloc_n = 0;
-	uint32_t nodeAlloc_i = 0;
-	uint32_t attrAlloc_n = 0;
-	uint32_t attrAlloc_i = 0;
+	const_allocator<rd_node>* nodeAlloc;
+	const_allocator<rd_attr>* attrAlloc;
 	
 	html::rd_node* parent;				// Current parsing parent node.
 	vector<html::rd_node*> lastChild;	// Stack of last child of `current`.
@@ -53,44 +49,35 @@ struct Parser {
 
 
 inline rd_attr& allocAttr(Parser& state){
-	// Allocate new page.
-	if (state.attrAlloc_i >= state.attrAlloc_n){
-		state.attrAlloc_i = 0;
-		state.attrAlloc->next = make_unique<rd_document::allocation<rd_attr>>();
-		state.attrAlloc = state.attrAlloc->next.get();
-		state.attrAlloc->alloc = make_unique<rd_attr[]>(state.attrAlloc_n);
-	}
-	
-	return state.attrAlloc->alloc[state.attrAlloc_i++];
+	rd_attr* attr = state.attrAlloc->alloc();
+	if (attr != nullptr)
+		return *attr;
+	throw parse_status::MEMORY;
 }
 
 
 inline rd_node& addChild(Parser& state, node_type type){
-	// Allocate new page.
-	if (state.nodeAlloc_i >= state.nodeAlloc_n){
-		state.nodeAlloc_i = 0;
-		state.nodeAlloc->next = make_unique<rd_document::allocation<rd_node>>();
-		state.nodeAlloc = state.nodeAlloc->next.get();
-		state.nodeAlloc->alloc = make_unique<rd_node[]>(state.nodeAlloc_n);
+	rd_node* node = state.nodeAlloc->alloc();
+	if (node == nullptr){
+		throw parse_status::MEMORY;
 	}
 	
-	rd_node& node = state.nodeAlloc->alloc[state.nodeAlloc_i++];
-	node.type = type;
-	node.parent = state.parent;
+	node->type = type;
+	node->parent = state.parent;
 	
 	// Append sibling
 	{
 		rd_node*& prev_sibling = state.lastChild.back();
 		
 		if (prev_sibling != nullptr)
-			prev_sibling->next = &node;
+			prev_sibling->next = node;
 		else
-			node.parent->child = &node;
+			node->parent->child = node;
 			
-		prev_sibling = &node;
+		prev_sibling = node;
 	}
 	
-	return node;
+	return *node;
 }
 
 
@@ -524,19 +511,10 @@ parse_result html::parse(const char* path){
 			throw parse_status::IO;
 		}
 		
-		doc.nodeAlloc = make_unique<rd_document::allocation<rd_node>>();
-		doc.attrAlloc = make_unique<rd_document::allocation<rd_attr>>();
-		doc.nodeAlloc->alloc = make_unique<rd_node[]>(PAGE_SIZE);
-		doc.attrAlloc->alloc = make_unique<rd_attr[]>(PAGE_SIZE);
-		
 		parser = {
-			.nodeAlloc = doc.nodeAlloc.get(),
-			.attrAlloc = doc.attrAlloc.get(),
-			.nodeAlloc_n = PAGE_SIZE,
-			.nodeAlloc_i = 1,					// Allocated root.
-			.attrAlloc_n = PAGE_SIZE,
-			.attrAlloc_i = 0,
-			.parent = &doc.nodeAlloc->alloc[0],	// Allocated Root.
+			.nodeAlloc = &doc.nodeAlloc,
+			.attrAlloc = &doc.attrAlloc,
+			.parent = &doc.root,
 			.lastChild = { nullptr },			// Initial root child.
 			.result = {
 				.s = doc.buffer.get(),

@@ -9,6 +9,8 @@
 #include "CLI.hpp"
 #include "DEBUG.hpp"
 
+#include "html.hpp"
+
 using namespace std;
 
 
@@ -19,12 +21,12 @@ using namespace std;
 #define VERSION 	"Alpha v0.1.0"
 
 
-static void version(){
+void version(){
 	INFO(ANSI_BOLD PROGRAM_NAME ": " ANSI_RESET ANSI_YELLOW VERSION ANSI_RESET ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
 }
 
 
-static void help(){
+void help(){
 	version();
 	INFO(ANSI_BOLD "Usage:" ANSI_RESET " %s [options] <files>", CLI::name());
 	INFO(ANSI_BOLD "Options:" ANSI_RESET);
