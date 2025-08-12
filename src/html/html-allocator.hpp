@@ -4,8 +4,6 @@
 #include <memory>
 #include <type_traits>
 
-#include "html-allocator.hpp"
-
 
 namespace html {
 	class char_allocator;
@@ -44,8 +42,8 @@ public:
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	char* alloc(uint16_t len) noexcept;
-	std::string_view alloc(std::string_view str) noexcept;
+	char* alloc(size_t len) noexcept;
+	char* alloc(std::string_view str) noexcept;
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:

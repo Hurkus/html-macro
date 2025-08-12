@@ -43,6 +43,7 @@ enum class html::node_type : uint8_t {
 	DIRECTIVE,	// <! ... >
 	COMMENT,	// <!-- ... -->
 	TEXT,		// <...>text</...>
+	ROOT		// Internal for marking root.
 };
 #endif
 
@@ -80,6 +81,15 @@ public:
 		return value();
 	}
 	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+public:
+	rd_document& root(){
+		if (parent != nullptr)
+			return parent->root();
+		assert(type == node_type::ROOT);
+		return *(rd_document*)this;
+	}
+	
 // ------------------------------------------------------------------------------------------ //
 };
 
@@ -108,7 +118,7 @@ public:
 };
 
 
-class html::rd_document {
+class html::rd_document : public rd_node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
 	std::unique_ptr<char[]> buffer;		// Terminated input text.
@@ -117,8 +127,11 @@ public:
 	html::const_allocator<rd_node> nodeAlloc;	// Node memory.
 	html::const_allocator<rd_attr> attrAlloc;	// Attribute memory.
 	
+// ---------------------------------- [ Constructors ] -------------------------------------- //
 public:
-	rd_node root;
+	rd_document(){
+		rd_node::type = node_type::ROOT;
+	}
 	
 // ------------------------------------------------------------------------------------------ //
 };

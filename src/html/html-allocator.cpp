@@ -52,13 +52,13 @@ static bool newPage(char_allocator& self, size_t minSize){
 }
 
 
-char* char_allocator::alloc(uint16_t len) noexcept {
+char* char_allocator::alloc(size_t len) noexcept {
 	if (len <= 0 || len >= MAX_LEN){
 		assert(len <= MAX_LEN);
 		return nullptr;
 	}
 	
-	const size_t reqLen = size_t(len) + sizeof(uint16_t);
+	const size_t reqLen = len + sizeof(uint16_t);
 	
 	// Create new page
 	if (pages.size() <= 0 || pages.back()->space < reqLen){
@@ -80,21 +80,18 @@ char* char_allocator::alloc(uint16_t len) noexcept {
 		i--;
 	}
 	
+	assert(len < UINT16_MAX);
 	s[0] = uint8_t((len >> 0) & 0xFF);
 	s[1] = uint8_t((len >> 8) & 0xFF);
 	return s + 2;
 }
 
 
-string_view char_allocator::alloc(string_view str) noexcept {
+char* char_allocator::alloc(string_view str) noexcept {
 	char* s = alloc(str.length());
-	
-	if (s != nullptr){
+	if (s != nullptr)
 		memcpy(s, str.begin(), str.length());
-		return string_view(s, str.length());
-	}
-	
-	return {};
+	return s;
 }
 
 
@@ -102,6 +99,8 @@ string_view char_allocator::alloc(string_view str) noexcept {
 
 
 bool char_allocator::dealloc(char* str) noexcept {
+	assert(str != nullptr);
+	
 	// Find page
 	size_t i;
 	for (i = 0 ; i < pages.size() ; i++){

@@ -514,7 +514,7 @@ parse_result html::parse(const char* path){
 		parser = {
 			.nodeAlloc = &doc.nodeAlloc,
 			.attrAlloc = &doc.attrAlloc,
-			.parent = &doc.root,
+			.parent = &doc,
 			.lastChild = { nullptr },			// Initial root child.
 			.result = {
 				.s = doc.buffer.get(),
