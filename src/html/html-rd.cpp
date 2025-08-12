@@ -99,6 +99,29 @@ inline rd_node& pop(Parser& state){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+long rd_document::lineof(const char* const p) noexcept {
+	const char* b = buffer;
+	
+	if (b == nullptr || p == nullptr || p < b){
+		return -1;
+	}
+	
+	long row = 1;
+	while (p > b){
+		if (*b == '\n')
+			row++;
+		else if (*b == 0)
+			return -1;
+		b++;
+	}
+	
+	return row;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 constexpr bool isMasked(auto i, uint64_t mask){
 	return ((uint64_t(1) << i) & mask) != 0;
 }
@@ -290,7 +313,7 @@ static const char* parse_attribute(Parser& state, const char* s, rd_attr& attr){
 	// Parse value
 	attr.value_p = s + 1;
 	s = parse_string(state, s);
-	attr.name_len = uint32_t(s - attr.value_p - 1);
+	attr.value_len = uint32_t(s - attr.value_p - 1);
 	
 	return s;
 }
@@ -461,69 +484,29 @@ void parse_all(Parser& state, const char* s){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool readFile(const char* path, rd_document& doc){
-	ifstream in = ifstream(path);
-	if (!in){
-		return false;
-	}
+parse_result rd_document::parseBuff(const char* buff){
+	clear();
 	
-	if (!in.seekg(0, ios_base::end)){
-		return false;
-	}
-	
-	const streampos pos = in.tellg();
-	if (pos < 0 || !in.seekg(0, ios_base::beg)){
-		return false;
-	}
-	
-	const size_t size = size_t(pos);
-	size_t total = 0;
-	doc.buffer = make_unique<char[]>(size + 1);
-	
-	while (total < size && in.read(doc.buffer.get(), size - total)){
-		
-		const streamsize n = in.gcount();
-		if (n <= 0){
-			break;
-		}
-		
-		total += size_t(n);
-	}
-	
-	if (total <= size){
-		doc.buffer_len = total;
-	}
-	
-	doc.buffer[total] = 0;
-	return true;
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-parse_result html::parse(const char* path){
-	rd_document doc;
 	Parser parser;
-	
 	try {
-		if (!readFile(path, doc)){
-			throw parse_status::IO;
-		}
+		nodeAlloc.clear();
+		attrAlloc.clear();
 		
 		parser = {
-			.nodeAlloc = &doc.nodeAlloc,
-			.attrAlloc = &doc.attrAlloc,
-			.parent = &doc,
+			.nodeAlloc = &nodeAlloc,
+			.attrAlloc = &attrAlloc,
+			.parent = this,
 			.lastChild = { nullptr },			// Initial root child.
 			.result = {
-				.s = doc.buffer.get(),
+				.s = buff,
 				.row = 1
 			}
 		};
 		
-		parse_all(parser, doc.buffer.get());
+		parse_all(parser, buff);
 		parser.result.status = parse_status::OK;
+		this->buffer = buff;
+		this->buffer_owned = false;
 		
 	} catch (const bad_alloc&){
 		parser.result.status = parse_status::MEMORY;
@@ -534,6 +517,55 @@ parse_result html::parse(const char* path){
 	}
 	
 	return parser.result;
+}
+
+
+static char* readFile(const char* path){
+	ifstream in = ifstream(path);
+	if (!in){
+		return nullptr;
+	}
+	
+	if (!in.seekg(0, ios_base::end)){
+		return nullptr;
+	}
+	
+	const streampos pos = in.tellg();
+	if (pos < 0 || !in.seekg(0, ios_base::beg)){
+		return nullptr;
+	}
+	
+	const size_t size = size_t(pos);
+	size_t total = 0;
+	char* buff = (char*)::operator new (size + 1);
+	
+	while (total < size && in.read(buff, size - total)){
+		
+		const streamsize n = in.gcount();
+		if (n <= 0){
+			break;
+		}
+		
+		total += size_t(n);
+	}
+	
+	buff[total] = 0;
+	return buff;
+}
+
+
+parse_result rd_document::parse(const char* path){
+	char* buff = readFile(path);
+	parse_result res = {}; 
+	
+	if (buff == nullptr){
+		res.status = parse_status::IO;
+		return res;
+	}
+	
+	res = parseBuff(buff);
+	this->buffer_owned = true;
+	return res;
 }
 
 

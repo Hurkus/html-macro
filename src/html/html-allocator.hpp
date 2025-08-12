@@ -40,6 +40,12 @@ public:
 	std::vector<std::unique_ptr<page>> pages;
 	size_t pageSize = PAGE_MIN_SIZE;			// Previous page size.
 	
+// ---------------------------------- [ Constructors ] -------------------------------------- //
+public:
+	char_allocator() = default;
+	char_allocator(const char_allocator&) = delete;
+	char_allocator(char_allocator&&) = default;
+	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	char* alloc(size_t len) noexcept;
@@ -93,6 +99,12 @@ public:
 	int pageHint = 0;
 	int pageSize = MIN_PAGE_SIZE;
 	
+// ---------------------------------- [ Constructors ] -------------------------------------- //
+public:
+	block_allocator() = default;
+	block_allocator(const block_allocator&) = delete;
+	block_allocator(block_allocator&&) = default;
+	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	T* alloc() noexcept;
@@ -126,11 +138,23 @@ public:
 	
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	page* rootPage;
+	page* rootPage = nullptr;
 	
 // ---------------------------------- [ Constructors ] -------------------------------------- //
 public:
+	const_allocator() = default;
+	const_allocator(const const_allocator&) = delete;
+	const_allocator(const_allocator&& o) = delete;
+	
 	~const_allocator(){
+		clear();
+	}
+	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+public:
+	T* alloc() noexcept;
+	
+	void clear(){
 		page* p = rootPage;
 		
 		while (p != nullptr){
@@ -139,11 +163,8 @@ public:
 			p = _p;
 		}
 		
+		rootPage = nullptr;
 	}
-	
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-public:
-	T* alloc() noexcept;
 	
 // ------------------------------------------------------------------------------------------ //	
 };

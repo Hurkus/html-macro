@@ -14,8 +14,6 @@ namespace html {
 	
 	enum class parse_status;
 	struct parse_result;
-	
-	parse_result parse(const char* path);
 }
 
 
@@ -51,7 +49,7 @@ enum class html::node_type : uint8_t {
 struct html::parse_result {
 	parse_status status;
 	const char* s = nullptr;	// Last parsing position.
-	uint32_t row;				// Last parsed row.
+	uint64_t row;				// Last parsed row.
 };
 
 
@@ -121,8 +119,8 @@ public:
 class html::rd_document : public rd_node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	std::unique_ptr<char[]> buffer;		// Terminated input text.
-	std::size_t buffer_len;				// Length of `buffer`.
+	const char* buffer = nullptr;	// Terminated input text.
+	bool buffer_owned = false;		// Is the buffer owned by `this` object.
 	
 	html::const_allocator<rd_node> nodeAlloc;	// Node memory.
 	html::const_allocator<rd_attr> attrAlloc;	// Attribute memory.
@@ -132,6 +130,47 @@ public:
 	rd_document(){
 		rd_node::type = node_type::ROOT;
 	}
+	
+	~rd_document(){
+		if (buffer_owned)
+			delete buffer;
+	}
+	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+public:
+	/**
+	 * @brief Open file from `path` and parse HTML.
+	 * @param path Path to file.
+	 * @return `parse_result` containing parsing status.
+	 */
+	parse_result parse(const char* path);
+	
+	/**
+	 * @brief Parse HTML from string.
+	 * @param buff String buffer, whose lifetime must exceede that of the document.
+	 * @return `parse_result` containing parsing status.
+	 */
+	parse_result parseBuff(const char* buff);
+	
+public:
+	void clear(){
+		if (buffer_owned)
+			delete buffer;
+		buffer = nullptr;
+		nodeAlloc.clear();
+		attrAlloc.clear();
+	}
+	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+public:
+	/**
+	 * @brief Find line number of `p` relative to beggining of the source `buffer`.
+	 *        This function is very slow (iterates over `buffer`).
+	 *        Recommended for error reporting only.
+	 * @param p Pointer to first character of string for which to find the line number.
+	 * @return Line number or -1 if not found.
+	 */
+	long lineof(const char* p) noexcept;
 	
 // ------------------------------------------------------------------------------------------ //
 };
