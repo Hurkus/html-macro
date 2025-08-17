@@ -1,5 +1,4 @@
-#include "html-rd.hpp"
-#include <cassert>
+#include "html.hpp"
 #include <vector>
 #include <fstream>
 
@@ -34,12 +33,8 @@ constexpr uint64_t MASK_QUOTE = MASK_QUOTE_1 | MASK_QUOTE_2;	// ' "
 
 namespace html {
 struct Parser {
-	const_allocator<rd_node>* nodeAlloc;
-	const_allocator<rd_attr>* attrAlloc;
-	
-	html::rd_node* parent;				// Current parsing parent node.
-	vector<html::rd_node*> lastChild;	// Stack of last child of `current`.
-	
+	html::node* parent;				// Current parsing parent node.
+	vector<html::node*> lastChild;	// Stack of last child of `current`.
 	parse_result result;
 };
 }
@@ -48,26 +43,22 @@ struct Parser {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-inline rd_attr& allocAttr(Parser& state){
-	rd_attr* attr = state.attrAlloc->alloc();
-	if (attr != nullptr)
-		return *attr;
-	throw parse_status::MEMORY;
+inline attr& allocAttr(Parser& state){
+	html::attr* a = html::newAttr();
+	a->options |= node_options::LIST_FORWARDS;
+	return *a;
 }
 
 
-inline rd_node& addChild(Parser& state, node_type type){
-	rd_node* node = state.nodeAlloc->alloc();
-	if (node == nullptr){
-		throw parse_status::MEMORY;
-	}
-	
+inline node& addChild(Parser& state, node_type type){
+	html::node* node = html::newNode();
 	node->type = type;
+	node->options |= node_options::LIST_FORWARDS;
 	node->parent = state.parent;
 	
 	// Append sibling
 	{
-		rd_node*& prev_sibling = state.lastChild.back();
+		html::node*& prev_sibling = state.lastChild.back();
 		
 		if (prev_sibling != nullptr)
 			prev_sibling->next = node;
@@ -81,15 +72,15 @@ inline rd_node& addChild(Parser& state, node_type type){
 }
 
 
-inline rd_node& pushNew(Parser& state){
-	rd_node& node = addChild(state, node_type::TAG);
+inline node& pushNew(Parser& state){
+	html::node& node = addChild(state, node_type::TAG);
 	state.lastChild.emplace_back(node.child);
 	state.parent = &node;
 	return node;
 }
 
 
-inline rd_node& pop(Parser& state){
+inline node& pop(Parser& state){
 	state.parent = state.parent->parent;
 	state.lastChild.pop_back();
 	return *state.parent;
@@ -99,7 +90,7 @@ inline rd_node& pop(Parser& state){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-long rd_document::lineof(const char* const p) noexcept {
+long document::lineof(const char* const p) const noexcept {
 	const char* b = buffer;
 	
 	if (b == nullptr || p == nullptr || p < b){
@@ -227,7 +218,7 @@ static const char* parse_question(Parser& state, const char* s){
 		throw parse_status::UNCLOSED_QUESTION;
 	}
 	
-	rd_node& node = addChild(state, node_type::PI);
+	node& node = addChild(state, node_type::PI);
 	node.value_len = uint32_t(s - beg);
 	node.value_p = beg;
 	return s + 2;
@@ -248,7 +239,7 @@ static const char* parse_comment(Parser& state, const char* s){
 		throw parse_status::UNCLOSED_COMMENT;
 	}
 	
-	rd_node& node = addChild(state, node_type::COMMENT);
+	node& node = addChild(state, node_type::COMMENT);
 	node.value_len = uint32_t(s - beg + 2);
 	node.value_p = beg;
 	return s + 3;
@@ -282,7 +273,7 @@ static const char* parse_exclamation(Parser& state, const char* s){
 		s++;
 	}
 	
-	rd_node& node = addChild(state, node_type::DIRECTIVE);
+	node& node = addChild(state, node_type::DIRECTIVE);
 	node.value_len = uint32_t(s - beg);
 	node.value_p = beg;
 	return s + 1;
@@ -292,7 +283,7 @@ static const char* parse_exclamation(Parser& state, const char* s){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static const char* parse_attribute(Parser& state, const char* s, rd_attr& attr){
+static const char* parse_attribute(Parser& state, const char* s, attr& attr){
 	assert(isTagChar(s[0]));
 	
 	// Parse name
@@ -329,13 +320,13 @@ static const char* parse_openTag(Parser& state, const char* s){
 	while (isTagChar(*(++s))) continue;
 	const uint32_t name_len = uint32_t(s - name_p);
 	
-	rd_attr* firstAttr = nullptr;
-	rd_attr* lastAttr = nullptr;
+	attr* firstAttr = nullptr;
+	attr* lastAttr = nullptr;
 	
 	// Self close
 	if (s[0] == '/'){ tag_self_close:
 		if (s[1] == '>'){
-			rd_node& node = addChild(state, node_type::TAG);
+			node& node = addChild(state, node_type::TAG);
 			node.value_p = name_p;
 			node.value_len = name_len;
 			node.attribute = firstAttr;
@@ -348,7 +339,7 @@ static const char* parse_openTag(Parser& state, const char* s){
 	
 	// End
 	else if (s[0] == '>'){ tag_end:
-		rd_node& node = pushNew(state);
+		node& node = pushNew(state);
 		node.value_p = name_p;
 		node.value_len = name_len;
 		node.attribute = firstAttr;
@@ -377,7 +368,7 @@ static const char* parse_openTag(Parser& state, const char* s){
 		}
 		
 		// Attribute
-		rd_attr& attr = allocAttr(state);
+		attr& attr = allocAttr(state);
 		s = parse_attribute(state, s, attr);
 		
 		if (firstAttr == nullptr){
@@ -448,7 +439,7 @@ void parse_all(Parser& state, const char* s){
 			// Text
 			s = parse_text(state, s + 1);
 			
-			rd_node& node = addChild(state, node_type::TEXT);
+			node& node = addChild(state, node_type::TEXT);
 			node.value_p = beg;
 			node.value_len = uint32_t(s - beg);
 			goto check_tag;
@@ -484,30 +475,20 @@ void parse_all(Parser& state, const char* s){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-parse_result rd_document::parseBuff(const char* buff){
-	clear();
-	
+static parse_result parse(node& root, const char* buff){
 	Parser parser;
+	parser.result.status = parse_status::OK;
+	
 	try {
-		nodeAlloc.clear();
-		attrAlloc.clear();
-		
 		parser = {
-			.nodeAlloc = &nodeAlloc,
-			.attrAlloc = &attrAlloc,
-			.parent = this,
+			.parent = &root,
 			.lastChild = { nullptr },			// Initial root child.
 			.result = {
 				.s = buff,
 				.row = 1
 			}
 		};
-		
 		parse_all(parser, buff);
-		parser.result.status = parse_status::OK;
-		this->buffer = buff;
-		this->buffer_owned = false;
-		
 	} catch (const bad_alloc&){
 		parser.result.status = parse_status::MEMORY;
 	} catch (const parse_status& err){
@@ -517,6 +498,26 @@ parse_result rd_document::parseBuff(const char* buff){
 	}
 	
 	return parser.result;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+parse_result document::parseBuff(const char* buff){
+	reset();
+	this->buffer = buff;
+	this->buffer_owned = false;
+	return parse(*this, buff);
+}
+
+
+parse_result document::parseBuff(const char*&& buff){
+	reset();
+	this->buffer = buff;
+	this->buffer_owned = true;
+	buff = nullptr;
+	return parse(*this, this->buffer);
 }
 
 
@@ -554,18 +555,19 @@ static char* readFile(const char* path){
 }
 
 
-parse_result rd_document::parse(const char* path){
+parse_result document::parseFile(const char* path){
 	char* buff = readFile(path);
-	parse_result res = {}; 
 	
 	if (buff == nullptr){
-		res.status = parse_status::IO;
-		return res;
+		return parse_result {
+			.status = parse_status::IO
+		};
 	}
 	
-	res = parseBuff(buff);
+	reset();
+	this->buffer = buff;
 	this->buffer_owned = true;
-	return res;
+	return parse(*this, buff);
 }
 
 

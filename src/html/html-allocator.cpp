@@ -1,324 +1,180 @@
 #include "html-allocator.hpp"
-#include "html-wr.hpp"
-#include "html-rd.hpp"
-#include <cstring>
+#include <cassert>
+#include <memory>
+#include <vector>
+
+#include "html.hpp"
 
 using namespace std;
 using namespace html;
 
 
-// ----------------------------------- [ Functions ] ---------------------------------------- //
+// ----------------------------------- [ Structures ] --------------------------------------- //
 
 
-static bool newPage(char_allocator& self, size_t minSize){
-	using page = char_allocator::page;
-	
-	minSize = (minSize < self.PAGE_MIN_SIZE ? self.PAGE_MIN_SIZE : minSize);
-	if (minSize > UINT32_MAX){
-		return false;
-	}
-	
-	size_t size = size_t(self.pageSize) * 2;
-	size = (size > self.PAGE_MAX_SIZE ? self.PAGE_MAX_SIZE : size);
-	size = (size < minSize ? minSize : size);
-	
-	// Try allocate memory page at different sizes.
-	page* p;
-	while (true){
-		p = (page*) ::operator new (sizeof(page) + size, align_val_t(alignof(page)), nothrow_t());
-		
-		if (p != nullptr)
-			break;
-		else if (size > minSize)
-			size = (size/2 < minSize) ? minSize : size/2;
-		else
-			return false;
-		
-	}
-
-	try {
-		self.pages.emplace_back(p);
-	} catch (...) {
-		delete p;
-		return false;
-	}
-	
-	assert(size <= UINT16_MAX);
-	self.pageSize = size;
-	p->space = size;
-	p->size = size;
-	p->deleted = 0;
-	return true;
-}
-
-
-char* char_allocator::alloc(size_t len) noexcept {
-	if (len <= 0 || len >= MAX_LEN){
-		assert(len <= MAX_LEN);
-		return nullptr;
-	}
-	
-	const size_t reqLen = len + sizeof(uint16_t);
-	
-	// Create new page
-	if (pages.size() <= 0 || pages.back()->space < reqLen){
-		if (!newPage(*this, reqLen))
-			return nullptr;
-	}
-	
-	assert(pages.back()->space >= reqLen);
-	
-	// Reserve chunk of memory.
-	page& p = *pages.back();
-	char* s = &p.memory[p.size - p.space];
-	p.space -= reqLen;
-	
-	// Bubble sort
-	size_t i = pages.size() - 1;
-	while (i >= 1 && pages[i]->space < pages[i-1]->space){
-		swap(pages[i], pages[i-1]);
-		i--;
-	}
-	
-	assert(len < UINT16_MAX);
-	s[0] = uint8_t((len >> 0) & 0xFF);
-	s[1] = uint8_t((len >> 8) & 0xFF);
-	return s + 2;
-}
-
-
-char* char_allocator::alloc(string_view str) noexcept {
-	char* s = alloc(str.length());
-	if (s != nullptr)
-		memcpy(s, str.begin(), str.length());
-	return s;
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-bool char_allocator::dealloc(char* str) noexcept {
-	assert(str != nullptr);
-	
-	// Find page
-	size_t i;
-	for (i = 0 ; i < pages.size() ; i++){
-		const char* beg = pages[i]->memory;
-		const char* end = beg + pages[i]->size;
-		if (beg <= str && str <= end)
-			goto found;
-	}
-	
-	return false;
-	found:
-	
-	// Mark deleted
-	str -= 2;
-	const uint16_t len = (uint16_t(str[0]) << 0) | (uint16_t(str[1]) << 8);
-	pages[i]->deleted += len + 2;
-	
-	// Check if not completely empty
-	if (pages[i]->deleted < (pages[i]->size - pages[i]->space)){
-		return true;
-	}
-	
-	pages[i]->deleted = 0;
-	pages[i]->space = pages[i]->size;
-	
-	if (pages.size() <= 1){
-		return true;
-	}
-	
-	// Extract page
-	unique_ptr<page> page = move(pages[i]);
-	pages.erase(pages.begin() + i);
-	
-	// Reinsert at top
-	if (pages.back()->space < pages.back()->size){
-		pages.emplace_back(move(page));
-	}
-	
-	return true;
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
+template<int SIZE, int ALIGN>
+struct heap_element_t {
+	static constexpr size_t size = SIZE;
+	static constexpr size_t align = ALIGN;
+};
 
 template<typename T>
-static bool addPage(block_allocator<T>& self) noexcept {
-	using SELF = block_allocator<T>;
-	using page = block_allocator<T>::page;
+using heap_t = heap_element_t<sizeof(T),alignof(T)>;	// H
+
+
+// ----------------------------------- [ Structures ] --------------------------------------- //
+
+
+template<class H>
+struct page {
+	int size;
+	int count;
 	
-	size_t size = self.pageSize + SELF::PAGE_SIZE_INC;
-	size = (size > SELF::MAX_PAGE_SIZE) ? SELF::MAX_PAGE_SIZE : size;
-	size = (size < SELF::MIN_PAGE_SIZE) ? SELF::MIN_PAGE_SIZE : size;
+	union block {
+		block* next;
+		alignas(H::align)
+		uint8_t obj[H::size];
+	};
+	
+	alignas(H::align)
+	block memory[];
+	
+};
+
+
+template<class H>
+struct block_allocator {
+	using page = ::page<H>;
+	using block = page::block;
+	
+	vector<unique_ptr<page>> pages;
+	size_t nextSize = 0;
+	block* emptyList = nullptr;		// Linked list of empty blocks.
+	
+	unique_ptr<page> createPage();
+	void* allocate();
+	void deallocate(void*);
+};
+
+
+// ----------------------------------- [ Variables ] ---------------------------------------- //
+
+
+constexpr size_t MIN_PAGE_SIZE = 1024;
+constexpr size_t MAX_PAGE_SIZE = 1024;
+constexpr size_t PAGE_SIZE_INC = 0;
+
+template<class H>
+static block_allocator<H> heap;
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+template<class H>
+unique_ptr<page<H>> block_allocator<H>::createPage(){
+	size_t n = max(min(MIN_PAGE_SIZE, nextSize), MAX_PAGE_SIZE);
 	
 	// Try alloc page at different sizes
 	page* p;
 	while (true){
-		p = static_cast<page*>(::operator new(sizeof(page) + sizeof(T)*size));
+		p = (page*)::operator new(sizeof(page) + n*H::size, align_val_t(H::align), nothrow_t{});
 		
 		if (p != nullptr)
 			break;
-		else if (size > SELF::MIN_PAGE_SIZE)
-			size = (size/2 < SELF::MIN_PAGE_SIZE) ? SELF::MIN_PAGE_SIZE : size/2;
+		else if (n > MIN_PAGE_SIZE)
+			n = (n/2 < MIN_PAGE_SIZE) ? MIN_PAGE_SIZE : n/2;
 		else
-			return false;
+			throw bad_alloc();
 		
 	}
 	
-	try {
-		self.pages.emplace_back(p);
-		self.pageSize = size;
-	} catch (...){
-		delete p;
-		return false;
-	}
-	
+	nextSize = n + PAGE_SIZE_INC;
 	p->count = 0;
-	p->size = size;
-	p->free_idx = 0;
-	p->memory[0].next = -1;
-	p->memory[0].size = size;
-	return true;
+	p->size = n;
+	return unique_ptr<page>(p);
 }
 
 
-template<typename T> requires std::is_trivially_destructible<T>::value
-T* block_allocator<T>::alloc() noexcept {
-	// Find page with free block
-	assert(pageHint >= 0);
-	while (pageHint < int(pages.size())){
-		if (pages[pageHint]->free_idx >= 0)
-			goto emplace;
-		pageHint++;
+template<class H>
+void* block_allocator<H>::allocate(){
+	// Reuse
+	if (emptyList != nullptr){
+		block* b = emptyList;
+		emptyList = emptyList->next;
+		return &b->obj;
 	}
 	
-	// New page
-	if (!addPage<T>(*this)){
-		return nullptr;
-	} else {
-		pageHint = int(pages.size()) - 1;
+	// New or initial page
+	else if (pages.empty() || pages.back()->count >= pages.back()->size){
+		try {
+			pages.emplace_back(createPage());
+		} catch (...) {
+			throw bad_alloc();
+		}
 	}
 	
-	emplace:
-	assert(pageHint < int(pages.size()));
-	assert(pages[pageHint]->free_idx >= 0);
-	page& p = *pages[pageHint];
-	block& b = p.memory[p.free_idx];
-	
-	// Shrink block
-	assert(b.size > 0);
-	if (b.size > 1){
-		p.free_idx++;
-		block& b2 = p.memory[p.free_idx];
-		b2.next = b.next;
-		b2.size = b.size - 1;
-	} else {
-		p.free_idx = b.next;
-	}
-	
-	// Construct element
-	p.count++;
-	T* element = new (&b.element) T();
-	return element;
+	// Take from last page
+	page& p = *pages.back();
+	block* b = &p.memory[p.count++];
+	return &b->obj;
 }
 
 
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-template<typename T> requires std::is_trivially_destructible<T>::value
-bool block_allocator<T>::dealloc(T* element) noexcept {
-	assert(element != nullptr);
-	block* b = (block*)element;
+template<class H>
+void block_allocator<H>::deallocate(void* p){
+	assert(p != nullptr);
 	
-	int pi;
-	int bi;
-	for (pi = 0 ; pi < int(pages.size()) ; pi++){
-		const block* beg = pages[pi]->memory;
-		const block* end = beg + pages[pi]->size;
-		
-		if (beg <= b && b < end){
-			bi = b - beg;
+	// Find page which contains `p`
+	for (unique_ptr<page>& page : pages){
+		const block* beg = &page->memory[0];
+		const block* end = beg + page->size;
+		if (beg <= p && p < end)
 			goto found;
-		}
-		
 	}
 	
-	return false;
+	// Not found
+	throw bad_alloc();
+	
 	found:
-	page& p = *pages[pi];
-	
-	// Destroy element
-	element->~T();
-	b->size = 1;
-	b->next = p.free_idx;
-	p.free_idx = bi;
-	p.count--;
-	
-	// Destroy page
-	assert(p.count >= 0);
-	if (p.count <= 0){
-		pages[pi] = move(pages.back());
-		pages.pop_back();
-	}
-	
-	pageHint = (pi < pageHint) ? pi : pageHint;
-	return true;
+	block* b = (block*)p;
+	b->next = emptyList;
+	emptyList = b;
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-template<typename T> requires std::is_trivially_destructible<T>::value
-T* const_allocator<T>::alloc() noexcept {
-	// New page
-	if (rootPage == nullptr || rootPage->count >= rootPage->size){
-		size_t size = (rootPage != nullptr) ? rootPage->size : 0;
-		size += PAGE_SIZE_INC;
-		size = (size > MAX_PAGE_SIZE) ? MAX_PAGE_SIZE : size;
-		size = (size < MIN_PAGE_SIZE) ? MIN_PAGE_SIZE : size;
-		
-		// Try alloc page at different sizes
-		page* p;
-		while (true){
-			p = static_cast<page*>(::operator new(sizeof(page) + sizeof(T)*size));
-			
-			if (p != nullptr)
-				break;
-			else if (size > MIN_PAGE_SIZE)
-				size = (size/2 < MIN_PAGE_SIZE) ? MIN_PAGE_SIZE : size/2;
-			else
-				return nullptr;
-			
-		}
-		
-		// Link
-		p->size = size;
-		p->count = 0;
-		p->next = rootPage;
-		rootPage = p;
-	}
-	
-	T* mem = &rootPage->memory[rootPage->count++];
-	return new (mem) T();
+node* html::newNode(){
+	using H = heap_t<node>;
+	void* e = heap<H>.allocate();
+	return new (e) node();
 }
 
 
-// ------------------------------------------------------------------------------------------ //
+attr* html::newAttr(){
+	using H = heap_t<attr>;
+	void* e = heap<H>.allocate();
+	return new (e) attr();
+}
 
 
-template wr_node* block_allocator<wr_node>::alloc();
-template wr_attr* block_allocator<wr_attr>::alloc();
-template bool block_allocator<wr_node>::dealloc(wr_node*);
-template bool block_allocator<wr_attr>::dealloc(wr_attr*);
+// ----------------------------------- [ Functions ] ---------------------------------------- //
 
-template rd_node* const_allocator<rd_node>::alloc();
-template rd_attr* const_allocator<rd_attr>::alloc();
+
+void html::del(node* p){
+	using H = heap_t<decltype(*p)>;
+	if (p != nullptr)
+		heap<H>.deallocate(p);
+}
+
+
+void html::del(attr* p){
+	using H = heap_t<decltype(*p)>;
+	if (p != nullptr)
+		heap<H>.deallocate(p);
+}
 
 
 // ------------------------------------------------------------------------------------------ //
