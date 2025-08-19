@@ -90,9 +90,8 @@ inline node& pop(Parser& state){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-long document::lineof(const char* const p) const noexcept {
+long document::row(const char* const p) const noexcept {
 	const char* b = buffer;
-	
 	if (b == nullptr || p == nullptr || p < b){
 		return -1;
 	}
@@ -107,6 +106,41 @@ long document::lineof(const char* const p) const noexcept {
 	}
 	
 	return row;
+}
+
+
+long document::col(const char* const p) const noexcept {
+	const char* b = buffer;
+	if (b == nullptr || p == nullptr || p < b){
+		return -1;
+	}
+	
+	bool tabs = false;
+	
+	// Find begining of line
+	const char* beg = p;
+	while (beg > b){
+		tabs |= (*beg == '\t');
+		if (beg[-1] == '\n')
+			break;
+		beg--;
+	}
+	
+	// No tabs
+	if (!tabs){
+		return p - beg + 1;
+	}
+	
+	// Find colum number accounting tabs
+	long col = 1;
+	while (beg != p){
+		col++;
+		if (*beg == '\t')
+			col = ((col + 2) & ~0b11L) + 1;
+		beg++;
+	}
+	
+	return col;
 }
 
 

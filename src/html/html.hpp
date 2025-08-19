@@ -259,7 +259,15 @@ public:
 	 * @param p Pointer to first character of string for which to find the line number.
 	 * @return Line number or -1 if not found.
 	 */
-	long lineof(const char* p) const noexcept;
+	long row(const char* p) const noexcept;
+	
+	/**
+	 * @brief Find colum number of `p` relative to beggining of the line in `buffer`.
+	 *        Recommended for error reporting only.
+	 * @param p Pointer to first character of string for which to find the colum number.
+	 * @return Colum number or -1 if not found.
+	 */
+	long col(const char* p) const noexcept;
 	
 // ------------------------------------------------------------------------------------------ //
 };
