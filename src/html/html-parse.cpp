@@ -31,59 +31,56 @@ constexpr uint64_t MASK_QUOTE = MASK_QUOTE_1 | MASK_QUOTE_2;	// ' "
 // ----------------------------------- [ Structures ] --------------------------------------- //
 
 
-namespace html {
 struct Parser {
-	html::node* parent;				// Current parsing parent node.
+	html::node* current;			// Current parsing parent node.
 	vector<html::node*> lastChild;	// Stack of last child of `current`.
+	vector<html::node*> macros;
 	parse_result result;
 };
-}
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-inline attr& allocAttr(Parser& state){
+inline attr* allocAttr(){
 	html::attr* a = html::newAttr();
 	a->options |= node_options::LIST_FORWARDS;
-	return *a;
+	return a;
 }
 
-
-inline node& addChild(Parser& state, node_type type){
+inline node* allocNode(node_type type){
 	html::node* node = html::newNode();
 	node->type = type;
 	node->options |= node_options::LIST_FORWARDS;
-	node->parent = state.parent;
-	
-	// Append sibling
-	{
-		html::node*& prev_sibling = state.lastChild.back();
-		
-		if (prev_sibling != nullptr)
-			prev_sibling->next = node;
-		else
-			node->parent->child = node;
-			
-		prev_sibling = node;
-	}
-	
-	return *node;
-}
-
-
-inline node& pushNew(Parser& state){
-	html::node& node = addChild(state, node_type::TAG);
-	state.lastChild.emplace_back(node.child);
-	state.parent = &node;
 	return node;
 }
 
 
-inline node& pop(Parser& state){
-	state.parent = state.parent->parent;
+inline node* addChild(Parser& state, node* node){
+	node->parent = state.current;
+	
+	// Append sibling
+	html::node*& prev_sibling = state.lastChild.back();
+	if (prev_sibling != nullptr)
+		prev_sibling->next = node;
+	else
+		node->parent->child = node;
+
+	prev_sibling = node;
+	return node;
+}
+
+
+inline node* push(Parser& state, node* node){
+	state.lastChild.emplace_back(node->child);
+	state.current = node;
+	return node;
+}
+
+
+inline void pop(Parser& state){
+	state.current = state.current->parent;
 	state.lastChild.pop_back();
-	return *state.parent;
 }
 
 
@@ -161,10 +158,18 @@ constexpr bool isQuote(char c){
 
 // [a-zA-Z:_-]
 constexpr bool isTagChar(char c){
-	constexpr uint64_t MASK = []() consteval {
+	constexpr uint64_t MASK_1 = []() consteval {
 		uint64_t m = 0;
 		m |= (uint64_t(1) << (':' & 0b00111111));
 		m |= (uint64_t(1) << ('-' & 0b00111111));
+		
+		for (char c = '0' ; c <= '9' ; c++)
+			m |= (uint64_t(1) << (c & 0b00111111));
+		
+		return m;
+	}();
+	constexpr uint64_t MASK_2 = []() consteval {
+		uint64_t m = 0;
 		m |= (uint64_t(1) << ('_' & 0b00111111));
 		
 		for (char c = 'A' ; c <= 'Z' ; c++)
@@ -175,9 +180,31 @@ constexpr bool isTagChar(char c){
 		return m;
 	}();
 	
-	uint8_t b2 = c >> 6;
-	uint8_t b6 = c & 0b00111111;
-	return ((b2 == 0b01) & isMasked(b6, MASK));
+	if (c < 64){
+		return isMasked(c, MASK_1);
+	} else {
+		uint8_t b2 = c >> 6;
+		uint8_t b6 = c & 0b00111111;
+		return ((b2 == 0b01) & isMasked(b6, MASK_2));
+	}
+	
+}
+
+
+constexpr bool isVoidTag(string_view name){
+	switch (name.length()){
+		case 2:
+			return name == "br" || name == "hr";
+		case 3:
+			return name == "img" || name == "col" || name == "wbr";
+		case 4:
+			return name == "link" || name == "meta" || name == "area" || name == "base";
+		case 5:
+			return name == "input" || name == "embed" || name == "param" || name == "track";
+		case 6:
+			return name == "source";
+	}
+	return false;
 }
 
 
@@ -205,6 +232,59 @@ inline const char* parse_text(Parser& state, const char* s){
 		s++;
 	}
 	return s;
+}
+
+
+static const char* parse_rawTextTag(Parser& state, node* tag, const char* s){
+	const char* name = tag->value_p;
+	size_t len = tag->value_len;
+	assert(len > 0 && name != nullptr);
+	
+	const char* beg = s;
+	const char* end = s;
+	
+	while (true){ loop:
+		
+		if (*s == 0){
+			state.result.s = name;
+			throw parse_status::MISSING_END_TAG;
+		} else if (*s == '\n'){
+			state.result.row++;
+			s++;
+			continue;
+		} else if (s[0] != '<' || s[1] != '/'){
+			s++;
+			continue;
+		}
+		
+		end = s;
+		s += 2;
+		
+		// Compare names
+		for (size_t i = 0 ; i < len ; i++, s++){
+			if (*s != name[i])
+				goto loop;
+		}
+		
+		s = parse_whiteSpace(state, s);
+		if (*s == '>'){
+			break;
+		}
+		
+		state.result.s = end;
+		throw parse_status::MISSING_END_TAG;
+	}
+	
+	// Append text node
+	node* txt = allocNode(node_type::TEXT);
+	txt->value_p = beg;
+	txt->value_len = min(end - beg, long(UINT32_MAX));
+	
+	assert(tag->child == nullptr);
+	txt->parent = tag;
+	tag->child = txt;
+	
+	return s + 1;
 }
 
 
@@ -252,9 +332,9 @@ static const char* parse_question(Parser& state, const char* s){
 		throw parse_status::UNCLOSED_QUESTION;
 	}
 	
-	node& node = addChild(state, node_type::PI);
-	node.value_len = uint32_t(s - beg);
-	node.value_p = beg;
+	node* node = addChild(state, allocNode(node_type::PI));
+	node->value_len = uint32_t(s - beg);
+	node->value_p = beg;
 	return s + 2;
 }
 
@@ -273,9 +353,9 @@ static const char* parse_comment(Parser& state, const char* s){
 		throw parse_status::UNCLOSED_COMMENT;
 	}
 	
-	node& node = addChild(state, node_type::COMMENT);
-	node.value_len = uint32_t(s - beg + 2);
-	node.value_p = beg;
+	node* node = addChild(state, allocNode(node_type::COMMENT));
+	node->value_len = uint32_t(s - beg + 2);
+	node->value_p = beg;
 	return s + 3;
 }
 
@@ -307,9 +387,9 @@ static const char* parse_exclamation(Parser& state, const char* s){
 		s++;
 	}
 	
-	node& node = addChild(state, node_type::DIRECTIVE);
-	node.value_len = uint32_t(s - beg);
-	node.value_p = beg;
+	node* node = addChild(state, allocNode(node_type::DIRECTIVE));
+	node->value_len = uint32_t(s - beg);
+	node->value_p = beg;
 	return s + 1;
 }
 
@@ -359,31 +439,79 @@ static const char* parse_openTag(Parser& state, const char* s){
 	
 	// Self close
 	if (s[0] == '/'){ tag_self_close:
-		if (s[1] == '>'){
-			node& node = addChild(state, node_type::TAG);
-			node.value_p = name_p;
-			node.value_len = name_len;
-			node.attribute = firstAttr;
-			return s + 2; 
-		} else {
+		if (s[1] != '>'){
 			state.result.s = s;
-			throw parse_status::MISSING_TAG_GT;
+			throw parse_status::UNCLOSED_TAG_GT;
 		}
+		
+		html::node* node = allocNode(node_type::TAG);
+		node->value_p = name_p;
+		node->value_len = name_len;
+		node->attribute = firstAttr;
+		
+		if (string_view(name_p, name_len) == "MACRO"){
+			state.macros.emplace_back(node);
+		} else {
+			addChild(state, node);
+		}
+		
+		return s + 2; 
 	}
 	
 	// End
 	else if (s[0] == '>'){ tag_end:
-		node& node = pushNew(state);
-		node.value_p = name_p;
-		node.value_len = name_len;
-		node.attribute = firstAttr;
+		html::node* node = addChild(state, allocNode(node_type::TAG));
+		node->value_p = name_p;
+		node->value_len = name_len;
+		node->attribute = firstAttr;
+		
+		const string_view name = string_view(name_p, name_len);
+		switch (name.length()){
+			case 2:
+				if (name == "br" || name == "hr")
+					goto void_tag;
+				else
+					goto regular_tag;
+			case 3:
+				if (name == "img" || name == "col" || name == "wbr")
+					goto void_tag;
+				else if (name == "pre")
+					return parse_rawTextTag(state, node, s+1);
+				else
+					goto regular_tag;
+			case 4:
+				if (name == "link" || name == "meta" || name == "area" || name == "base")
+					goto void_tag;
+				else
+					goto regular_tag;
+			case 5:
+				if (name == "style")
+					return parse_rawTextTag(state, node, s+1);
+				else if (name == "input" || name == "embed" || name == "param" || name == "track")
+					goto void_tag;
+				else
+					goto regular_tag;
+			case 6:
+				if (name == "script")
+					return parse_rawTextTag(state, node, s+1);
+				else if (name == "source")
+					goto void_tag;
+				else
+					goto regular_tag;
+			default:
+				goto regular_tag;
+		}
+		
+		regular_tag:
+		push(state, node);
+		void_tag:
 		return s + 1;
 	}
 	
 	// Check for attributes
 	else if (!isWhitespace(s[0])){
 		state.result.s = s;
-		throw (s[0] == 0) ? parse_status::MISSING_TAG_GT : parse_status::INVALID_TAG_NAME;
+		throw (s[0] == 0) ? parse_status::UNCLOSED_TAG_GT : parse_status::INVALID_TAG_NAME;
 	}
 	
 	while (true){
@@ -402,19 +530,20 @@ static const char* parse_openTag(Parser& state, const char* s){
 		}
 		
 		// Attribute
-		attr& attr = allocAttr(state);
-		s = parse_attribute(state, s, attr);
+		attr* attr = allocAttr();
+		s = parse_attribute(state, s, *attr);
 		
 		if (firstAttr == nullptr){
-			firstAttr = lastAttr = &attr;
+			firstAttr = lastAttr = attr;
 		} else {
-			lastAttr->next = &attr;
-			lastAttr = &attr;
+			lastAttr->next = attr;
+			lastAttr = attr;
 		}
 		
 		continue;
 	}
 	
+	// Error
 	state.result.s = s;
 	throw parse_status::UNCLOSED_TAG;
 }
@@ -422,37 +551,40 @@ static const char* parse_openTag(Parser& state, const char* s){
 
 static const char* parse_closeTag(Parser& state, const char* s){
 	assert(s[0] == '/');
+	uint32_t len = state.current->value_len;
+	const char* name = state.current->value_p;
+	const char* beg = s;
+	
 	s++;
-	
-	uint32_t len = state.parent->value_len;
-	const char* name = state.parent->value_p;
-	
-	if (len <= 0){
-		state.result.s = s;
-		throw parse_status::INVALID_TAG_CLOSE;
-	} else {
-		assert(name != nullptr);
-	}
-	
 	while (len > 0){
-		if (*s != *name){
-			state.result.s = s;
-			throw parse_status::INVALID_TAG_CLOSE;
-		}
+		if (*s != *name)
+			goto check_void_tag;
 		len--;
 		s++;
 		name++;
 	}
 	
 	s = parse_whiteSpace(state, s);
-	
-	if (*s != '>'){
-		state.result.s = s;
-		throw parse_status::INVALID_TAG_CLOSE;
+	if (*s == '>'){
+		pop(state);
+		return s + 1;
 	}
 	
-	pop(state);
-	return s + 1;
+	check_void_tag:
+	// Parse tag name
+	s = beg;
+	while (isTagChar(*(++s))) continue;
+	
+	// Discard void tag
+	if (isVoidTag(string_view(beg + 1, s))){
+		s = parse_whiteSpace(state, s);
+		if (*s == '>')
+			return s + 1;
+	}
+	
+	// Error
+	state.result.s = s;
+	throw parse_status::INVALID_TAG_CLOSE;
 }
 
 
@@ -473,9 +605,9 @@ void parse_all(Parser& state, const char* s){
 			// Text
 			s = parse_text(state, s + 1);
 			
-			node& node = addChild(state, node_type::TEXT);
-			node.value_p = beg;
-			node.value_len = uint32_t(s - beg);
+			node* node = addChild(state, allocNode(node_type::TEXT));
+			node->value_p = beg;
+			node->value_len = uint32_t(s - beg);
 			goto check_tag;
 		}
 		
@@ -503,6 +635,15 @@ void parse_all(Parser& state, const char* s){
 		
 	}
 	
+	// Check if parsed completely
+	if (state.current->parent != nullptr){
+		if (state.current->value_p != nullptr)
+			state.result.s = state.current->value_p;
+		else
+			state.result.s = s;
+		throw parse_status::MISSING_END_TAG;
+	}
+	
 }
 
 
@@ -515,7 +656,7 @@ static parse_result parse(node& root, const char* buff){
 	
 	try {
 		parser = {
-			.parent = &root,
+			.current = &root,
 			.lastChild = { nullptr },			// Initial root child.
 			.result = {
 				.s = buff,
@@ -529,6 +670,11 @@ static parse_result parse(node& root, const char* buff){
 		parser.result.status = err;
 	} catch (...){
 		parser.result.status = parse_status::ERROR;
+	}
+	
+	// TEMP
+	for (node* m : parser.macros){
+		html::del(m);
 	}
 	
 	return parser.result;

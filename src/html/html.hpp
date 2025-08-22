@@ -23,15 +23,16 @@ namespace html {
 
 enum class html::parse_status {
 	OK,
-	UNCLOSED_TAG,
-	UNCLOSED_STRING,
-	UNCLOSED_QUESTION,		// ?>
-	UNCLOSED_COMMENT,		// -->
-	MISSING_TAG_GT,			// />
+	UNCLOSED_TAG,			// ...>
+	UNCLOSED_TAG_GT,		// .../>
+	UNCLOSED_STRING,		// ..."
+	UNCLOSED_QUESTION,		// ...?>
+	UNCLOSED_COMMENT,		// ...-->
 	INVALID_TAG_NAME,		// <...
 	INVALID_TAG_CHAR,		// <...>
 	INVALID_TAG_CLOSE,
 	MISSING_ATTR_VALUE,		// attr=
+	MISSING_END_TAG,		// </tag>
 	MEMORY,					// Out of memory.
 	IO,						// Failed to read file.
 	ERROR					// Unknown error.
