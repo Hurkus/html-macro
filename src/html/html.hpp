@@ -10,7 +10,6 @@
 namespace html {
 	enum class node_type : uint8_t;
 	enum class node_options : uint8_t;
-	struct nocopy {};
 	
 	struct node;
 	struct attr;
@@ -52,18 +51,18 @@ enum class html::node_type : uint8_t {
 
 
 enum class html::node_options : uint8_t {
-	NONE           = 0,
-	LIST_FORWARDS  = 1 << 0,	// Direction of node child linked list and attribute linked list.
-	OWNED_NAME     = 1 << 1,
-	OWNED_VALUE    = 1 << 2,
+	NONE          = 0,
+	LIST_FORWARDS = 1 << 0,	// Direction of node child linked list and attribute linked list.
+	OWNED_NAME    = 1 << 1,
+	OWNED_VALUE   = 1 << 2,
+	INTERPOLATE   = 1 << 3,	// Text content of `value` should be interpolated for expressions `{}`.
 };
 ENUM_OPERATORS(html::node_options);
 
 
 struct html::parse_result {
 	parse_status status;
-	const char* s = nullptr;	// Last parsing position.
-	long row;					// Last parsed row.
+	const char* pos = nullptr;	// Last parsing position. Usefull for `document::row()`.
 };
 
 
@@ -224,6 +223,7 @@ public:
 public:
 	/**
 	 * @brief Open file from `path` and parse HTML.
+	 *        `buffer` is owned by `this` object.
 	 * @param path Path to file.
 	 * @return `parse_result` containing parsing status.
 	 */
@@ -235,13 +235,6 @@ public:
 	 * @return `parse_result` containing parsing status.
 	 */
 	parse_result parseBuff(const char* buff);
-	
-	/**
-	 * @brief Parse HTML from string.
-	 * @param buff String buffer, whose lifetime is transfered to `this` object.
-	 * @return `parse_result` containing parsing status.
-	 */
-	parse_result parseBuff(const char*&& buff);
 	
 public:
 	void reset(){
@@ -256,17 +249,17 @@ public:
 	/**
 	 * @brief Find line number of `p` relative to beggining of the source `buffer`.
 	 *        This function is very slow (iterates over `buffer`).
-	 *        Recommended for error reporting only.
+	 * @note Recommended for error reporting only.
 	 * @param p Pointer to first character of string for which to find the line number.
-	 * @return Line number or -1 if not found.
+	 * @return Line number or `-1` if not found.
 	 */
 	long row(const char* p) const noexcept;
 	
 	/**
 	 * @brief Find colum number of `p` relative to beggining of the line in `buffer`.
-	 *        Recommended for error reporting only.
+	 * @note Recommended for error reporting only.
 	 * @param p Pointer to first character of string for which to find the colum number.
-	 * @return Colum number or -1 if not found.
+	 * @return Colum number or `-1` if not found.
 	 */
 	long col(const char* p) const noexcept;
 	
