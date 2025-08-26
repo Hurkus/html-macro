@@ -31,14 +31,12 @@ html::attr* newAttr();
 /**
  * @brief Delete node object obtained by `html::newNode()`.
  * @param p Pointer to `html::node` previously allocated with `html::newNode()`.
- * @throws `bad_alloc` if `p` does not belong to this allocator.
  */
 void del(html::node* p);
 
 /**
  * @brief Delete attribute object obtained by `html::newAttr()`.
  * @param p Pointer to `html::attr` previously allocated with `html::newAttr()`.
- * @throws `bad_alloc` if `p` does not belong to this allocator.
  */
 void del(html::attr* p);
 

@@ -2,6 +2,9 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <string>
+#include <vector>
+#include <memory>
 
 #include "html-allocator.hpp"
 #include "EnumOperators.hpp"
@@ -37,8 +40,7 @@ enum class html::parse_status {
 	ERROR					// Unknown error.
 };
 
-#ifndef H_HTML_NODE_TYPE
-#define H_HTML_NODE_TYPE
+
 enum class html::node_type : uint8_t {
 	TAG,		// <tag ... >
 	PI,			// <? ... ?>
@@ -47,7 +49,6 @@ enum class html::node_type : uint8_t {
 	TEXT,		// <...>text</...>
 	ROOT		// Internal for marking root.
 };
-#endif
 
 
 enum class html::node_options : uint8_t {
@@ -63,6 +64,7 @@ ENUM_OPERATORS(html::node_options);
 struct html::parse_result {
 	parse_status status;
 	const char* pos = nullptr;	// Last parsing position. Usefull for `document::row()`.
+	std::vector<node*> macros;	// Pointers to nodes `<MACRO>`
 };
 
 
@@ -78,10 +80,7 @@ public:
 	
 	node* parent = nullptr;
 	node* child = nullptr;			// First/last child in linked list.
-	union {
-		node* next = nullptr;		// Linked list.
-		node* prev;					// Linked list.
-	};
+	node* next = nullptr;			// Linked list.
 	
 	attr* attribute = nullptr;		// First/last attribute in linked list.
 	
@@ -162,10 +161,7 @@ public:
 	const char* name_p = nullptr;
 	const char* value_p = nullptr;
 	
-	union {
-		attr* next = nullptr;	// Linked list.
-		attr* prev;				// Linked list.
-	};
+	attr* next = nullptr;	// Linked list.
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
@@ -207,6 +203,7 @@ class html::document : public node {
 public:
 	const char* buffer = nullptr;	// Terminated input text.
 	bool buffer_owned = false;		// Is the buffer owned by `this` object.
+	std::shared_ptr<std::string> srcFile;
 	
 // ---------------------------------- [ Constructors ] -------------------------------------- //
 public:
@@ -215,8 +212,7 @@ public:
 	}
 	
 	~document(){
-		if (buffer_owned)
-			delete buffer;
+		reset();
 	}
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -227,7 +223,7 @@ public:
 	 * @param path Path to file.
 	 * @return `parse_result` containing parsing status.
 	 */
-	parse_result parseFile(const char* path);
+	parse_result parseFile(std::string_view path);
 	
 	/**
 	 * @brief Parse HTML from string.
@@ -237,11 +233,26 @@ public:
 	parse_result parseBuff(const char* buff);
 	
 public:
+	/**
+	 * @brief Delete/reset all owned data (child nodes, buffer, etc.).
+	 */
 	void reset(){
 		node::clear();
+		srcFile.reset();
 		if (buffer_owned)
 			delete buffer;
 		buffer = nullptr;
+	}
+	
+	/**
+	 * @brief Disown all child nodes without freeing memory (leak memory).
+	 * @note Really think about it before using this.
+	 */
+	void releaseNodes(){
+		this->child = nullptr;
+		this->value_p = nullptr;
+		this->value_len = 0;
+		this->next = nullptr;
 	}
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //

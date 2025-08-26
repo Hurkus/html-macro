@@ -134,7 +134,7 @@ void block_allocator<H>::deallocate(void* p){
 	}
 	
 	// Not found
-	throw bad_alloc();
+	assert(false && "Allocation not found.");
 	
 	found:
 	block* b = (block*)p;
@@ -175,6 +175,15 @@ void html::del(attr* p){
 	if (p != nullptr)
 		heap<H>.deallocate(p);
 }
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+// void html::eraseMemory(){
+// 	heap<heap_t<attr>> = {};
+// 	heap<heap_t<node>> = {};
+// }
 
 
 // ------------------------------------------------------------------------------------------ //

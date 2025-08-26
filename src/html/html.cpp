@@ -5,7 +5,7 @@ using namespace std;
 using namespace html;
 
 
-// ----------------------------------- [ Functions ] ---------------------------------------- //
+// ---------------------------------- [ Constructors ] -------------------------------------- //
 
 
 inline void _free_str(node& n){
@@ -59,19 +59,19 @@ void node::value(char* str, size_t len){
 
 
 node& node::appendChild(node_type type){
+	assert(!isSet(this->options, node_options::LIST_FORWARDS));
 	node* c = html::newNode();
 	c->type = type;
 	c->parent = this;
-	c->prev = this->child;
+	c->next = this->child;
 	this->child = c;
-	// this->options &= ~node_options::LIST_FORWARDS;
 	return *c;
 }
 
 
 attr& node::appendAttribute(){
 	attr* a = html::newAttr();
-	a->prev = this->attribute;
+	a->next = this->attribute;
 	this->attribute = a;
 	return *a;
 }

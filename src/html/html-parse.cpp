@@ -18,16 +18,16 @@ constexpr uint64_t MASK_QUESTION = (uint64_t(1) << '?');	// ?
 constexpr uint64_t MASK_LT       = (uint64_t(1) << '<');	// <
 constexpr uint64_t MASK_GT       = (uint64_t(1) << '>');	// >
 
-constexpr uint64_t MASK_QUOTE = MASK_QUOTE_1 | MASK_QUOTE_2;	// ' "
+constexpr uint64_t MASK_QUOTE = MASK_QUOTE_1 | MASK_QUOTE_2;	// ['"]
 
 
 // ----------------------------------- [ Structures ] --------------------------------------- //
 
 
 struct Parser {
-	html::node* current;			// Current parsing parent node.
-	vector<html::node*> lastChild;	// Stack of last child of `current`.
-	html::node* macros = nullptr;	// Linked list of macro nodes.
+	node* current;				// Current parsing parent node.
+	vector<node*> lastChild;	// Stack of last child of `current`.
+	vector<node*>* macros;
 	parse_result result;
 };
 
@@ -61,14 +61,6 @@ inline node* addChild(Parser& state, node* node){
 
 	prev_sibling = node;
 	return node;
-}
-
-
-inline node* addMacro(Parser& state, node* macro){
-	macro->parent = state.current;
-	macro->next = state.macros;
-	state.macros = macro;
-	return macro;
 }
 
 
@@ -299,7 +291,7 @@ static const char* parse_rawpcData(Parser& state, node* parent, const char* s){
 	// Append text nodes back to front
 	while (totalLen > 0){
 		node* txt = allocNode(node_type::TEXT);
-		txt->prev = parent->child;
+		txt->next = parent->child;
 		parent->child = txt;
 		txt->parent = parent;
 		
@@ -470,15 +462,13 @@ static const char* parse_openTag(Parser& state, const char* s){
 			throw parse_status::UNCLOSED_TAG_GT;
 		}
 		
-		html::node* node = allocNode(node_type::TAG);
+		html::node* node = addChild(state, allocNode(node_type::TAG));
 		node->value_p = name_p;
 		node->value_len = name_len;
 		node->attribute = firstAttr;
 		
 		if (string_view(name_p, name_len) == "MACRO"){
-			addMacro(state, node);
-		} else {
-			addChild(state, node);
+			state.macros->emplace_back(node);
 		}
 		
 		return s + 2; 
@@ -531,9 +521,7 @@ static const char* parse_openTag(Parser& state, const char* s){
 		}
 		
 		macro_tag:
-		push(state, addMacro(state, node));
-		return s + 1;
-		
+		state.macros->emplace_back(node);
 		regular_tag:
 		push(state, addChild(state, node));
 		return s + 1;
@@ -681,13 +669,14 @@ const char* parse_all(Parser& state, const char* s){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static parse_result parse(node& root, const char* buff){
+static parse_result parse(document& doc, const char* buff){
 	Parser parser;
 	
 	try {
 		parser = {
-			.current = &root,
+			.current = &doc,
 			.lastChild = { nullptr },			// Initial root child.
+			.macros = &parser.result.macros,
 			.result = {
 				.status = parse_status::OK,
 				.pos = buff
@@ -700,14 +689,6 @@ static parse_result parse(node& root, const char* buff){
 		parser.result.status = err;
 	} catch (...){
 		parser.result.status = parse_status::ERROR;
-	}
-	
-	// TEMP
-	node* m = parser.macros;
-	while (m != nullptr){
-		node* next = m->next;
-		html::del(m);
-		m = next;
 	}
 	
 	return parser.result;
@@ -759,8 +740,9 @@ static char* readFile(const char* path){
 }
 
 
-parse_result document::parseFile(const char* path){
-	char* buff = readFile(path);
+parse_result document::parseFile(string_view path){
+	unique_ptr<string> pathstr = make_unique<string>(path);
+	char* buff = readFile(pathstr->c_str());
 	
 	if (buff == nullptr){
 		return parse_result {
@@ -769,6 +751,7 @@ parse_result document::parseFile(const char* path){
 	}
 	
 	reset();
+	this->srcFile = move(pathstr);
 	this->buffer = buff;
 	this->buffer_owned = true;
 	return parse(*this, buff);
