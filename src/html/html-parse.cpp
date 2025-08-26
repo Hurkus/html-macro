@@ -81,7 +81,7 @@ inline void pop(Parser& state){
 
 
 long document::row(const char* const p) const noexcept {
-	const char* b = buffer;
+	const char* b = (buffer_owned ? buffer_owned.get() : buffer_unowned);
 	if (b == nullptr || p == nullptr || p < b){
 		return -1;
 	}
@@ -100,7 +100,7 @@ long document::row(const char* const p) const noexcept {
 
 
 long document::col(const char* const p) const noexcept {
-	const char* b = buffer;
+	const char* b = (buffer_owned ? buffer_owned.get() : buffer_unowned);
 	if (b == nullptr || p == nullptr || p < b){
 		return -1;
 	}
@@ -698,14 +698,6 @@ static parse_result parse(document& doc, const char* buff){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-parse_result document::parseBuff(const char* buff){
-	reset();
-	this->buffer = buff;
-	this->buffer_owned = false;
-	return parse(*this, buff);
-}
-
-
 static char* readFile(const char* path){
 	ifstream in = ifstream(path);
 	if (!in){
@@ -740,9 +732,15 @@ static char* readFile(const char* path){
 }
 
 
-parse_result document::parseFile(string_view path){
-	unique_ptr<string> pathstr = make_unique<string>(path);
-	char* buff = readFile(pathstr->c_str());
+parse_result document::parseBuff(const char* buff){
+	reset();
+	this->buffer_unowned = buff;
+	return parse(*this, buff);
+}
+
+
+parse_result document::parseFile(const char* path){
+	char* buff = readFile(path);
 	
 	if (buff == nullptr){
 		return parse_result {
@@ -751,9 +749,7 @@ parse_result document::parseFile(string_view path){
 	}
 	
 	reset();
-	this->srcFile = move(pathstr);
-	this->buffer = buff;
-	this->buffer_owned = true;
+	this->buffer_owned = shared_ptr<char>(buff);
 	return parse(*this, buff);
 }
 

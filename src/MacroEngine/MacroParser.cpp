@@ -1,7 +1,7 @@
 #include "MacroParser.hpp"
 #include <fstream>
 
-#include "DEBUG.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace pugi;
@@ -83,10 +83,10 @@ bool parseBuffer(std::string_view buff, pugi::xml_node dst){
 			const char* expl = "Some HTML tags must be made explicitly self closing, such as '<img/>', '<meta/>' and others.";
 			
 			int row, col;
-			if (findRowCol(buff, result.offset, row, col) && row > 0)
-				errorf("unknown", row, "%s. %s", result.description(), expl);
-			else
-				errorf("unknown", "%s. %s", result.description(), expl);
+			// if (findRowCol(buff, result.offset, row, col) && row > 0)
+			// 	errorf("unknown", row, "%s. %s", result.description(), expl);
+			// else
+			// 	errorf("unknown", "%s. %s", result.description(), expl);
 			
 			return false;
 		} break;
@@ -104,7 +104,7 @@ bool parseBuffer(std::string_view buff, pugi::xml_node dst){
 			
 			int row, col;
 			if (findRowCol(buff, result.offset, row, col) && row > 0){
-				errorf("unknown", row, "%s.", result.description());
+				// errorf("unknown", row, "%s.", result.description());
 				return false;
 			}
 			
@@ -113,7 +113,7 @@ bool parseBuffer(std::string_view buff, pugi::xml_node dst){
 		
 		default:{
 			default_err:
-			errorf("unknown", "%s.", result.description());
+			// errorf("unknown", "%s.", result.description());
 			return false;
 		} break;
 		
@@ -129,7 +129,7 @@ bool parseBuffer(std::string_view buff, pugi::xml_node dst){
 bool parseFile(const char* file, xml_document& doc){
 	ifstream in = ifstream(file);
 	if (!in){
-		ERROR_L1("MacroParser: Failed to open file '%s'.", file);
+		ERROR("MacroParser: Failed to open file '%s'.", file);
 		return false;
 	}
 	
@@ -142,10 +142,10 @@ bool parseFile(const char* file, xml_document& doc){
 			const char* expl = "Some HTML tags must be made explicitly self closing, such as '<img/>', '<meta/>' and others.";
 			
 			int row, col;
-			if (findRowCol(in, result.offset, row, col) && row > 0)
-				errorf(file, row, "%s. %s", result.description(), expl);
-			else
-				errorf(file, "%s. %s", result.description(), expl);
+			// if (findRowCol(in, result.offset, row, col) && row > 0)
+				// errorf(file, row, "%s. %s", result.description(), expl);
+			// else
+				// errorf(file, "%s. %s", result.description(), expl);
 			
 			return false;
 		} break;
@@ -163,7 +163,7 @@ bool parseFile(const char* file, xml_document& doc){
 			
 			int row, col;
 			if (findRowCol(in, result.offset, row, col) && row > 0){
-				errorf(file, row, "%s.", result.description());
+				// errorf(file, row, "%s.", result.description());
 				return false;
 			}
 			
@@ -172,7 +172,7 @@ bool parseFile(const char* file, xml_document& doc){
 		
 		default:{
 			default_err:
-			errorf(file, "%s.", result.description());
+			// errorf(file, "%s.", result.description());
 			return false;
 		} break;
 		

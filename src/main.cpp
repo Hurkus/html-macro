@@ -7,7 +7,7 @@
 #include "Expression.hpp"
 #include "ExpressionParser.hpp"
 #include "CLI.hpp"
-#include "DEBUG.hpp"
+#include "Debug.hpp"
 
 #include "html.hpp"
 

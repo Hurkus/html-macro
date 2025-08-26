@@ -167,7 +167,7 @@ bool MacroEngine::setTag(const xml_node op, xml_node dst){
 	
 	const char* cname = name_attr.value();
 	if (cname[0] == 0){
-		ERROR_L1("%s: Attribute 'NAME' cannot be empty.", op.name());
+		ERROR("%s: Attribute 'NAME' cannot be empty.", op.name());
 		return false;
 	}
 	
@@ -242,7 +242,7 @@ xml_node MacroEngine::tag(const xml_node op, xml_node dst){
 		} else if (name == "CALL"){
 			attr_call = attr;
 		} else {
-			WARNING_L1("%s: Unknown attribute '%s' treated as regular HTML attribute.", op.name(), cname);
+			WARN("%s: Unknown attribute '%s' treated as regular HTML attribute.", op.name(), cname);
 			attribute(attr, node);
 		}
 		

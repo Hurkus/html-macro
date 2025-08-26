@@ -1,8 +1,9 @@
 #include "Expression.hpp"
+#include <cassert>
 #include <cstring>
 
 #include "ExpressionParser.hpp"
-#include "DEBUG.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace Expression;
@@ -100,7 +101,7 @@ void Expression::interpolate(const char* str, const VariableMap& vars, string& b
 			Value val = expr->eval(vars);
 			Expression::str(val, buff);
 		} else {
-			WARNING_L1("TEXT: Failed to parse expression [%s].", string(beg, end+1).c_str());
+			WARN("TEXT: Failed to parse expression [%s].", string(beg, end+1).c_str());
 		}
 		
 		// Next expression

@@ -1,7 +1,7 @@
 #pragma once
 #include "MacroEngine.hpp"
 #include "ExpressionParser.hpp"
-#include "DEBUG.hpp"
+#include "Debug.hpp"
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -31,7 +31,7 @@ inline bool _attr_if(const MacroEngine& self, const pugi::xml_node& op, const pu
 	optbool b = _cond(self, attr.value());
 	
 	if (b.empty()){
-		WARNING_L1("%s: Invalid expression in attribute [%s=\"%s\"]. Defaulting to false.", op.name(), attr.name(), attr.value());
+		WARN("%s: Invalid expression in attribute [%s=\"%s\"]. Defaulting to false.", op.name(), attr.name(), attr.value());
 		return false;
 	}
 	
@@ -45,7 +45,7 @@ inline void _attr_interpolate(const MacroEngine& self, const pugi::xml_node& op,
 	if (b.hasValue()){
 		out = b.get();
 	} else {
-		WARNING_L1("%s: Ignored invalid expression in attribute [%s=\"%s\"].", op.name(), attr.name(), attr.value());
+		WARN("%s: Ignored invalid expression in attribute [%s=\"%s\"].", op.name(), attr.name(), attr.value());
 	}
 	
 }
@@ -55,17 +55,17 @@ inline void _attr_interpolate(const MacroEngine& self, const pugi::xml_node& op,
 
 
 inline void _attr_ignore(const pugi::xml_node& op, const pugi::xml_attribute& attr){
-	WARNING_L1("%s: Ignored attribute '%s'.", op.name(), attr.name());
+	WARN("%s: Ignored attribute '%s'.", op.name(), attr.name());
 }
 
 
 inline void _attr_missing(const pugi::xml_node& op, const char* name){
-	ERROR_L1("%s: Missing attribute '%s'.", op.name(), name);
+	ERROR("%s: Missing attribute '%s'.", op.name(), name);
 }
 
 
 inline void _attr_duplicate(const pugi::xml_node& op, const pugi::xml_attribute& a1, const pugi::xml_attribute& a2){
-	WARNING_L1("%s: Duplicate attribute [%s=\"%s\"] and [%s=\"%s\"].", op.name(), a1.name(), a1.value(), a2.name(), a2.value());
+	WARN("%s: Duplicate attribute [%s=\"%s\"] and [%s=\"%s\"].", op.name(), a1.name(), a1.value(), a2.name(), a2.value());
 }
 
 

@@ -1,9 +1,10 @@
 #include "MacroParser.hpp"
+#include <cassert>
 #include <array>
 #include <string_view>
 #include <algorithm>
 
-#include "DEBUG.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace pugi;

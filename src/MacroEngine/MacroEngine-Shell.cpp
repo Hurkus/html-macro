@@ -236,7 +236,7 @@ bool MacroEngine::shell(const xml_node op, xml_node dst){
 			
 		}
 		else {
-			WARNING_L1("SHELL: Ignored unknown macro attribute [%s=\"%s\"].", attr.name(), attr.value());
+			WARN("SHELL: Ignored unknown macro attribute [%s=\"%s\"].", attr.name(), attr.value());
 		}
 		
 	}
@@ -272,7 +272,7 @@ bool MacroEngine::shell(const xml_node op, xml_node dst){
 	}
 	
 	if (status != 0){
-		ERROR_L1("SHELL: Exited with status (" ANSI_RED "%d" ANSI_RESET ").", status);
+		ERROR("SHELL: Exited with status (" ANSI_RED "%d" ANSI_RESET ").", status);
 	}
 	
 	// Apply result

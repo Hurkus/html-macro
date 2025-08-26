@@ -1,3 +1,4 @@
+#include <cassert>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -11,7 +12,7 @@ extern "C" {
 }
 
 #include "ANSI.h"
-#include "DEBUG.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 

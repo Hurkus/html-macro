@@ -2,7 +2,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <string>
 #include <vector>
 #include <memory>
 
@@ -201,14 +200,22 @@ public:
 class html::document : public node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	const char* buffer = nullptr;	// Terminated input text.
-	bool buffer_owned = false;		// Is the buffer owned by `this` object.
-	std::shared_ptr<std::string> srcFile;
+	std::shared_ptr<char> buffer_owned = nullptr;		// c-string
+	const char* buffer_unowned = nullptr;
 	
 // ---------------------------------- [ Constructors ] -------------------------------------- //
 public:
 	document(){
 		node::type = node_type::ROOT;
+	}
+	
+	document(document&& o){
+		std::swap(*this, o);
+	}
+	
+	document& operator=(document&& o){
+		std::swap(*this, o);
+		return *this;
 	}
 	
 	~document(){
@@ -223,7 +230,7 @@ public:
 	 * @param path Path to file.
 	 * @return `parse_result` containing parsing status.
 	 */
-	parse_result parseFile(std::string_view path);
+	parse_result parseFile(const char* path);
 	
 	/**
 	 * @brief Parse HTML from string.
@@ -238,10 +245,8 @@ public:
 	 */
 	void reset(){
 		node::clear();
-		srcFile.reset();
-		if (buffer_owned)
-			delete buffer;
-		buffer = nullptr;
+		buffer_owned = nullptr;
+		buffer_unowned = nullptr;
 	}
 	
 	/**

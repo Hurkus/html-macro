@@ -2,7 +2,7 @@
 #include <cmath>
 
 #include "MacroParser.hpp"
-#include "DEBUG.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace pugi;
@@ -43,7 +43,7 @@ shared_ptr<Macro> MacroEngine::loadFile(const filesystem::path& path){
 		else
 			dom.path = path.relative_path();
 	} catch (const exception& e){
-		ERROR_L1("Could not open file '%s'.", path.c_str());
+		ERROR("Could not open file '%s'.", path.c_str());
 		return nullptr;
 	}
 	

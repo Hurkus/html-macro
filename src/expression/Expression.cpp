@@ -1,7 +1,7 @@
 #include "Expression.hpp"
 #include <cmath>
 
-#include "DEBUG.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace Expression;
@@ -39,7 +39,7 @@ Value Expr::Var::eval(const VariableMap& vars) noexcept {
 			return p->second;
 	} catch (const exception& e){}
 	
-	WARNING_L1("Undefined varialbe '%s' defaulted to 0.", this->var.c_str());
+	WARN("Undefined varialbe '%s' defaulted to 0.", this->var.c_str());
 	return Value(0);
 }
 

@@ -13,13 +13,13 @@ using namespace Expression;
 
 void MacroEngine::call(const char* name, xml_node dst){
 	if (name == nullptr || name[0] == 0){
-		ERROR_L1("CALL: Missing macro name.");
+		ERROR("CALL: Missing macro name.");
 		return;
 	}
 	
 	shared_ptr<Macro> macro = getMacro(name);
 	if (macro == nullptr){
-		WARNING_L1("CALL: Macro '%s' not found.", name);
+		WARN("CALL: Macro '%s' not found.", name);
 		return;
 	}
 	
@@ -48,7 +48,7 @@ void MacroEngine::call(const xml_node op, xml_node dst){
 	if (!name_attr.empty()){
 		call(name_attr.value(), dst);
 	} else {
-		WARNING_L1("CALL: Missing 'NAME' attribute.");
+		WARN("CALL: Missing 'NAME' attribute.");
 	}
 	
 }
@@ -98,7 +98,7 @@ bool MacroEngine::include(const xml_node op, xml_node dst){
 		}
 		
 	} catch (const exception& e){
-		ERROR_L1("%s: Failed to construct path '%s'.", op.name(), src_attr.value());
+		ERROR("%s: Failed to construct path '%s'.", op.name(), src_attr.value());
 		return false;
 	}
 	
@@ -188,7 +188,7 @@ void MacroEngine::run(const xml_node op, xml_node dst){
 		} else if (name == "ERROR"){
 			error(op);
 		} else {
-			WARNING_L1("%s: Unknown macro treated as regular HTML tag.", cname);
+			WARN("%s: Unknown macro treated as regular HTML tag.", cname);
 			tag(op, dst);
 		}
 		

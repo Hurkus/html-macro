@@ -1,6 +1,7 @@
 #include "ExpressionParser.hpp"
+#include <cassert>
 #include <charconv>
-#include "DEBUG.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace Expression;
@@ -131,7 +132,7 @@ unique_ptr<Expr::Const> Parser::parseNum(){
 			continue;
 		} else if (s[ii] == '.'){
 			if (dot){
-				ERROR_L1("Expression: Too many decimal points in number.\n%s", getErrorLine(i, ii, ii).c_str());
+				ERROR("Expression: Too many decimal points in number.\n%s", getErrorLine(i, ii, ii).c_str());
 				return nullptr;
 			}
 			dot = true;
@@ -149,7 +150,7 @@ unique_ptr<Expr::Const> Parser::parseNum(){
 		from_chars_result res = from_chars(s + i, s + ii, val);
 		
 		if (res.ec != errc()){
-			ERROR_L1("Expression: Failed to parse float in expression.\n%s", getErrorLine(i, ii).c_str());
+			ERROR("Expression: Failed to parse float in expression.\n%s", getErrorLine(i, ii).c_str());
 			return nullptr;
 		}
 		
@@ -159,7 +160,7 @@ unique_ptr<Expr::Const> Parser::parseNum(){
 		from_chars_result res = from_chars(s + i, s + ii, val);
 		
 		if (res.ec != errc()){
-			ERROR_L1("Expression: Failed to parse int in expression.\n%s", getErrorLine(i, ii).c_str());
+			ERROR("Expression: Failed to parse int in expression.\n%s", getErrorLine(i, ii).c_str());
 			return nullptr;
 		}
 		
@@ -197,7 +198,7 @@ unique_ptr<Expr::Const> Parser::parseStr(){
 	}
 	
 	// Fail
-	ERROR_L1("Expression: Missing closing quote in expression.\n%s", getErrorLine(i, ii).c_str());
+	ERROR("Expression: Missing closing quote in expression.\n%s", getErrorLine(i, ii).c_str());
 	return nullptr;
 	
 	success:
@@ -233,14 +234,14 @@ unique_ptr<Expr> Parser::parseUnaryExpression(){
 	
 	const char op = s[i];
 	if (!isUnaryOp(op)){
-		ERROR_L1("Expression: Unknown unary operator.\n%s", getErrorLine(_i).c_str());
+		ERROR("Expression: Unknown unary operator.\n%s", getErrorLine(_i).c_str());
 		return nullptr;
 	}
 	
 	i++;
 	i += parseWhiteSpace(s, i, e);
 	if (i >= e || s[i] == 0){
-		ERROR_L1("Expression: Missing unary operation argument.\n%s", getErrorLine(_i, i, i-1).c_str());
+		ERROR("Expression: Missing unary operation argument.\n%s", getErrorLine(_i, i, i-1).c_str());
 		return nullptr;
 	}
 	
@@ -398,13 +399,13 @@ pExpr Parser::parseBinopChain(){
 	int _i = i;
 	i += parseWhiteSpace(s, i, e);
 	if (i >= e){
-		ERROR_L1("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
+		ERROR("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
 		return nullptr;
 	}
 	
 	pExpr second = parseSingleExpression();
 	if (second == nullptr){
-		ERROR_L1("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
+		ERROR("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
 		return nullptr;
 	}
 	
@@ -434,7 +435,7 @@ pExpr Parser::parseBinopChain(){
 		if (arg != nullptr){
 			args.emplace_back(move(arg));
 		} else {
-			ERROR_L1("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
+			ERROR("Expression: Missing second operand of binary operator.\n%s", getErrorLine(_i, i, _i).c_str());
 			return nullptr;
 		}
 		
@@ -465,7 +466,7 @@ unique_ptr<Expr::Var> Parser::parseVar(){
 	if (isalpha(s[ii])){
 		ii++;
 	} else {
-		ERROR_L1("Expression: Unexpected character in symbol name.\n%s", getErrorLine(i, ii, ii).c_str());
+		ERROR("Expression: Unexpected character in symbol name.\n%s", getErrorLine(i, ii, ii).c_str());
 		return nullptr;
 	}
 	
@@ -488,7 +489,7 @@ unique_ptr<Expr::Func> Parser::parseFunArgs(){
 	const int _i = i;
 	
 	if (s[i] != '('){
-		ERROR_L1("Expression: Expected function argument list bracket '('.\n%s", getErrorLine(_i, i, i).c_str());
+		ERROR("Expression: Expected function argument list bracket '('.\n%s", getErrorLine(_i, i, i).c_str());
 		return nullptr;
 	} else {
 		i++;
@@ -506,10 +507,10 @@ unique_ptr<Expr::Func> Parser::parseFunArgs(){
 		}
 		
 		else if (first && s[i] == ','){
-			ERROR_L1("Expression: Unexpected separator ',' in argument list.\n%s", getErrorLine(_i, i, i).c_str());
+			ERROR("Expression: Unexpected separator ',' in argument list.\n%s", getErrorLine(_i, i, i).c_str());
 			return nullptr;
 		} else if (!first && s[i] != ','){
-			ERROR_L1("Expression: Missing separator ',' in argument list.\n%s", getErrorLine(_i, i, i).c_str());
+			ERROR("Expression: Missing separator ',' in argument list.\n%s", getErrorLine(_i, i, i).c_str());
 			return nullptr;
 		} else if (s[i] == ','){
 			i++;
@@ -517,7 +518,7 @@ unique_ptr<Expr::Func> Parser::parseFunArgs(){
 		
 		args.emplace_back(parseBinopChain());
 		if (args.back() == nullptr){
-			ERROR_L1("Expression: Failed to parse function argument list.\n%s", getErrorLine(_i, i).c_str());
+			ERROR("Expression: Failed to parse function argument list.\n%s", getErrorLine(_i, i).c_str());
 			return nullptr;
 		}
 		
@@ -526,7 +527,7 @@ unique_ptr<Expr::Func> Parser::parseFunArgs(){
 	
 	i += parseWhiteSpace(s, i, e);
 	if (i >= e || s[i] != ')'){
-		ERROR_L1("Expression: Missing closing bracket ')' in function argument list.\n%s", getErrorLine(_i, i, i).c_str());
+		ERROR("Expression: Missing closing bracket ')' in function argument list.\n%s", getErrorLine(_i, i, i).c_str());
 		return nullptr;
 	}
 	
@@ -588,13 +589,13 @@ pExpr Parser::parseSingleExpression(){
 		
 		pExpr expr = parseBinopChain();
 		if (expr == nullptr){
-			ERROR_L1("Expression: Missing expression within brackets '()'.\n%s", getErrorLine(_i, i).c_str());
+			ERROR("Expression: Missing expression within brackets '()'.\n%s", getErrorLine(_i, i).c_str());
 			return nullptr;
 		}
 		
 		i += parseWhiteSpace(s, i, e);
 		if (i >= e || s[i] != ')'){
-			ERROR_L1("Expression: Missing closing bracket ')'.\n%s", getErrorLine(_i, i, i).c_str());
+			ERROR("Expression: Missing closing bracket ')'.\n%s", getErrorLine(_i, i, i).c_str());
 			return nullptr;
 		}
 		
@@ -602,7 +603,7 @@ pExpr Parser::parseSingleExpression(){
 		return expr;
 	}
 	
-	ERROR_L1("Expression: Unexpected symbol.\n%s", getErrorLine(i).c_str());
+	ERROR("Expression: Unexpected symbol.\n%s", getErrorLine(i).c_str());
 	return nullptr;
 }
 
@@ -619,7 +620,7 @@ pExpr Parser::parse(string_view str){
 	
 	i += parseWhiteSpace(s, i, e);
 	if (i < e){
-		ERROR_L1("Expression: Unexpected symbol.\n%s", getErrorLine(i).c_str());
+		ERROR("Expression: Unexpected symbol.\n%s", getErrorLine(i).c_str());
 		return nullptr;
 	}
 	

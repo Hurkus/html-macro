@@ -21,7 +21,7 @@ void MacroEngine::set(const xml_node op){
 		
 		pExpr expr = parser.parse(value);
 		if (expr == nullptr){
-			WARNING_L1("SET: Failed to parse expression [%s].", attr.value());
+			WARN("SET: Failed to parse expression [%s].", attr.value());
 			continue;
 		}
 		
@@ -46,7 +46,7 @@ bool MacroEngine::branch_if(const xml_node op, xml_node dst){
 		
 		pExpr expr = parser.parse(attr.value());
 		if (expr == nullptr){
-			ERROR_L1("%s: Invalid expression in attribute [%s=\"%s\"].", op.name(), attr.name(), attr.value());
+			ERROR("%s: Invalid expression in attribute [%s=\"%s\"].", op.name(), attr.name(), attr.value());
 			return false;
 		}
 		
@@ -79,7 +79,7 @@ bool MacroEngine::branch_if(const xml_node op, xml_node dst){
 		this->branch = true;
 		return true;
 	} else {
-		WARNING_L1("IF: Missing any TRUE or FALSE expression attributes.");
+		WARN("IF: Missing any TRUE or FALSE expression attributes.");
 		goto fail;
 	}
 	
@@ -91,7 +91,7 @@ bool MacroEngine::branch_if(const xml_node op, xml_node dst){
 
 bool MacroEngine::branch_elif(const xml_node op, xml_node dst){
 	if (this->branch.empty()){
-		WARNING_L1("ELSE-IF: Missing preceding IF tag.");
+		WARN("ELSE-IF: Missing preceding IF tag.");
 		return false;
 	} else if (this->branch == true){
 		return false;
@@ -105,7 +105,7 @@ bool MacroEngine::branch_else(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
 	if (branch.empty()){
-		WARNING_L1("ELSE: Missing preceding IF tag.");
+		WARN("ELSE: Missing preceding IF tag.");
 		return false;
 	} else if (branch == true){
 		this->branch = nullptr;
@@ -152,7 +152,7 @@ int MacroEngine::loop_for(const xml_node op, xml_node dst){
 			if (cond_attr.empty())
 				cond_attr = attr;
 			else
-				WARNING_L1("FOR: Duplicate condition attribute [%s=\"%s\"] and [%s=\"%s\"].", cond_attr.name(), cond_attr.value(), attr.name(), attr.value());
+				WARN("FOR: Duplicate condition attribute [%s=\"%s\"] and [%s=\"%s\"].", cond_attr.name(), cond_attr.value(), attr.name(), attr.value());
 		}
 		else if (name == "INTERPOLATE"){
 			_attr_interpolate(*this, op, attr, _interpolate);
@@ -161,13 +161,13 @@ int MacroEngine::loop_for(const xml_node op, xml_node dst){
 			if (setup_attr.empty())
 				setup_attr = attr;
 			else
-				WARNING_L1("FOR: Duplicate setup attribute [%s=\"%s\"] and [%s=\"%s\"].", setup_attr.name(), setup_attr.value(), attr.name(), attr.value());
+				WARN("FOR: Duplicate setup attribute [%s=\"%s\"] and [%s=\"%s\"].", setup_attr.name(), setup_attr.value(), attr.name(), attr.value());
 		}
 		else {
 			if (inc_attr.empty())
 				inc_attr = attr;
 			else
-				WARNING_L1("FOR: Duplicate increment attribute [%s=\"%s\"] and [%s=\"%s\"].", inc_attr.name(), inc_attr.value(), attr.name(), attr.value());
+				WARN("FOR: Duplicate increment attribute [%s=\"%s\"] and [%s=\"%s\"].", inc_attr.name(), inc_attr.value(), attr.name(), attr.value());
 		}
 		
 		continue;
@@ -183,18 +183,18 @@ int MacroEngine::loop_for(const xml_node op, xml_node dst){
 	if (!cond_attr.empty()){
 		cond_expr = parser.parse(cond_attr.value());
 		if (cond_expr == nullptr){
-			ERROR_L1("FOR: Invalid expression in attribute [%s=\"%s\"].", cond_attr.name(), cond_attr.value());
+			ERROR("FOR: Invalid expression in attribute [%s=\"%s\"].", cond_attr.name(), cond_attr.value());
 			return 0;
 		}
 	} else {
-		ERROR_L1("FOR: Missing loop condition attribute [TRUE=<expr>] or [FALSE=<expr>].");
+		ERROR("FOR: Missing loop condition attribute [TRUE=<expr>] or [FALSE=<expr>].");
 		return 0;
 	}
 	
 	if (!setup_attr.empty()){
 		setup_expr = parser.parse(setup_attr.value());
 		if (setup_expr == nullptr){
-			ERROR_L1("FOR: Ignored invalid expression in attribute [%s=\"%s\"].", setup_attr.name(), setup_attr.value());
+			ERROR("FOR: Ignored invalid expression in attribute [%s=\"%s\"].", setup_attr.name(), setup_attr.value());
 			return 0;
 		}
 	}
@@ -202,7 +202,7 @@ int MacroEngine::loop_for(const xml_node op, xml_node dst){
 	if (!inc_attr.empty()){
 		inc_expr = parser.parse(inc_attr.value());
 		if (inc_expr == nullptr){
-			ERROR_L1("FOR: Ignored invalid expression in attribute [%s=\"%s\"].", inc_attr.name(), inc_attr.value());
+			ERROR("FOR: Ignored invalid expression in attribute [%s=\"%s\"].", inc_attr.name(), inc_attr.value());
 			return 0;
 		}
 	}
@@ -249,13 +249,13 @@ int MacroEngine::loop_while(const xml_node op, xml_node dst){
 			if (cond_attr.empty())
 				cond_attr = attr;
 			else
-				WARNING_L1("WHILE: Duplicate condition attribute [%s=\"%s\"] and [%s=\"%s\"].", cond_attr.name(), cond_attr.value(), attr.name(), attr.value());
+				WARN("WHILE: Duplicate condition attribute [%s=\"%s\"] and [%s=\"%s\"].", cond_attr.name(), cond_attr.value(), attr.name(), attr.value());
 		}
 		else if (name == "INTERPOLATE"){
 			_attr_interpolate(*this, op, attr, _interpolate);
 		}
 		else {
-			WARNING_L1("WHILE: Ignored unknown macro attribute [%s=\"%s\"].", attr.name(), attr.value());
+			WARN("WHILE: Ignored unknown macro attribute [%s=\"%s\"].", attr.name(), attr.value());
 		}
 		
 		continue;
@@ -269,11 +269,11 @@ int MacroEngine::loop_while(const xml_node op, xml_node dst){
 	if (!cond_attr.empty()){
 		cond_expr = parser.parse(cond_attr.value());
 		if (cond_expr == nullptr){
-			ERROR_L1("WHILE: Invalid expression in attribute [%s=\"%s\"].", cond_attr.name(), cond_attr.value());
+			ERROR("WHILE: Invalid expression in attribute [%s=\"%s\"].", cond_attr.name(), cond_attr.value());
 			return 0;
 		}
 	} else {
-		ERROR_L1("WHILE: Missing loop condition attribute [TRUE=<expr>] or [FALSE=<expr>].");
+		ERROR("WHILE: Missing loop condition attribute [TRUE=<expr>] or [FALSE=<expr>].");
 		return 0;
 	}
 	
