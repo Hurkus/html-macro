@@ -141,7 +141,7 @@ bool parseFile(const char* file, xml_document& doc){
 		case status_end_element_mismatch: {
 			const char* expl = "Some HTML tags must be made explicitly self closing, such as '<img/>', '<meta/>' and others.";
 			
-			int row, col;
+			// int row, col;
 			// if (findRowCol(in, result.offset, row, col) && row > 0)
 				// errorf(file, row, "%s. %s", result.description(), expl);
 			// else

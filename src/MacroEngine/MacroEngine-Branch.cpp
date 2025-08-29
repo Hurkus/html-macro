@@ -10,7 +10,7 @@ using namespace Expression;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::set(const xml_node op){
+void MacroEngineObject::set(const xml_node op){
 	Expression::Parser parser = {};
 	
 	for (const xml_attribute attr : op.attributes()){
@@ -34,7 +34,7 @@ void MacroEngine::set(const xml_node op){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngine::branch_if(const xml_node op, xml_node dst){
+bool MacroEngineObject::branch_if(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
 	Parser parser = {};
@@ -89,7 +89,7 @@ bool MacroEngine::branch_if(const xml_node op, xml_node dst){
 }
 
 
-bool MacroEngine::branch_elif(const xml_node op, xml_node dst){
+bool MacroEngineObject::branch_elif(const xml_node op, xml_node dst){
 	if (this->branch.empty()){
 		WARN("ELSE-IF: Missing preceding IF tag.");
 		return false;
@@ -101,7 +101,7 @@ bool MacroEngine::branch_elif(const xml_node op, xml_node dst){
 }
 
 
-bool MacroEngine::branch_else(const xml_node op, xml_node dst){
+bool MacroEngineObject::branch_else(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
 	if (branch.empty()){
@@ -134,7 +134,7 @@ bool MacroEngine::branch_else(const xml_node op, xml_node dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-int MacroEngine::loop_for(const xml_node op, xml_node dst){
+int MacroEngineObject::loop_for(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	bool _interpolate = this->interpolateText;
 	xml_attribute setup_attr;
@@ -233,7 +233,7 @@ int MacroEngine::loop_for(const xml_node op, xml_node dst){
 }
 
 
-int MacroEngine::loop_while(const xml_node op, xml_node dst){
+int MacroEngineObject::loop_while(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	bool _interpolate = this->interpolateText;
 	xml_attribute cond_attr;

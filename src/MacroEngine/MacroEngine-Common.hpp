@@ -7,7 +7,7 @@
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static optbool _cond(const MacroEngine& self, const char* exprstr){
+static optbool _cond(const MacroEngineObject& self, const char* exprstr){
 	assert(exprstr != nullptr);
 	if (exprstr[0] == 0){
 		return nullptr;
@@ -27,7 +27,7 @@ static optbool _cond(const MacroEngine& self, const char* exprstr){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-inline bool _attr_if(const MacroEngine& self, const pugi::xml_node& op, const pugi::xml_attribute& attr){
+inline bool _attr_if(const MacroEngineObject& self, const pugi::xml_node& op, const pugi::xml_attribute& attr){
 	optbool b = _cond(self, attr.value());
 	
 	if (b.empty()){
@@ -39,7 +39,7 @@ inline bool _attr_if(const MacroEngine& self, const pugi::xml_node& op, const pu
 }
 
 
-inline void _attr_interpolate(const MacroEngine& self, const pugi::xml_node& op, const pugi::xml_attribute& attr, bool& out){
+inline void _attr_interpolate(const MacroEngineObject& self, const pugi::xml_node& op, const pugi::xml_attribute& attr, bool& out){
 	optbool b = _cond(self, attr.value());
 			
 	if (b.hasValue()){

@@ -77,6 +77,29 @@ attr& node::appendAttribute(){
 }
 
 
+attr* node::extractAttr(attr* a){
+	attr* prev = nullptr;
+	attr* curr = this->attribute;
+	
+	// Find previous attribute
+	while (curr != a){
+		if (curr == nullptr)
+			return nullptr;
+		prev = curr;
+		curr = curr->next;
+	}
+	
+	if (prev == nullptr){
+		this->attribute = a->next;
+	} else {
+		prev->next = a->next;
+	}
+	
+	a->next = nullptr;
+	return a;
+}
+
+
 bool node::removeAttr(attr* a){
 	attr* prev = nullptr;
 	attr* curr = this->attribute;
@@ -89,6 +112,7 @@ bool node::removeAttr(attr* a){
 		curr = curr->next;
 	}
 	
+	// Remove from linked list
 	if (prev == nullptr){
 		this->attribute = a->next;
 	} else {
@@ -115,12 +139,36 @@ void node::removeAttributes(){
 }
 
 
+node* node::extractChild(node* child){
+	node* prev = nullptr;
+	node* curr = this->child;
 	
+	// Find previous node
+	while (curr != child){
+		if (curr == nullptr)
+			return nullptr;
+		prev = curr;
+		curr = curr->next;
+	}
+	
+	// Remove from linked list
+	if (prev == nullptr){
+		this->child = child->next;
+	} else {
+		prev->next = child->next;
+	}
+	
+	child->next = nullptr;
+	child->parent = nullptr;
+	return child;
+}
+
+
 bool node::removeChild(node* child){
 	node* prev = nullptr;
 	node* curr = this->child;
 	
-	// Find previous attribute
+	// Find previous node
 	while (curr != child){
 		if (curr == nullptr)
 			return false;
@@ -128,6 +176,7 @@ bool node::removeChild(node* child){
 		curr = curr->next;
 	}
 	
+	// Remove from linked list
 	if (prev == nullptr){
 		this->child = child->next;
 	} else {

@@ -11,13 +11,13 @@ using namespace Expression;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::call(const char* name, xml_node dst){
+void MacroEngineObject::call(const char* name, xml_node dst){
 	if (name == nullptr || name[0] == 0){
 		ERROR("CALL: Missing macro name.");
 		return;
 	}
 	
-	shared_ptr<Macro> macro = getMacro(name);
+	shared_ptr<MacroObject> macro = getMacro(name);
 	if (macro == nullptr){
 		WARN("CALL: Macro '%s' not found.", name);
 		return;
@@ -27,7 +27,7 @@ void MacroEngine::call(const char* name, xml_node dst){
 }
 
 
-void MacroEngine::call(const xml_node op, xml_node dst){
+void MacroEngineObject::call(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	xml_attribute name_attr;
 	
@@ -57,7 +57,7 @@ void MacroEngine::call(const xml_node op, xml_node dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngine::include(const xml_node op, xml_node dst){
+bool MacroEngineObject::include(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	xml_attribute src_attr;
 	
@@ -103,7 +103,7 @@ bool MacroEngine::include(const xml_node op, xml_node dst){
 	}
 	
 	// Fetch and execute macro
-	shared_ptr<Macro> macro = loadFile(path);
+	shared_ptr<MacroObject> macro = loadFile(path);
 	if (macro == nullptr){
 		return false;
 	}
@@ -116,7 +116,7 @@ bool MacroEngine::include(const xml_node op, xml_node dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::runChildren(const xml_node parent, xml_node dst){
+void MacroEngineObject::runChildren(const xml_node parent, xml_node dst){
 	assert(parent.root() != dst.root());
 	auto _branch = this->branch;
 	this->branch = nullptr;
@@ -129,7 +129,7 @@ void MacroEngine::runChildren(const xml_node parent, xml_node dst){
 }
 
 
-void MacroEngine::run(const xml_node op, xml_node dst){
+void MacroEngineObject::run(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	
 	// Not tag
@@ -200,14 +200,14 @@ void MacroEngine::run(const xml_node op, xml_node dst){
 }
 
 
-void MacroEngine::exec(const Macro& macro, xml_node dst){
+void MacroEngineObject::exec(const MacroObject& macro, xml_node dst){
 	const bool _interp = this->interpolateText;
 	this->interpolateText = true;
 	
 	const optbool _branch = this->branch;
 	this->branch = nullptr;
 	
-	const Macro* _currentMacro = this->currentMacro;
+	const MacroObject* _currentMacro = this->currentMacro;
 	this->currentMacro = &macro;
 	
 	runChildren(macro.root, dst);

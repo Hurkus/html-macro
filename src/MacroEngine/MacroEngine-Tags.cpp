@@ -9,7 +9,7 @@ using namespace Expression;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-xml_text MacroEngine::text(const char* str, xml_node dst){
+xml_text MacroEngineObject::text(const char* str, xml_node dst){
 	xml_text txtnode = dst.append_child(xml_node_type::node_pcdata).text();
 	
 	if (!interpolateText){
@@ -34,7 +34,7 @@ xml_text MacroEngine::text(const char* str, xml_node dst){
 }
 
 
-void MacroEngine::interpolateAttr(const char* str, pugi::xml_attribute dst){
+void MacroEngineObject::interpolateAttr(const char* str, pugi::xml_attribute dst){
 	assert(str != nullptr);
 	
 	// Check if value requires interpolation
@@ -52,7 +52,7 @@ void MacroEngine::interpolateAttr(const char* str, pugi::xml_attribute dst){
 }
 
 
-xml_attribute MacroEngine::attribute(const xml_attribute src, xml_node dst){
+xml_attribute MacroEngineObject::attribute(const xml_attribute src, xml_node dst){
 	assert(!src.empty());
 	
 	if (!src.empty()){
@@ -68,7 +68,7 @@ xml_attribute MacroEngine::attribute(const xml_attribute src, xml_node dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngine::setAttr(const xml_node op, xml_node dst){
+bool MacroEngineObject::setAttr(const xml_node op, xml_node dst){
 	// Check IF conditional
 	for (const xml_attribute attr : op.attributes()){
 		if (attr.name() == "IF"sv){
@@ -96,7 +96,7 @@ bool MacroEngine::setAttr(const xml_node op, xml_node dst){
 }
 
 
-bool MacroEngine::getAttr(const xml_node op, xml_node dst){
+bool MacroEngineObject::getAttr(const xml_node op, xml_node dst){
 	// Check IF conditional
 	for (const xml_attribute attr : op.attributes()){
 		if (attr.name() == "IF"sv){
@@ -119,7 +119,7 @@ bool MacroEngine::getAttr(const xml_node op, xml_node dst){
 }
 
 
-bool MacroEngine::delAttr(const xml_node op, xml_node dst){
+bool MacroEngineObject::delAttr(const xml_node op, xml_node dst){
 	// Check IF conditional
 	for (const xml_attribute attr : op.attributes()){
 		if (attr.name() == "IF"sv){
@@ -139,7 +139,7 @@ bool MacroEngine::delAttr(const xml_node op, xml_node dst){
 }
 
 
-bool MacroEngine::setTag(const xml_node op, xml_node dst){
+bool MacroEngineObject::setTag(const xml_node op, xml_node dst){
 	xml_attribute name_attr;
 	
 	// Check IF conditional
@@ -177,7 +177,7 @@ bool MacroEngine::setTag(const xml_node op, xml_node dst){
 }
 
 
-bool MacroEngine::getTag(const xml_node op, xml_node dst){
+bool MacroEngineObject::getTag(const xml_node op, xml_node dst){
 	// Check IF conditional
 	for (const xml_attribute attr : op.attributes()){
 		if (attr.name() == "IF"sv){
@@ -199,7 +199,7 @@ bool MacroEngine::getTag(const xml_node op, xml_node dst){
 }
 
 
-bool MacroEngine::delTag(const xml_node op, xml_node dst){
+bool MacroEngineObject::delTag(const xml_node op, xml_node dst){
 	assert(false);
 	return false;
 }
@@ -208,7 +208,7 @@ bool MacroEngine::delTag(const xml_node op, xml_node dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-xml_node MacroEngine::tag(const xml_node op, xml_node dst){
+xml_node MacroEngineObject::tag(const xml_node op, xml_node dst){
 	assert(op.root() != dst.root());
 	const char* tag_cname = op.name();
 	string_view tag_name = tag_cname;

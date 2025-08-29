@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 #include <memory>
 
@@ -13,27 +14,27 @@ namespace html {
 	enum class node_type : uint8_t;
 	enum class node_options : uint8_t;
 	
+	enum class parse_status;
+	struct parse_result;
+	
 	struct node;
 	struct attr;
 	class document;
 	
-	enum class parse_status;
-	struct parse_result;
+	const char* errstr(parse_status status) noexcept;
 }
 
 
 enum class html::parse_status {
 	OK,
 	UNCLOSED_TAG,			// ...>
-	UNCLOSED_TAG_GT,		// .../>
 	UNCLOSED_STRING,		// ..."
 	UNCLOSED_QUESTION,		// ...?>
 	UNCLOSED_COMMENT,		// ...-->
 	INVALID_TAG_NAME,		// <...
 	INVALID_TAG_CHAR,		// <...>
-	INVALID_TAG_CLOSE,
+	MISSING_END_TAG,		// Some tags are unclosed: </tag>
 	MISSING_ATTR_VALUE,		// attr=
-	MISSING_END_TAG,		// </tag>
 	MEMORY,					// Out of memory.
 	IO,						// Failed to read file.
 	ERROR					// Unknown error.
@@ -65,6 +66,8 @@ struct html::parse_result {
 	const char* pos = nullptr;	// Last parsing position. Usefull for `document::row()`.
 	std::vector<node*> macros;	// Pointers to nodes `<MACRO>`
 };
+
+
 
 
 /* Readonly node for marking HTML structure in a source text. */
@@ -127,9 +130,11 @@ public:
 	
 	bool removeChild(node* child);
 	void removeChildren();
+	node* extractChild(node* child);
 	
 	bool removeAttr(attr* attr);
 	void removeAttributes();
+	attr* extractAttr(attr* child);
 	
 	void clear(){
 		removeAttributes();
@@ -144,6 +149,24 @@ public:
 			return parent->root();
 		assert(type == node_type::ROOT);
 		return *(document*)this;
+	}
+	
+	const document& root() const {
+		if (parent != nullptr)
+			return parent->root();
+		assert(type == node_type::ROOT);
+		return *(document*)this;
+	}
+	
+public:
+	static void del(node* node){
+		assert(node != nullptr);
+		if (node->parent != nullptr){
+			node->parent->removeChild(node);
+		} else {
+			node->clear();
+			html::del(node);
+		}
 	}
 	
 // ------------------------------------------------------------------------------------------ //
@@ -203,6 +226,8 @@ public:
 	std::shared_ptr<char> buffer_owned = nullptr;		// c-string
 	const char* buffer_unowned = nullptr;
 	
+	std::shared_ptr<const std::string> srcFile;			// Path to source file.
+	
 // ---------------------------------- [ Constructors ] -------------------------------------- //
 public:
 	document(){
@@ -225,19 +250,25 @@ public:
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	/**
-	 * @brief Open file from `path` and parse HTML.
-	 *        `buffer` is owned by `this` object.
-	 * @param path Path to file.
-	 * @return `parse_result` containing parsing status.
-	 */
-	parse_result parseFile(const char* path);
-	
-	/**
 	 * @brief Parse HTML from string.
 	 * @param buff String buffer, whose lifetime must exceede that of `this` object.
 	 * @return `parse_result` containing parsing status.
 	 */
 	parse_result parseBuff(const char* buff);
+	
+	/**
+	 * @brief Open file from `path` and parse HTML.
+	 *        `buffer` is owned by `this` object.
+	 * @param path Path to file.
+	 * @return `parse_result` containing parsing status.
+	 */
+	parse_result parseFile(std::string&& path){
+		srcFile = std::make_shared<std::string>(std::move(path));
+		return parseFile();
+	}
+	
+private:
+	parse_result parseFile();
 	
 public:
 	/**
@@ -278,6 +309,13 @@ public:
 	 * @return Colum number or `-1` if not found.
 	 */
 	long col(const char* p) const noexcept;
+	
+	
+	const char* file() const {
+		if (srcFile != nullptr)
+			return srcFile->c_str();
+		return "";
+	}
 	
 // ------------------------------------------------------------------------------------------ //
 };

@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdio>
+#include <iostream>
 #include "ANSI.h"
 
 
@@ -17,7 +17,7 @@
 
 
 #define PRINT_HERE(...)	\
-	std::fprintf(stderr, ANSI_BOLD "%s:%ld:" ANSI_RESET " ", __FILE__, size_t(__LINE__))
+	std::fprintf(stderr, ANSI_BOLD "[%s:%ld]" ANSI_RESET "\n ", __FILE__, size_t(__LINE__))
 
 
 #ifdef DEBUG

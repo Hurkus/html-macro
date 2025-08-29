@@ -35,6 +35,42 @@ struct Parser {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+
+const char* html::errstr(parse_status status) noexcept {
+	switch (status){
+		case parse_status::OK:
+			return "";
+		case parse_status::UNCLOSED_TAG:
+			return "Missing closing bracket '>'.";
+		case parse_status::UNCLOSED_STRING:
+			return "Unterminated string. Multiline strings are not permitted.";
+		case parse_status::UNCLOSED_QUESTION:
+			return "Missing end bracket '?>' for processing instruction.";
+		case parse_status::UNCLOSED_COMMENT:
+			return "Missing end bracket '-->' for comment.";
+		case parse_status::INVALID_TAG_NAME:
+			return "Invalid character in tag name.";
+		case parse_status::INVALID_TAG_CHAR:
+			return "Invalid character in tag.";
+		case parse_status::MISSING_END_TAG:
+			return "Missing closing tag.";
+		case parse_status::MISSING_ATTR_VALUE:
+			return "Missing value of attribute.";
+		case parse_status::MEMORY:
+			return "Out of memory.";
+		case parse_status::IO:
+			return "Failed to read file.";
+		case parse_status::ERROR:
+			return "Internal error.";
+	}
+	assert(false);
+	return nullptr;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 inline attr* allocAttr(){
 	html::attr* a = html::newAttr();
 	a->options |= node_options::LIST_FORWARDS;
@@ -459,7 +495,7 @@ static const char* parse_openTag(Parser& state, const char* s){
 	if (s[0] == '/'){ tag_self_close:
 		if (s[1] != '>'){
 			state.result.pos = s;
-			throw parse_status::UNCLOSED_TAG_GT;
+			throw parse_status::UNCLOSED_TAG;
 		}
 		
 		html::node* node = addChild(state, allocNode(node_type::TAG));
@@ -534,7 +570,7 @@ static const char* parse_openTag(Parser& state, const char* s){
 	// Check for attributes
 	else if (!isWhitespace(s[0])){
 		state.result.pos = s;
-		throw (s[0] == 0) ? parse_status::UNCLOSED_TAG_GT : parse_status::INVALID_TAG_NAME;
+		throw (s[0] == 0) ? parse_status::UNCLOSED_TAG : parse_status::INVALID_TAG_NAME;
 	}
 	
 	while (true){
@@ -606,8 +642,9 @@ static const char* parse_closeTag(Parser& state, const char* s){
 	}
 	
 	// Error
-	state.result.pos = s;
-	throw parse_status::INVALID_TAG_CLOSE;
+	name = state.current->value_p;
+	state.result.pos = (name != nullptr ? name : beg);
+	throw parse_status::MISSING_END_TAG;
 }
 
 
@@ -739,8 +776,9 @@ parse_result document::parseBuff(const char* buff){
 }
 
 
-parse_result document::parseFile(const char* path){
-	char* buff = readFile(path);
+parse_result document::parseFile(){
+	assert(this->srcFile != nullptr);
+	char* buff = readFile(srcFile->c_str());
 	
 	if (buff == nullptr){
 		return parse_result {

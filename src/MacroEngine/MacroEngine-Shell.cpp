@@ -197,7 +197,7 @@ static void _extractVars(const char* csv, vector<string_view>& vars){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngine::shell(const xml_node op, xml_node dst){
+bool MacroEngineObject::shell(const xml_node op, xml_node dst){
 	vector<string_view> vars = {};
 	
 	enum class Capture {

@@ -28,7 +28,7 @@ static void _log(const char* str, bool interp, const VariableMap& vars, FILE* ou
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::info(const xml_node op){
+void MacroEngineObject::info(const xml_node op){
 	bool intrp = this->interpolateText;
 	
 	for (const xml_attribute attr : op.attributes()){
@@ -58,7 +58,7 @@ void MacroEngine::info(const xml_node op){
 }
 
 
-void MacroEngine::warn(const pugi::xml_node op){
+void MacroEngineObject::warn(const pugi::xml_node op){
 	bool intrp = this->interpolateText;
 	
 	for (const xml_attribute attr : op.attributes()){
@@ -88,7 +88,7 @@ void MacroEngine::warn(const pugi::xml_node op){
 }
 
 
-void MacroEngine::error(const pugi::xml_node op){
+void MacroEngineObject::error(const pugi::xml_node op){
 	bool intrp = this->interpolateText;
 	
 	for (const xml_attribute attr : op.attributes()){

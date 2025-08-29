@@ -8,27 +8,27 @@
 #include "Expression.hpp"
 
 
-class MacroEngine {
+class MacroEngineObject {
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 public:
 	pugi::xml_document doc;
-	string_map<std::shared_ptr<Macro>> macros;
+	string_map<std::shared_ptr<MacroObject>> macros;
 	Expression::VariableMap variables;
 	
 public:
-	const Macro* currentMacro = nullptr;
+	const MacroObject* currentMacro = nullptr;
 	optbool branch = nullptr;
 	bool interpolateText = true;
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	std::shared_ptr<Macro> getMacro(std::string_view name) const;
-	std::shared_ptr<Macro> loadFile(const std::filesystem::path& path);
+	std::shared_ptr<MacroObject> getMacro(std::string_view name) const;
+	std::shared_ptr<MacroObject> loadFile(const std::filesystem::path& path);
 	void setVariableConstants();
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	void exec(const Macro& macro, pugi::xml_node dst);
+	void exec(const MacroObject& macro, pugi::xml_node dst);
 	bool execBuff(std::string_view buff, pugi::xml_node dst);
 	
 	/**

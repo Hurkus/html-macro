@@ -11,7 +11,7 @@ using namespace pugi;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-shared_ptr<Macro> MacroEngine::getMacro(string_view name) const {
+shared_ptr<MacroObject> MacroEngineObject::getMacro(string_view name) const {
 	auto p = macros.find(name);
 	if (p != macros.end()){
 		assert(p->second != nullptr);
@@ -22,7 +22,7 @@ shared_ptr<Macro> MacroEngine::getMacro(string_view name) const {
 }
 
 
-static void cacheMacros(MacroEngine& self, vector<unique_ptr<Macro>>&& newMacros){
+static void cacheMacros(MacroEngineObject& self, vector<unique_ptr<MacroObject>>&& newMacros){
 	for (auto& pmacro : newMacros){
 		assert(pmacro != nullptr);
 		self.macros.emplace(pmacro->name, move(pmacro));
@@ -34,7 +34,7 @@ static void cacheMacros(MacroEngine& self, vector<unique_ptr<Macro>>&& newMacros
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-shared_ptr<Macro> MacroEngine::loadFile(const filesystem::path& path){
+shared_ptr<MacroObject> MacroEngineObject::loadFile(const filesystem::path& path){
 	XHTMLFile dom = {};
 	
 	try {
@@ -48,7 +48,7 @@ shared_ptr<Macro> MacroEngine::loadFile(const filesystem::path& path){
 	}
 	
 	// Check if file is already cached.
-	shared_ptr<Macro> p = getMacro(dom.path.native());
+	shared_ptr<MacroObject> p = getMacro(dom.path.native());
 	if (p != nullptr){
 		return p;
 	}
@@ -59,7 +59,7 @@ shared_ptr<Macro> MacroEngine::loadFile(const filesystem::path& path){
 	}
 	
 	// Extract and cache all sub-macros
-	vector<unique_ptr<Macro>> macroList = dom.convertToMacroSet();
+	vector<unique_ptr<MacroObject>> macroList = dom.convertToMacroSet();
 	p = move(macroList.back());
 	macroList.pop_back();
 	
@@ -73,14 +73,14 @@ shared_ptr<Macro> MacroEngine::loadFile(const filesystem::path& path){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngine::execBuff(string_view buff, xml_node dst){
+bool MacroEngineObject::execBuff(string_view buff, xml_node dst){
 	xml_document doc;
 	if (!parseBuffer(buff, doc)){
 		return false;
 	}
 	
-	vector<unique_ptr<Macro>> macroList = XHTMLFile::extractMacros(move(doc));
-	unique_ptr<Macro> main = move(macroList.back());
+	vector<unique_ptr<MacroObject>> macroList = XHTMLFile::extractMacros(move(doc));
+	unique_ptr<MacroObject> main = move(macroList.back());
 	macroList.pop_back();
 	
 	cacheMacros(*this, move(macroList));
@@ -94,7 +94,7 @@ bool MacroEngine::execBuff(string_view buff, xml_node dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::setVariableConstants(){
+void MacroEngineObject::setVariableConstants(){
 	variables["false"] = 0L;
 	variables["true"] = 1L;
 	variables["pi"] = M_PI;

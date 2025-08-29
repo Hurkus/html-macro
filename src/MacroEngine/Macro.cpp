@@ -1,11 +1,20 @@
 #include "Macro.hpp"
-#include <cstring>
+#include "string_map.hpp"
+#include "Paths.hpp"
 
-#include <iostream>
-#include "DEBUG.hpp"
+#include "Debug.hpp"
+#include "MacroDebug.hpp"
 
 using namespace std;
 using namespace pugi;
+using namespace html;
+using namespace MacroEngine;
+
+// ----------------------------------- [ Variables ] ---------------------------------------- //
+
+
+static unordered_map<string_view,shared_ptr<Macro>> macroFileCache;
+static unordered_map<string_view,shared_ptr<Macro>> macroNameCache;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -23,14 +32,14 @@ static void findMacroDefs(const xml_node root, vector<xml_node>& out_nodes){
 }
 
 
-static bool parseMacroDef(xml_node node, Macro& macro){
+static bool parseMacroDef(xml_node node, MacroObject& macro){
 	macro.name = node.attribute("NAME").value();
 	return !macro.name.empty();
 }
 
 
-static unique_ptr<Macro> extractMacroDef(xml_node node){
-	unique_ptr<Macro> m = make_unique<Macro>();
+static unique_ptr<MacroObject> extractMacroDef(xml_node node){
+	unique_ptr<MacroObject> m = make_unique<MacroObject>();
 	
 	// Parse attributes
 	if (!parseMacroDef(node, *m)){
@@ -64,17 +73,17 @@ static unique_ptr<Macro> extractMacroDef(xml_node node){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static vector<unique_ptr<Macro>> _extract(xml_document&& doc, shared_ptr<filesystem::path> src){
+static vector<unique_ptr<MacroObject>> _extract(xml_document&& doc, shared_ptr<filesystem::path> src){
 	// Find all MACRO tags.
 	vector<xml_node> nodes;
 	findMacroDefs(doc, nodes);
 	
-	vector<unique_ptr<Macro>> macros;
+	vector<unique_ptr<MacroObject>> macros;
 	macros.reserve(nodes.size() + 1);
 	
 	// Create new macro sub-documents and remove from original document.
 	for (int i = 0 ; i < int(nodes.size()) ; i++){
-		unique_ptr<Macro> m = extractMacroDef(nodes[i]);
+		unique_ptr<MacroObject> m = extractMacroDef(nodes[i]);
 		if (m != nullptr){
 			m->srcFile = src;
 			macros.push_back(move(m));
@@ -82,7 +91,7 @@ static vector<unique_ptr<Macro>> _extract(xml_document&& doc, shared_ptr<filesys
 	}
 	
 	// Add self
-	Macro& m = *macros.emplace_back(make_unique<Macro>());
+	MacroObject& m = *macros.emplace_back(make_unique<MacroObject>());
 	m.root = move(doc);
 	m.srcFile = move(src);
 	
@@ -94,13 +103,104 @@ static vector<unique_ptr<Macro>> _extract(xml_document&& doc, shared_ptr<filesys
 }
 
 
-vector<unique_ptr<Macro>> XHTMLFile::convertToMacroSet(){
+vector<unique_ptr<MacroObject>> XHTMLFile::convertToMacroSet(){
 	return _extract(move(this->doc), make_shared<filesystem::path>(move(this->path)));
 }
 
 
-vector<unique_ptr<Macro>> XHTMLFile::extractMacros(xml_document&& doc){
+vector<unique_ptr<MacroObject>> XHTMLFile::extractMacros(xml_document&& doc){
 	return _extract(move(doc), nullptr);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static bool registerMacro(const Macro& parent, node&& macro){
+	// Find name
+	attr* a = macro.attribute;
+	while (a != nullptr && a->name() != "NAME"){
+		a = a->next;
+	}
+	
+	if (a == nullptr){
+		warn_missing_attr(macro, "NAME");
+		return false;
+	}
+	
+	// Create new macro by moving <MACRO> node to new document.
+	unique_ptr<Macro> m = make_unique<Macro>();
+	m->name = a->value();
+	
+	// Transfer node
+	m->doc.buffer_owned = parent.doc.buffer_owned;
+	m->doc.buffer_unowned = parent.doc.buffer_unowned;
+	m->doc.srcFile = parent.doc.srcFile;
+	swap(macro.options, m->doc.options);
+	swap(macro.value_len, m->doc.value_len);
+	swap(macro.value_p, m->doc.value_p);
+	swap(macro.child, m->doc.child);
+	swap(macro.attribute, m->doc.attribute);
+	
+	// Register new macro
+	macroNameCache[m->name] = move(m);
+	return true;
+}
+
+
+static Macro* loadFile(string&& path){
+	unique_ptr<Macro> macro = make_unique<Macro>();
+	parse_result res = macro->doc.parseFile(move(path));
+	
+	switch (res.status){
+		case parse_status::OK:
+			break;
+		default: {
+			const char* file = macro->doc.file();
+			long row = macro->doc.row(res.pos);
+			long col = macro->doc.col(res.pos);
+			const char* msg = html::errstr(res.status);
+			ERROR(ANSI_BOLD "%s:%ld:%ld:" ANSI_RESET " %s", file, row, col, msg);
+			return nullptr;
+		}
+	}
+	
+	// Extract all <MACRO> nodes.
+	for (node* m : res.macros){
+		assert(m != nullptr && m->parent != nullptr);
+		registerMacro(*macro, move(*m));
+		node::del(m);
+	}
+	
+	// Store macro
+	string_view key = string_view(*macro->doc.srcFile);
+	const auto& p = macroFileCache.emplace(key, move(macro));
+	return p.first->second.get();
+};
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+const Macro* Macro::get(string_view name){
+	auto p = macroNameCache.find(name);
+	if (p != macroNameCache.end())
+		return p->second.get();
+	return nullptr;
+}
+
+
+const Macro* Macro::load(string_view path){
+	string file = resolve(path).string();
+	
+	// Check if cached files.
+	auto p = macroFileCache.find(string_view(file));
+	if (p != macroFileCache.end()){
+		return p->second.get();
+	}
+	
+	// Parse new file
+	return loadFile(move(file));
 }
 
 
