@@ -11,21 +11,21 @@
 
 
 namespace html {
-	enum class node_type : uint8_t;
-	enum class node_options : uint8_t;
+	enum class NodeType : uint8_t;
+	enum class NodeOptions : uint8_t;
 	
-	enum class parse_status;
-	struct parse_result;
+	enum class ParseStatus;
+	struct ParseResult;
 	
-	struct node;
-	struct attr;
-	class document;
+	struct Node;
+	struct Attr;
+	class Document;
 	
-	const char* errstr(parse_status status) noexcept;
+	const char* errstr(ParseStatus status) noexcept;
 }
 
 
-enum class html::parse_status {
+enum class html::ParseStatus {
 	OK,
 	UNCLOSED_TAG,			// ...>
 	UNCLOSED_STRING,		// ..."
@@ -41,7 +41,7 @@ enum class html::parse_status {
 };
 
 
-enum class html::node_type : uint8_t {
+enum class html::NodeType : uint8_t {
 	TAG,		// <tag ... >
 	PI,			// <? ... ?>
 	DIRECTIVE,	// <! ... >
@@ -51,40 +51,40 @@ enum class html::node_type : uint8_t {
 };
 
 
-enum class html::node_options : uint8_t {
+enum class html::NodeOptions : uint8_t {
 	NONE          = 0,
 	LIST_FORWARDS = 1 << 0,	// Direction of node child linked list and attribute linked list.
 	OWNED_NAME    = 1 << 1,
 	OWNED_VALUE   = 1 << 2,
 	INTERPOLATE   = 1 << 3,	// Text content of `value` should be interpolated for expressions `{}`.
 };
-ENUM_OPERATORS(html::node_options);
+ENUM_OPERATORS(html::NodeOptions);
 
 
-struct html::parse_result {
-	parse_status status;
+struct html::ParseResult {
+	ParseStatus status;
 	const char* pos = nullptr;	// Last parsing position. Usefull for `document::row()`.
-	std::vector<node*> macros;	// Pointers to nodes `<MACRO>`
+	std::vector<Node*> macros;	// Pointers to nodes `<MACRO>`
 };
 
 
 
 
 /* Readonly node for marking HTML structure in a source text. */
-struct html::node {
+struct html::Node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	node_type type = node_type::TAG;
-	node_options options = node_options::NONE;
+	NodeType type = NodeType::TAG;
+	NodeOptions options = NodeOptions::NONE;
 	
 	uint32_t value_len = 0;			// Length of `value_p`.
 	const char* value_p = nullptr;	// Unterminated name/value string.
 	
-	node* parent = nullptr;
-	node* child = nullptr;			// First/last child in linked list.
-	node* next = nullptr;			// Linked list.
+	Node* parent = nullptr;
+	Node* child = nullptr;			// First/last child in linked list.
+	Node* next = nullptr;			// Linked list.
 	
-	attr* attribute = nullptr;		// First/last attribute in linked list.
+	Attr* attribute = nullptr;		// First/last attribute in linked list.
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
@@ -125,16 +125,16 @@ public:
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	node& appendChild(node_type type = node_type::TAG);
-	attr& appendAttribute();
+	Node& appendChild(NodeType type = NodeType::TAG);
+	Attr& appendAttribute();
 	
-	bool removeChild(node* child);
+	bool removeChild(Node* child);
 	void removeChildren();
-	node* extractChild(node* child);
+	Node* extractChild(Node* child);
 	
-	bool removeAttr(attr* attr);
+	bool removeAttr(Attr* attr);
 	void removeAttributes();
-	attr* extractAttr(attr* child);
+	Attr* extractAttr(Attr* child);
 	
 	void clear(){
 		removeAttributes();
@@ -144,22 +144,22 @@ public:
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	document& root(){
+	Document& root(){
 		if (parent != nullptr)
 			return parent->root();
-		assert(type == node_type::ROOT);
-		return *(document*)this;
+		assert(type == NodeType::ROOT);
+		return *(Document*)this;
 	}
 	
-	const document& root() const {
+	const Document& root() const {
 		if (parent != nullptr)
 			return parent->root();
-		assert(type == node_type::ROOT);
-		return *(document*)this;
+		assert(type == NodeType::ROOT);
+		return *(Document*)this;
 	}
 	
 public:
-	static void del(node* node){
+	static void del(Node* node){
 		assert(node != nullptr);
 		if (node->parent != nullptr){
 			node->parent->removeChild(node);
@@ -173,17 +173,17 @@ public:
 };
 
 
-struct html::attr {
+struct html::Attr {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	node_options options = node_options::NONE;
+	NodeOptions options = NodeOptions::NONE;
 	
 	uint16_t name_len = 0;
 	uint32_t value_len = 0;
 	const char* name_p = nullptr;
 	const char* value_p = nullptr;
 	
-	attr* next = nullptr;	// Linked list.
+	Attr* next = nullptr;	// Linked list.
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
@@ -220,7 +220,7 @@ public:
 };
 
 
-class html::document : public node {
+class html::Document : public Node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
 	std::shared_ptr<char> buffer_owned = nullptr;		// c-string
@@ -230,20 +230,20 @@ public:
 	
 // ---------------------------------- [ Constructors ] -------------------------------------- //
 public:
-	document(){
-		node::type = node_type::ROOT;
+	Document(){
+		Node::type = NodeType::ROOT;
 	}
 	
-	document(document&& o){
+	Document(Document&& o){
 		std::swap(*this, o);
 	}
 	
-	document& operator=(document&& o){
+	Document& operator=(Document&& o){
 		std::swap(*this, o);
 		return *this;
 	}
 	
-	~document(){
+	~Document(){
 		reset();
 	}
 	
@@ -254,7 +254,7 @@ public:
 	 * @param buff String buffer, whose lifetime must exceede that of `this` object.
 	 * @return `parse_result` containing parsing status.
 	 */
-	parse_result parseBuff(const char* buff);
+	ParseResult parseBuff(const char* buff);
 	
 	/**
 	 * @brief Open file from `path` and parse HTML.
@@ -262,20 +262,20 @@ public:
 	 * @param path Path to file.
 	 * @return `parse_result` containing parsing status.
 	 */
-	parse_result parseFile(std::string&& path){
+	ParseResult parseFile(std::string&& path){
 		srcFile = std::make_shared<std::string>(std::move(path));
 		return parseFile();
 	}
 	
 private:
-	parse_result parseFile();
+	ParseResult parseFile();
 	
 public:
 	/**
 	 * @brief Delete/reset all owned data (child nodes, buffer, etc.).
 	 */
 	void reset(){
-		node::clear();
+		Node::clear();
 		buffer_owned = nullptr;
 		buffer_unowned = nullptr;
 	}

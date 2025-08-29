@@ -16,7 +16,7 @@ namespace MacroEngine {
 class MacroEngine::Macro {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	html::document doc;
+	html::Document doc;
 	std::string_view name;
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //

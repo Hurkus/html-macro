@@ -4,8 +4,8 @@
 
 
 namespace html {
-	struct node;
-	struct attr;
+	struct Node;
+	struct Attr;
 }
 
 
@@ -18,27 +18,27 @@ namespace html {
  * @throws `bad_alloc` on failed memory allocation.
  * @return New instance of `html::node`.
  */
-html::node* newNode();
+html::Node* newNode();
 
 /**
  * @brief Allocate new attribute using a custom allocator.
  * @throws `bad_alloc` on failed memory allocation.
  * @return New instance of `html::attr`.
  */
-html::attr* newAttr();
+html::Attr* newAttr();
 
 
 /**
  * @brief Delete node object obtained by `html::newNode()`.
  * @param p Pointer to `html::node` previously allocated with `html::newNode()`.
  */
-void del(html::node* p);
+void del(html::Node* p);
 
 /**
  * @brief Delete attribute object obtained by `html::newAttr()`.
  * @param p Pointer to `html::attr` previously allocated with `html::newAttr()`.
  */
-void del(html::attr* p);
+void del(html::Attr* p);
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //

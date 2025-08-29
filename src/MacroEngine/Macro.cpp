@@ -3,7 +3,7 @@
 #include "Paths.hpp"
 
 #include "Debug.hpp"
-#include "MacroDebug.hpp"
+#include "html-debug.hpp"
 
 using namespace std;
 using namespace pugi;
@@ -116,9 +116,9 @@ vector<unique_ptr<MacroObject>> XHTMLFile::extractMacros(xml_document&& doc){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool registerMacro(const Macro& parent, node&& macro){
+static bool registerMacro(const Macro& parent, Node&& macro){
 	// Find name
-	attr* a = macro.attribute;
+	Attr* a = macro.attribute;
 	while (a != nullptr && a->name() != "NAME"){
 		a = a->next;
 	}
@@ -150,10 +150,10 @@ static bool registerMacro(const Macro& parent, node&& macro){
 
 static Macro* loadFile(string&& path){
 	unique_ptr<Macro> macro = make_unique<Macro>();
-	parse_result res = macro->doc.parseFile(move(path));
+	ParseResult res = macro->doc.parseFile(move(path));
 	
 	switch (res.status){
-		case parse_status::OK:
+		case ParseStatus::OK:
 			break;
 		default: {
 			const char* file = macro->doc.file();
@@ -166,10 +166,10 @@ static Macro* loadFile(string&& path){
 	}
 	
 	// Extract all <MACRO> nodes.
-	for (node* m : res.macros){
+	for (Node* m : res.macros){
 		assert(m != nullptr && m->parent != nullptr);
 		registerMacro(*macro, move(*m));
-		node::del(m);
+		Node::del(m);
 	}
 	
 	// Store macro

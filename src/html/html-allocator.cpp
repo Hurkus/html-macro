@@ -26,26 +26,26 @@ using heap_t = heap_element_t<sizeof(T),alignof(T)>;	// H
 
 
 template<class H>
-struct page {
+struct Page {
 	int size;
 	int count;
 	
-	union block {
-		block* next;
+	union Block {
+		Block* next;
 		alignas(H::align)
 		uint8_t obj[H::size];
 	};
 	
 	alignas(H::align)
-	block memory[];
+	Block memory[];
 	
 };
 
 
 template<class H>
 struct block_allocator {
-	using page = ::page<H>;
-	using block = page::block;
+	using page = ::Page<H>;
+	using block = page::Block;
 	
 	vector<unique_ptr<page>> pages;
 	size_t nextSize = 0;
@@ -72,7 +72,7 @@ static block_allocator<H> heap;
 
 
 template<class H>
-unique_ptr<page<H>> block_allocator<H>::createPage(){
+unique_ptr<Page<H>> block_allocator<H>::createPage(){
 	size_t n = max(min(MIN_PAGE_SIZE, nextSize), MAX_PAGE_SIZE);
 	
 	// Try alloc page at different sizes
@@ -146,31 +146,31 @@ void block_allocator<H>::deallocate(void* p){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-node* html::newNode(){
-	using H = heap_t<node>;
+Node* html::newNode(){
+	using H = heap_t<Node>;
 	void* e = heap<H>.allocate();
-	return new (e) node();
+	return new (e) Node();
 }
 
 
-attr* html::newAttr(){
-	using H = heap_t<attr>;
+Attr* html::newAttr(){
+	using H = heap_t<Attr>;
 	void* e = heap<H>.allocate();
-	return new (e) attr();
+	return new (e) Attr();
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void html::del(node* p){
+void html::del(Node* p){
 	using H = heap_t<decltype(*p)>;
 	if (p != nullptr)
 		heap<H>.deallocate(p);
 }
 
 
-void html::del(attr* p){
+void html::del(Attr* p){
 	using H = heap_t<decltype(*p)>;
 	if (p != nullptr)
 		heap<H>.deallocate(p);

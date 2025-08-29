@@ -2,19 +2,19 @@
 
 
 namespace html {
-	struct node;
-	struct attr;
+	struct Node;
+	struct Attr;
 };
 
 
-namespace MacroEngine {
+namespace html {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void error(const html::node* node, const char* msg);
+void error(const html::Node* node, const char* msg);
 
-void error_missing_attr(const html::node& node, const char* name);
-void warn_missing_attr(const html::node& node, const char* name);
+void error_missing_attr(const html::Node& node, const char* name);
+void warn_missing_attr(const html::Node& node, const char* name);
 
 
 // ------------------------------------------------------------------------------------------ //

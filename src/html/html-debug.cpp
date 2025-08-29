@@ -1,4 +1,4 @@
-#include "MacroDebug.hpp"
+#include "html-debug.hpp"
 #include "Macro.hpp"
 #include "Debug.hpp"
 
@@ -49,8 +49,8 @@ inline const char* _name(const T* obj){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::error(const node* node, const char* msg){
-	const document& doc = node->root();
+void html::error(const Node* node, const char* msg){
+	const Document& doc = node->root();
 	long row = doc.row(_name(node));
 	long col = doc.col(_name(node));
 	_ERROR(doc.file(), row, col, "%s", msg);
@@ -60,16 +60,16 @@ void MacroEngine::error(const node* node, const char* msg){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::error_missing_attr(const node& node, const char* name){
-	const document& doc = node.root();
+void html::error_missing_attr(const Node& node, const char* name){
+	const Document& doc = node.root();
 	long row = doc.row(node.value_p);
 	long col = doc.col(node.value_p);
 	_ERROR(doc.file(), row, col, "Missing attribute '" PURPLE "%s" RS "'.", name);
 }
 
 
-void MacroEngine::warn_missing_attr(const node& node, const char* name){
-	const document& doc = node.root();
+void html::warn_missing_attr(const Node& node, const char* name){
+	const Document& doc = node.root();
 	long row = doc.row(node.value_p);
 	long col = doc.col(node.value_p);
 	_WARN(doc.file(), row, col, "Tag <%s> missing attribute '" PURPLE "%s" RS "'.", string(node.name()).c_str(), name);
