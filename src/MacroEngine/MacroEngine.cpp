@@ -1,185 +1,94 @@
 #include "MacroEngine.hpp"
-#include <cstring>
+#include <cmath>
 
-#include "MacroEngine-Common.hpp"
+#include "html-debug.hpp"
 
 using namespace std;
-using namespace pugi;
-using namespace Expression;
+using namespace html;
+using namespace MacroEngine;
+
+
+// ----------------------------------- [ Variables ] ---------------------------------------- //
+
+
+Expression::VariableMap MacroEngine::variables;
+Document MacroEngine::doc;
+
+const Macro* MacroEngine::currentMacro = nullptr;
+Branch MacroEngine::currentBranch = Branch::NONE;
+Interpolate MacroEngine::currentInterpolation = Interpolate::ALL;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngineObject::call(const char* name, xml_node dst){
-	if (name == nullptr || name[0] == 0){
-		ERROR("CALL: Missing macro name.");
-		return;
-	}
-	
-	shared_ptr<MacroObject> macro = getMacro(name);
-	if (macro == nullptr){
-		WARN("CALL: Macro '%s' not found.", name);
-		return;
-	}
-	
-	exec(*macro, dst);
-}
-
-
-void MacroEngineObject::call(const xml_node op, xml_node dst){
-	assert(op.root() != dst.root());
-	xml_attribute name_attr;
-	
-	for (const xml_attribute attr : op.attributes()){
-		string_view name = attr.name();
-		
-		if (name == "NAME"){
-			name_attr = attr;
-		} else if (name == "IF"){
-			if (!_attr_if(*this, op, attr))
-				return;
-		} else {
-			_attr_ignore(op, attr);
-		}
-		
-	}
-	
-	if (!name_attr.empty()){
-		call(name_attr.value(), dst);
-	} else {
-		WARN("CALL: Missing 'NAME' attribute.");
-	}
-	
+void MacroEngine::setVariableConstants(){
+	MacroEngine::variables["false"] = 0L;
+	MacroEngine::variables["true"] = 1L;
+	MacroEngine::variables["pi"] = M_PI;
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngineObject::include(const xml_node op, xml_node dst){
-	assert(op.root() != dst.root());
-	xml_attribute src_attr;
-	
-	for (const xml_attribute attr : op.attributes()){
-		string_view name = attr.name();
+void MacroEngine::run(const Node& op, Node& dst){
+	switch (op.type){
+		case NodeType::TAG:
+			break;
 		
-		if (name == "SRC"){
-			src_attr = attr;
-		} else if (name == "IF"){
-			if (!_attr_if(*this, op, attr))
-				return false;
-		} else {
-			_attr_ignore(op, attr);
-		}
+		case NodeType::ROOT:
+			runChildren(op, dst);
+			return;
 		
-	}
-	
-	if (src_attr.empty()){
-		_attr_missing(op, "SRC");
-		return false;
-	}
-	
-	// Modify relative path to current macro file path.
-	filesystem::path path;
-	try {
-		path = src_attr.value();
+		case NodeType::PI:
+		case NodeType::DIRECTIVE:
+		case NodeType::TEXT:
+		case NodeType::COMMENT:
+			text(op, dst);
+			return;
 		
-		if (!path.is_absolute()){
-			assert(currentMacro != nullptr);
-			if (currentMacro == nullptr || currentMacro->srcFile == nullptr){
-				ERROR("%s: Missing macro relative path.", op.name());
-				return false;
-			}
-			
-			filesystem::path dir = *currentMacro->srcFile;
-			dir.remove_filename();
-			path = dir / filesystem::proximate(move(path), dir);
-		}
-		
-	} catch (const exception& e){
-		ERROR("%s: Failed to construct path '%s'.", op.name(), src_attr.value());
-		return false;
-	}
-	
-	// Fetch and execute macro
-	shared_ptr<MacroObject> macro = loadFile(path);
-	if (macro == nullptr){
-		return false;
-	}
-	
-	exec(*macro, dst);
-	return true;
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-void MacroEngineObject::runChildren(const xml_node parent, xml_node dst){
-	assert(parent.root() != dst.root());
-	auto _branch = this->branch;
-	this->branch = nullptr;
-	
-	for (const xml_node mchild : parent.children()){
-		run(mchild, dst);
-	}
-	
-	this->branch = _branch;
-}
-
-
-void MacroEngineObject::run(const xml_node op, xml_node dst){
-	assert(op.root() != dst.root());
-	
-	// Not tag
-	xml_node_type type = op.type();
-	if (type != xml_node_type::node_element){
-		if (type == xml_node_type::node_pcdata)
-			text(op.value(), dst);
-		else
-			dst.append_copy(op);
-		return;
+		default: return;
 	}
 	
 	// Check for macro
-	const char* cname = op.name();
-	if (isupper(cname[0])){
-		string_view name = cname;
+	string_view name = op.name();
+	if (name.length() >= 1 && isupper(name[0])){
 		
-		if (name == "SET"){
-			set(op);
-		} else if (name == "IF"){
-			branch_if(op, dst);
-		} else if (name == "ELSE-IF"){
-			branch_elif(op, dst);
-		} else if (name == "ELSE"){
-			branch_else(op, dst);
-		} else if (name == "FOR"){
-			loop_for(op, dst);
-		} else if (name == "WHILE"){
-			loop_while(op, dst);
-		}
+		// if (name == "SET"){
+		// 	set(op);
+		// } else if (name == "IF"){
+		// 	branch_if(op, dst);
+		// } else if (name == "ELSE-IF"){
+		// 	branch_elif(op, dst);
+		// } else if (name == "ELSE"){
+		// 	branch_else(op, dst);
+		// } else if (name == "FOR"){
+		// 	loop_for(op, dst);
+		// } else if (name == "WHILE"){
+		// 	loop_while(op, dst);
+		// }
 		
-		else if (name == "SET-ATTR"){
-			setAttr(op, dst);
-		} else if (name == "GET-ATTR"){
-			getAttr(op, dst);
-		} else if (name == "DEL-ATTR"){
-			delAttr(op, dst);
-		} else if (name == "SET-TAG"){
-			setTag(op, dst);
-		} else if (name == "GET-TAG"){
-			getTag(op, dst);
-		}
+		// else if (name == "SET-ATTR"){
+		// 	setAttr(op, dst);
+		// } else if (name == "GET-ATTR"){
+		// 	getAttr(op, dst);
+		// } else if (name == "DEL-ATTR"){
+		// 	delAttr(op, dst);
+		// } else if (name == "SET-TAG"){
+		// 	setTag(op, dst);
+		// } else if (name == "GET-TAG"){
+		// 	getTag(op, dst);
+		// }
 		
-		else if (name == "CALL"){
+		if (name == "CALL"){
 			call(op, dst);
-		} else if (name == "INCLUDE"){
-			include(op, dst);
-		}  else if (name == "SHELL"){
-			shell(op, dst);
 		}
+		// else if (name == "INCLUDE"){
+		// 	include(op, dst);
+		// }  else if (name == "SHELL"){
+		// 	shell(op, dst);
+		// }
 		
 		else if (name == "INFO"){
 			info(op);
@@ -187,8 +96,10 @@ void MacroEngineObject::run(const xml_node op, xml_node dst){
 			warn(op);
 		} else if (name == "ERROR"){
 			error(op);
-		} else {
-			WARN("%s: Unknown macro treated as regular HTML tag.", cname);
+		}
+		
+		else {
+			html::warn_unknown_macro(op);
 			tag(op, dst);
 		}
 		
@@ -200,21 +111,30 @@ void MacroEngineObject::run(const xml_node op, xml_node dst){
 }
 
 
-void MacroEngineObject::exec(const MacroObject& macro, xml_node dst){
-	const bool _interp = this->interpolateText;
-	this->interpolateText = true;
+void MacroEngine::runChildren(const Node& macroParent, Node& dst){
+	auto prevBranch = MacroEngine::currentBranch;
 	
-	const optbool _branch = this->branch;
-	this->branch = nullptr;
+	const Node* macroChild = macroParent.child;
+	while (macroChild != nullptr){
+		run(*macroChild, dst);
+		macroChild = macroChild->next;
+	}
 	
-	const MacroObject* _currentMacro = this->currentMacro;
-	this->currentMacro = &macro;
+	MacroEngine::currentBranch = prevBranch;
+}
+
+
+void MacroEngine::exec(const Macro& macro, Node& dst){
+	auto prevMacro = MacroEngine::currentMacro;
+	auto prevBranch = MacroEngine::currentBranch;
 	
-	runChildren(macro.root, dst);
+	MacroEngine::currentMacro = &macro;
+	MacroEngine::currentBranch = Branch::NONE;
 	
-	this->currentMacro = _currentMacro;
-	this->branch = _branch;
-	this->interpolateText = _interp;
+	runChildren(macro.doc, dst);
+	
+	MacroEngine::currentMacro = prevMacro;
+	MacroEngine::currentBranch = prevBranch;
 }
 
 

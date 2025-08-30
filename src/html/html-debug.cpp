@@ -34,26 +34,68 @@ using namespace MacroEngine;
 		WARN(BOLD "%s:" RS " " FMT, file, __VA_ARGS__); \
 	} \
 
+#define _INFO(file, row, col, FMT, ...)	\
+	if (row > 0 && col > 0){ \
+		INFO(BOLD "%s:%ld:%ld:" RS " " FMT, file, row, col, __VA_ARGS__); \
+	} else if (row > 0){ \
+		INFO(BOLD "%s:%ld:" RS " " FMT, file, row, __VA_ARGS__); \
+	} else { \
+		INFO(BOLD "%s:" RS " " FMT, file, __VA_ARGS__); \
+	} \
+
+#define CNAME(node)		(string(node.name()).c_str())
+#define CVALUE(node)	(string(node.value()).c_str())
+
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-template<typename T>
-inline const char* _name(const T* obj){
-	if (obj == nullptr)
-		return nullptr;
-	return obj->name().data();
+void html::error(const Node& node, const char* msg){
+	const Document& doc = node.root();
+	long row = doc.row(node.value_p);
+	long col = doc.col(node.value_p);
+	_ERROR(doc.file(), row, col, "%s", msg);
+}
+
+
+void html::warn(const Node& node, const char* msg){
+	const Document& doc = node.root();
+	long row = doc.row(node.value_p);
+	long col = doc.col(node.value_p);
+	_WARN(doc.file(), row, col, "%s", msg);
+}
+
+
+void html::info(const Node& node, const char* msg){
+	const Document& doc = node.root();
+	long row = doc.row(node.value_p);
+	long col = doc.col(node.value_p);
+	_INFO(doc.file(), row, col, "%s", msg);
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void html::error(const Node* node, const char* msg){
-	const Document& doc = node->root();
-	long row = doc.row(_name(node));
-	long col = doc.col(_name(node));
-	_ERROR(doc.file(), row, col, "%s", msg);
+void html::warn_unknown_macro(const Node& node){
+	const Document& doc = node.root();
+	long row = doc.row(node.value_p);
+	long col = doc.col(node.value_p);
+	_WARN(doc.file(), row, col,
+		"Unknown macro " PURPLE "<%s>" RS " treated as regular HTML tag.",
+		CNAME(node)
+	);
+}
+
+
+void html::warn_unknown_attribute(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_WARN(doc.file(), row, col,
+		"Unknown attribute " PURPLE "'%s'" RS " in tag " PURPLE "<%s>" RS " treated as regular HTML attribute.",
+		CNAME(attr), CNAME(node)
+	);
 }
 
 
@@ -72,7 +114,29 @@ void html::warn_missing_attr(const Node& node, const char* name){
 	const Document& doc = node.root();
 	long row = doc.row(node.value_p);
 	long col = doc.col(node.value_p);
-	_WARN(doc.file(), row, col, "Tag <%s> missing attribute '" PURPLE "%s" RS "'.", string(node.name()).c_str(), name);
+	_WARN(doc.file(), row, col, "Tag <%s> missing attribute '" PURPLE "%s" RS "'.", CNAME(node), name);
+}
+
+
+void html::warn_ignored_attribute(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_WARN(doc.file(), row, col,
+		"Ignored attribute " PURPLE "'%s'" RS " in tag " PURPLE "<%s>" RS ".",
+		CNAME(attr), CNAME(node)
+	);
+}
+
+
+void html::warn_macro_not_found(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_WARN(doc.file(), row, col,
+		"Macro " PURPLE "'%s'" RS " not found from tag " PURPLE "<%s>" RS ".",
+		CVALUE(attr), CNAME(node)
+	);
 }
 
 

@@ -30,27 +30,13 @@ public:
 
 
 
+// TODO: REMOVE
 class MacroObject {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
 	pugi::xml_document root;
 	std::string name;
 	std::shared_ptr<std::filesystem::path> srcFile;
-	
-// ------------------------------------------------------------------------------------------ //
-};
-
-
-class XHTMLFile {
-// ------------------------------------[ Properties ] --------------------------------------- //
-public:
-	pugi::xml_document doc;
-	std::filesystem::path path;
-	
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-public:
-	std::vector<std::unique_ptr<MacroObject>> convertToMacroSet();
-	static std::vector<std::unique_ptr<MacroObject>> extractMacros(pugi::xml_document&& doc);
 	
 // ------------------------------------------------------------------------------------------ //
 };
