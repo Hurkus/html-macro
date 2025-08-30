@@ -465,13 +465,17 @@ static const char* parse_attribute(Parser& state, const char* s, Attr& attr){
 	s = parse_whiteSpace(state, s + 1);
 	
 	// Parse value
-	if (isQuote(*s)){
-		attr.value_p = s + 1;
-		s = parse_string(state, s, attr.options);
-		attr.value_len = uint32_t(min(s - attr.value_p - 1, long(UINT32_MAX)));
-	} else {
-		state.result.pos = attr.name_p + attr.name_len;
-		throw ParseStatus::MISSING_ATTR_VALUE;
+	switch (*s){
+		case '\'':
+			attr.options |= NodeOptions::SINGLE_QUOTE;
+		case '"':
+			attr.value_p = s + 1;
+			s = parse_string(state, s, attr.options);
+			attr.value_len = uint32_t(min(s - attr.value_p - 1, long(UINT32_MAX)));
+			break;
+		default:
+			state.result.pos = attr.name_p + attr.name_len;
+			throw ParseStatus::MISSING_ATTR_VALUE;
 	}
 	
 	return s;

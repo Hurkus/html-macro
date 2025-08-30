@@ -57,8 +57,10 @@ enum class html::NodeOptions : uint8_t {
 	OWNED_NAME    = 1 << 1,
 	OWNED_VALUE   = 1 << 2,
 	INTERPOLATE   = 1 << 3,	// Text content of `value` should be interpolated for expressions `{}`.
+	SINGLE_QUOTE  = 1 << 4, // Attribute value is in single quotes.
 };
-ENUM_OPERATORS(html::NodeOptions);
+
+template<> inline constexpr bool has_enum_operators<html::NodeOptions> = true;
 
 
 struct html::ParseResult {
@@ -126,6 +128,7 @@ public:
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	Node& appendChild(NodeType type = NodeType::TAG);
+	void appendChild(Node* child);
 	Attr& appendAttribute();
 	
 	bool removeChild(Node* child);
@@ -168,6 +171,16 @@ public:
 			html::del(node);
 		}
 	}
+	
+public:
+	struct deleter {
+		void operator()(Node* p){
+			if (p != nullptr){
+				p->clear();
+				html::del(p);
+			}
+		}
+	};
 	
 // ------------------------------------------------------------------------------------------ //
 };

@@ -60,12 +60,25 @@ void Node::value(char* str, size_t len){
 
 Node& Node::appendChild(NodeType type){
 	assert(!isSet(this->options, NodeOptions::LIST_FORWARDS));
-	Node* c = html::newNode();
-	c->type = type;
-	c->parent = this;
-	c->next = this->child;
-	this->child = c;
-	return *c;
+	Node* child = html::newNode();
+	child->type = type;
+	child->parent = this;
+	child->next = this->child;
+	this->child = child;
+	return *child;
+}
+
+void Node::appendChild(Node* child){
+	assert(child != nullptr);
+	assert(!isSet(this->options, NodeOptions::LIST_FORWARDS));
+	
+	if (child->parent != nullptr){
+		child->parent->extractChild(child);
+	}
+	
+	child->parent = this;
+	child->next = this->child;
+	this->child = child;
 }
 
 
