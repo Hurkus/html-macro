@@ -1,7 +1,6 @@
 #include "MacroEngine.hpp"
 #include <cmath>
-
-#include "html-debug.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace html;
@@ -99,7 +98,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 		}
 		
 		else {
-			html::warn_unknown_macro(op);
+			warn_unknown_macro(op);
 			tag(op, dst);
 		}
 		

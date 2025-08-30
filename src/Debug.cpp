@@ -1,4 +1,4 @@
-#include "html-debug.hpp"
+#include "Debug.hpp"
 #include "Macro.hpp"
 #include "Debug.hpp"
 
@@ -50,7 +50,7 @@ using namespace MacroEngine;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void html::error(const Node& node, const char* msg){
+void error(const Node& node, const char* msg){
 	const Document& doc = node.root();
 	long row = doc.row(node.value_p);
 	long col = doc.col(node.value_p);
@@ -58,7 +58,7 @@ void html::error(const Node& node, const char* msg){
 }
 
 
-void html::warn(const Node& node, const char* msg){
+void warn(const Node& node, const char* msg){
 	const Document& doc = node.root();
 	long row = doc.row(node.value_p);
 	long col = doc.col(node.value_p);
@@ -66,7 +66,7 @@ void html::warn(const Node& node, const char* msg){
 }
 
 
-void html::info(const Node& node, const char* msg){
+void info(const Node& node, const char* msg){
 	const Document& doc = node.root();
 	long row = doc.row(node.value_p);
 	long col = doc.col(node.value_p);
@@ -77,7 +77,7 @@ void html::info(const Node& node, const char* msg){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void html::warn_unknown_macro(const Node& node){
+void warn_unknown_macro(const Node& node){
 	const Document& doc = node.root();
 	long row = doc.row(node.value_p);
 	long col = doc.col(node.value_p);
@@ -88,7 +88,7 @@ void html::warn_unknown_macro(const Node& node){
 }
 
 
-void html::warn_unknown_attribute(const Node& node, const Attr& attr){
+void warn_unknown_attribute(const Node& node, const Attr& attr){
 	const Document& doc = node.root();
 	long row = doc.row(attr.name_p);
 	long col = doc.col(attr.name_p);
@@ -102,7 +102,7 @@ void html::warn_unknown_attribute(const Node& node, const Attr& attr){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void html::error_missing_attr(const Node& node, const char* name){
+void error_missing_attr(const Node& node, const char* name){
 	const Document& doc = node.root();
 	long row = doc.row(node.value_p);
 	long col = doc.col(node.value_p);
@@ -110,7 +110,7 @@ void html::error_missing_attr(const Node& node, const char* name){
 }
 
 
-void html::warn_missing_attr(const Node& node, const char* name){
+void warn_missing_attr(const Node& node, const char* name){
 	const Document& doc = node.root();
 	long row = doc.row(node.value_p);
 	long col = doc.col(node.value_p);
@@ -118,7 +118,7 @@ void html::warn_missing_attr(const Node& node, const char* name){
 }
 
 
-void html::warn_ignored_attribute(const Node& node, const Attr& attr){
+void warn_ignored_attribute(const Node& node, const Attr& attr){
 	const Document& doc = node.root();
 	long row = doc.row(attr.name_p);
 	long col = doc.col(attr.name_p);
@@ -129,7 +129,7 @@ void html::warn_ignored_attribute(const Node& node, const Attr& attr){
 }
 
 
-void html::warn_macro_not_found(const Node& node, const Attr& attr){
+void warn_macro_not_found(const Node& node, const Attr& attr){
 	const Document& doc = node.root();
 	long row = doc.row(attr.name_p);
 	long col = doc.col(attr.name_p);

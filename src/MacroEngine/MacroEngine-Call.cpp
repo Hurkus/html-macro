@@ -1,5 +1,5 @@
 #include "MacroEngine.hpp"
-#include "html-debug.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace html;
@@ -25,20 +25,20 @@ void MacroEngine::call(const Node& op, Node& dst){
 		// 		return;
 		// }
 		else {
-			html::warn_ignored_attribute(op, *attr);
+			warn_ignored_attribute(op, *attr);
 		}
 		
 		attr = attr->next;
 	}
 	
 	if (macroName.empty()){
-		html::warn_missing_attr(op, "NAME");
+		warn_missing_attr(op, "NAME");
 		return;
 	}
 	
 	const Macro* macro = Macro::get(macroName);
 	if (macro == nullptr){
-		html::warn_macro_not_found(op, *attr);
+		warn_macro_not_found(op, *attr);
 		return;
 	}
 	

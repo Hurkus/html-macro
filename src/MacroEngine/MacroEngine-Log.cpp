@@ -1,6 +1,6 @@
 #include "MacroEngine.hpp"
 // #include "MacroEngine-Common.hpp"
-#include "html-debug.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace html;
@@ -44,12 +44,12 @@ static bool eval(const Node& op, LogInfo& out){
 		// 	_attr_ignore(op, attr);
 		// }
 		
-		html::warn_ignored_attribute(op, *attr);
+		warn_ignored_attribute(op, *attr);
 	}
 	
 	const Node* txt = op.child;
 	if (txt != nullptr && txt->type != NodeType::TEXT){
-		html::error(*txt, "Expected plain text node.");
+		error(*txt, "Expected plain text node.");
 		return false;
 	}
 	
@@ -69,7 +69,7 @@ void MacroEngine::info(const Node& op){
 	}
 	
 	string msg = string(info.msg);
-	html::info(op, msg.c_str());
+	::info(op, msg.c_str());
 }
 
 
@@ -80,7 +80,7 @@ void MacroEngine::warn(const Node& op){
 	}
 	
 	string msg = string(info.msg);
-	html::warn(op, msg.c_str());
+	::warn(op, msg.c_str());
 }
 
 
@@ -91,7 +91,7 @@ void MacroEngine::error(const Node& op){
 	}
 	
 	string msg = string(info.msg);
-	html::error(op, msg.c_str());
+	::error(op, msg.c_str());
 }
 
 

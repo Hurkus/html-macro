@@ -1,9 +1,7 @@
 #include "Macro.hpp"
 #include "string_map.hpp"
 #include "Paths.hpp"
-
 #include "Debug.hpp"
-#include "html-debug.hpp"
 
 using namespace std;
 using namespace pugi;

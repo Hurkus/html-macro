@@ -1,5 +1,5 @@
 #include "MacroEngine.hpp"
-#include "html-debug.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace html;
@@ -57,7 +57,7 @@ void MacroEngine::tag(const Node& op, Node& dst){
 		// 	attr_call = attr;
 		// }
 		else {
-			html::warn_unknown_attribute(op, *attr);
+			warn_unknown_attribute(op, *attr);
 			attribute(*attr, child);
 		}
 		
