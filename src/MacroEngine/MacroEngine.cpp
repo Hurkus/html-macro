@@ -14,7 +14,8 @@ Expression::VariableMap MacroEngine::variables;
 Document MacroEngine::doc;
 
 const Macro* MacroEngine::currentMacro = nullptr;
-Branch MacroEngine::currentBranch = Branch::NONE;
+Branch MacroEngine::currentBranch_block = Branch::NONE;
+Branch MacroEngine::currentBranch_inline = Branch::NONE;
 Interpolate MacroEngine::currentInterpolation = Interpolate::ALL;
 
 
@@ -54,19 +55,19 @@ void MacroEngine::run(const Node& op, Node& dst){
 	string_view name = op.name();
 	if (name.length() >= 1 && isupper(name[0])){
 		
-		// if (name == "SET"){
-		// 	set(op);
-		// } else if (name == "IF"){
-		// 	branch_if(op, dst);
-		// } else if (name == "ELSE-IF"){
-		// 	branch_elif(op, dst);
-		// } else if (name == "ELSE"){
-		// 	branch_else(op, dst);
-		// } else if (name == "FOR"){
-		// 	loop_for(op, dst);
-		// } else if (name == "WHILE"){
-		// 	loop_while(op, dst);
-		// }
+		if (name == "SET"){
+			set(op);
+		} else if (name == "IF"){
+			branch_if(op, dst);
+		} else if (name == "ELSE-IF"){
+			branch_elif(op, dst);
+		} else if (name == "ELSE"){
+			branch_else(op, dst);
+		} else if (name == "FOR"){
+			loop_for(op, dst);
+		} else if (name == "WHILE"){
+			loop_while(op, dst);
+		}
 		
 		// else if (name == "SET-ATTR"){
 		// 	setAttr(op, dst);
@@ -111,7 +112,10 @@ void MacroEngine::run(const Node& op, Node& dst){
 
 
 void MacroEngine::runChildren(const Node& macroParent, Node& dst){
-	auto prevBranch = MacroEngine::currentBranch;
+	auto _branch_1 = MacroEngine::currentBranch_block;
+	auto _branch_2 = MacroEngine::currentBranch_inline;
+	MacroEngine::currentBranch_block = Branch::NONE;
+	MacroEngine::currentBranch_inline = Branch::NONE;
 	
 	const Node* macroChild = macroParent.child;
 	while (macroChild != nullptr){
@@ -119,21 +123,28 @@ void MacroEngine::runChildren(const Node& macroParent, Node& dst){
 		macroChild = macroChild->next;
 	}
 	
-	MacroEngine::currentBranch = prevBranch;
+	MacroEngine::currentBranch_block = _branch_1;
+	MacroEngine::currentBranch_inline = _branch_2;
 }
 
 
 void MacroEngine::exec(const Macro& macro, Node& dst){
-	auto prevMacro = MacroEngine::currentMacro;
-	auto prevBranch = MacroEngine::currentBranch;
+	auto _macro = MacroEngine::currentMacro;
+	auto _branch_1 = MacroEngine::currentBranch_block;
+	auto _branch_2 = MacroEngine::currentBranch_inline;
+	auto _interp = MacroEngine::currentInterpolation;
 	
 	MacroEngine::currentMacro = &macro;
-	MacroEngine::currentBranch = Branch::NONE;
+	MacroEngine::currentBranch_block = Branch::NONE;
+	MacroEngine::currentBranch_inline = Branch::NONE;
+	MacroEngine::currentInterpolation = Interpolate::ALL;
 	
 	runChildren(macro.doc, dst);
 	
-	MacroEngine::currentMacro = prevMacro;
-	MacroEngine::currentBranch = prevBranch;
+	MacroEngine::currentMacro = _macro;
+	MacroEngine::currentBranch_block = _branch_1;
+	MacroEngine::currentBranch_inline = _branch_2;
+	MacroEngine::currentInterpolation = _interp;
 }
 
 

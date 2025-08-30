@@ -19,12 +19,12 @@ void MacroEngine::call(const Node& op, Node& dst){
 		
 		if (name == "NAME"){
 			macroName = attr->value();
-		}
-		// else if (name == "IF"){
-		// 	if (!_attr_if(*this, op, attr))
-		// 		return;
-		// }
-		else {
+			if (macroName.empty())
+				warn_missing_attr_value(op, *attr);
+		} else if (name == "IF"){
+			if (!eval_attr_if(op, *attr))
+				return;
+		} else {
 			warn_ignored_attribute(op, *attr);
 		}
 		
@@ -39,6 +39,24 @@ void MacroEngine::call(const Node& op, Node& dst){
 	const Macro* macro = Macro::get(macroName);
 	if (macro == nullptr){
 		warn_macro_not_found(op, *attr);
+		return;
+	}
+	
+	exec(*macro, dst);
+}
+
+
+void MacroEngine::call(const Node& op, const Attr& attr, Node& dst){
+	string_view macroName = attr.value();
+	
+	if (macroName.empty()){
+		warn_missing_attr_value(op, attr);
+		return;
+	}
+	
+	const Macro* macro = Macro::get(macroName);
+	if (macro == nullptr){
+		warn_macro_not_found(op, attr);
 		return;
 	}
 	

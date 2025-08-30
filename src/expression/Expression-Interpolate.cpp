@@ -43,79 +43,84 @@ void Expression::str(const Value& val, string& buff){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool Expression::hasInterpolation(const char* str, size_t* out_len){
-	assert(str != nullptr);
+// bool Expression::hasInterpolation(const char* str, size_t* out_len){
+// 	assert(str != nullptr);
 	
-	const char* p = str;
-	while (*p != 0){
-		p = strchrnul(p, '{');
-		if (*p == 0 || p == str || p[-1] != '\\'){
-			break;
-		}
+// 	const char* p = str;
+// 	while (*p != 0){
+// 		p = strchrnul(p, '{');
+// 		if (*p == 0 || p == str || p[-1] != '\\'){
+// 			break;
+// 		}
 		
-		// Count escapes
-		size_t n = 0;
-		const char* esc = p - 1;
-		while (esc != str && *esc == '\\'){
-			esc--;
-			n++;
-		}
+// 		// Count escapes
+// 		size_t n = 0;
+// 		const char* esc = p - 1;
+// 		while (esc != str && *esc == '\\'){
+// 			esc--;
+// 			n++;
+// 		}
 		
-		if (n % 2 == 0){
-			break;
-		}
+// 		if (n % 2 == 0){
+// 			break;
+// 		}
 		
-		p++;
-	}
+// 		p++;
+// 	}
 	
-	if (out_len != nullptr){
-		*out_len = p - str;
-	}
+// 	if (out_len != nullptr){
+// 		*out_len = p - str;
+// 	}
 	
-	return (*p == '{');
-}
+// 	return (*p == '{');
+// }
 
 
-void Expression::interpolate(const char* str, const VariableMap& vars, string& buff){
-	assert(str != nullptr);
+void Expression::interpolate(string_view str, const VariableMap& vars, string& buff){
+	const char* beg = str.begin();
+	const char* end = beg + str.length();
 	
-	const char* beg = strchrnul(str, '{');
-	if (*beg == 0){
-		buff.append(str, beg);
-		return;
-	}
-	
-	const char* end = strchrnul(beg + 1, '}');
-	if (*end == 0){
-		buff.append(str, end);
-		return;
-	}
-	
-	Parser parser = {};
-	
-	while (*beg != 0 && *end != 0){
-		buff.append(str, beg);
+	while (beg != end){
+		// Find starting poing {
+		const char* a = beg;
+		while (a != end && *a != '{') a++;
 		
-		pExpr expr = parser.parse(string_view(beg + 1, end));
+		// Find end point }
+		const char* b = a;
+		while (b != end){
+			if (*b == '}'){
+				break;
+			} else if (*b == '\n'){
+				ERROR("Newline not allowed in interpolated expression [%s].", string(beg, b).c_str());
+				return;
+			}
+			b++;
+		}
+		
+		// Append prefix
+		if (b == end){
+			buff.append(beg, b);
+			return;
+		} else {
+			buff.append(beg, a);
+		}
+		
+		// Evaluate expression
+		pExpr expr = Parser().parse(string_view(a+1, b));
 		if (expr != nullptr){
 			Value val = expr->eval(vars);
 			Expression::str(val, buff);
 		} else {
-			WARN("TEXT: Failed to parse expression [%s].", string(beg, end+1).c_str());
+			ERROR("Failed to parse expression [%s].", string(a, b+1).c_str());
+			return;
 		}
 		
-		// Next expression
-		str = end + 1;
-		beg = strchrnul(str, '{');
-		end = strchrnul(beg, '}');
+		beg = b+1;
 	}
-	
-	buff.append(str, end);
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
-#ifdef DEBUG
 
 
 // static void _str(const Value& value, string& s){
@@ -192,5 +197,4 @@ void Expression::interpolate(const char* str, const VariableMap& vars, string& b
 // }
 
 
-#endif
 // ------------------------------------------------------------------------------------------ //

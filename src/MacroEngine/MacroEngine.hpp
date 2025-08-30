@@ -8,7 +8,9 @@ namespace MacroEngine {
 
 
 enum class Branch {
-	NONE, TRUE, FALSE
+	NONE,
+	ELSE,
+	END
 };
 
 enum class Interpolate {
@@ -26,7 +28,8 @@ extern Expression::VariableMap variables;
 extern html::Document doc;
 
 extern const Macro* currentMacro;
-extern Branch currentBranch;
+extern Branch currentBranch_block;
+extern Branch currentBranch_inline;
 extern Interpolate currentInterpolation;
 
 
@@ -39,7 +42,8 @@ inline void reset(){
 	variables.clear();
 	doc.reset();
 	currentMacro = nullptr;
-	currentBranch = Branch::NONE;
+	currentBranch_block = Branch::NONE;
+	currentBranch_inline = Branch::NONE;
 	currentInterpolation = Interpolate::ALL;
 	setVariableConstants();
 }
@@ -111,7 +115,32 @@ void attribute(const html::Attr& attr, html::Node& dst);
  */
 void call(const html::Node& op, html::Node& dst);
 
+/**
+ * @brief Invoke defined macro using the name from calling operation node attribute 'CALL'.
+ * @param op Calling operation node from which `opAttr` originates.
+ * @param opAttr Attribute invoking the macro call.
+ * @param dst Destination parent node for any created nodes.
+ */
+void call(const html::Node& op, const html::Attr& opAttr, html::Node& dst);
+
+
 bool include(const html::Node& op, html::Node& dst);
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+/**
+ * @brief Set variable.
+ * @param op Operation node from which to get name and value of new variable.
+ */
+void set(const html::Node& op);
+
+void branch_if(const html::Node& op, html::Node& dst);
+void branch_elif(const html::Node& op, html::Node& dst);
+void branch_else(const html::Node& op, html::Node& dst);
+long loop_for(const html::Node& op, html::Node& dst);
+long loop_while(const html::Node& op, html::Node& dst);
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -120,6 +149,16 @@ bool include(const html::Node& op, html::Node& dst);
 void info(const html::Node& op);
 void warn(const html::Node& op);
 void error(const html::Node& op);
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+bool eval_attr_if(const html::Node& op, const html::Attr& attr);
+bool eval_attr_true(const html::Node& op, const html::Attr& attr);
+bool eval_attr_false(const html::Node& op, const html::Attr& attr);
+
+Interpolate eval_attr_interp(const html::Node& op, const html::Attr& attr);
 
 
 // ------------------------------------------------------------------------------------------ //
@@ -148,14 +187,6 @@ public:
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	void set(const pugi::xml_node op);
-	bool branch_if(const pugi::xml_node op, pugi::xml_node dst);
-	bool branch_elif(const pugi::xml_node op, pugi::xml_node dst);
-	bool branch_else(const pugi::xml_node op, pugi::xml_node dst);
-	int loop_for(const pugi::xml_node op, pugi::xml_node dst);
-	int loop_while(const pugi::xml_node op, pugi::xml_node dst);
-	
-public:
 	bool setAttr(const pugi::xml_node op, pugi::xml_node dst);
 	bool getAttr(const pugi::xml_node op, pugi::xml_node dst);
 	bool delAttr(const pugi::xml_node op, pugi::xml_node dst);
@@ -177,3 +208,6 @@ public:
 	
 // ------------------------------------------------------------------------------------------ //
 };
+
+
+template<> inline constexpr bool has_enum_operators<MacroEngine::Interpolate> = true;

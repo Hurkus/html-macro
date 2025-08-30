@@ -13,64 +13,83 @@ void MacroEngine::text(const Node& src, Node& dst){
 	assert(src.type != NodeType::ROOT);
 	Node& txt = dst.appendChild(src.type);
 	
-	if (isSet(src.options, NodeOptions::INTERPOLATE)){
-		// TODO: interpolate
+	if (src.options % NodeOptions::INTERPOLATE){
+		string s = {};
+		Expression::interpolate(src.value(), MacroEngine::variables, s);
+		txt.value(s.data(), s.length());
+	} else {
+		txt.value(src.value());
 	}
 	
-	txt.value(src.value());
 }
 
 
 void MacroEngine::attribute(const Attr& src, Node& dst){
 	Attr& attr = dst.appendAttribute();
 	attr.name(src.name());
-	attr.value(src.value());
+	
+	if (MacroEngine::currentInterpolation % Interpolate::ATTRIBUTE){
+		string s = {};
+		Expression::interpolate(src.value(), MacroEngine::variables, s);
+		attr.value(s.data(), s.length());
+	} else {
+		attr.value(src.value());
+	}
+	
 }
 
 
 void MacroEngine::tag(const Node& op, Node& dst){
-	assert(op.type == NodeType::TAG);
+	Interpolate _interp = MacroEngine::currentInterpolation;
+	const Attr* attr_call_before = nullptr;
+	const Attr* attr_call_after = nullptr;
 	
-	Node& child = dst.appendChild(NodeType::TAG);
-	child.name(op.name());
+	// Create child, unlinked
+	assert(op.type == NodeType::TAG);
+	unique_ptr child = unique_ptr<Node,Node::deleter>(html::newNode());
 	
 	// Copy attributes
-	Attr* attr = op.attribute;
-	while (attr != nullptr){
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
-		// Regular attribute
 		if (name.length() < 1 || !isupper(name[0])){
-			attribute(*attr, child);
-		}
-		
-		// else if (name == "IF"){
-		// 	if (!_attr_if(*this, op, attr)){
-		// 		dst.remove_child(node);
-		// 		return {};
-		// 	}
-		// }
-		// else if (name == "INTERPOLATE"){
-		// 	_attr_interpolate(*this, op, attr, _interp);
-		// }
-		// else if (name == "CALL"){
-		// 	attr_call = attr;
-		// }
-		else {
+			attribute(*attr, *child);
+		} else if (name == "IF"){
+			if (!eval_attr_if(op, *attr))
+				return;
+		} else if (name == "INTERPOLATE"){
+			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
+		} else if (name == "CALL" || name == "CALL-BEFORE"){
+			attr_call_before = attr;
+		} else if (name == "CALL-AFTER"){
+			attr_call_after = attr;
+		} else {
 			warn_unknown_attribute(op, *attr);
-			attribute(*attr, child);
+			attribute(*attr, *child);
 		}
 		
-		attr = attr->next;
 	}
 	
-	// if (!attr_call.empty()){
-	// 	this->interpolateText = _interp;
-	// 	call(attr_call.value(), node);
-	// }
+	child->type = NodeType::TAG;
+	child->name(op.name());
+	
+	// Link child to parent
+	Node* child_p = child.release();
+	dst.appendChild(child_p);
+	
+	if (attr_call_before != nullptr){
+		call(op, *attr_call_before, dst);
+	}
 	
 	// Resolve children
-	runChildren(op, child);
+	runChildren(op, *child_p);
+	
+	if (attr_call_after != nullptr){
+		call(op, *attr_call_after, dst);
+	}
+	
+	// Restore state
+	MacroEngine::currentInterpolation = _interp;
 }
 
 
@@ -82,40 +101,6 @@ void MacroEngine::tag(const Node& op, Node& dst){
 
 
 
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-// void MacroEngineObject::interpolateAttr(const char* str, pugi::xml_attribute dst){
-// 	assert(str != nullptr);
-	
-// 	// Check if value requires interpolation
-// 	size_t len;
-// 	if (!hasInterpolation(str, &len)){
-// 		dst.set_value(str, len);
-// 		return;
-// 	}
-	
-// 	// Interpolate
-// 	string buff = {};
-// 	buff.append(str, len);
-// 	interpolate(str + len, this->variables, buff);
-// 	dst.set_value(buff.c_str(), buff.length());
-// }
-
-
-// xml_attribute MacroEngineObject::attribute(const xml_attribute src, xml_node dst){
-// 	assert(!src.empty());
-	
-// 	if (!src.empty()){
-// 		xml_attribute attr = dst.append_attribute(src.name());
-// 		interpolateAttr(src.value(), attr);
-// 		return attr;
-// 	}
-	
-// 	return {};
-// }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //

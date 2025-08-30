@@ -1,31 +1,53 @@
 #include "MacroEngine.hpp"
 #include "ExpressionParser.hpp"
-#include "MacroEngine-Common.hpp"
+#include "Debug.hpp"
 
 using namespace std;
-using namespace pugi;
+using namespace html;
 using namespace Expression;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngineObject::set(const xml_node op){
+void MacroEngine::set(const Node& op){
 	Expression::Parser parser = {};
 	
-	for (const xml_attribute attr : op.attributes()){
-		string_view value = attr.value();
-		if (value.empty()){
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view name = attr->name();
+		string_view value = attr->value();
+		
+		if (name.empty()){
 			continue;
+		} else if (name == "IF" && !eval_attr_if(op, *attr)){
+			return;
 		}
 		
-		pExpr expr = parser.parse(value);
-		if (expr == nullptr){
-			WARN("SET: Failed to parse expression [%s].", attr.value());
-			continue;
+		// TODO: update variable map index
+		Value& var = MacroEngine::variables[string(name)];
+		
+		// Expression
+		if (attr->options % NodeOptions::SINGLE_QUOTE){
+			pExpr expr = parser.parse(value);
+			if (expr == nullptr){
+				error_expression_parse(op, *attr);
+				continue;
+			}
+			
+			var = expr->eval(MacroEngine::variables);
 		}
 		
-		variables[attr.name()] = expr->eval(variables);
+		// Interpolate
+		else if (attr->options % NodeOptions::INTERPOLATE){
+			string& s = var.emplace<string>();
+			interpolate(attr->value(), MacroEngine::variables, s);
+		}
+		
+		// Plain text
+		else {
+			var.emplace<string>(attr->value());
+		}
+		
 	}
 	
 }
@@ -34,140 +56,134 @@ void MacroEngineObject::set(const xml_node op){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngineObject::branch_if(const xml_node op, xml_node dst){
-	assert(op.root() != dst.root());
-	
-	Parser parser = {};
-	bool _interp = this->interpolateText;
-	bool hasExpr = false;
-	
-	auto __eval = [&](const xml_attribute attr, bool expected){
-		hasExpr = true;
-		
-		pExpr expr = parser.parse(attr.value());
-		if (expr == nullptr){
-			ERROR("%s: Invalid expression in attribute [%s=\"%s\"].", op.name(), attr.name(), attr.value());
-			return false;
-		}
-		
-		Value val = expr->eval(variables);
-		return Expression::boolEval(val) == expected;
-	};
+void MacroEngine::branch_if(const Node& op, Node& dst){
+	auto _interp = MacroEngine::currentInterpolation;
 	
 	// Chain of `&&` statements
-	for (const xml_attribute attr : op.attributes()){
-		string_view name = attr.name();
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view name = attr->name();
 		
 		if (name == "TRUE"){
-			if (!__eval(attr, true))
+			if (!eval_attr_true(op, *attr))
 				goto fail;
 		} else if (name == "FALSE"){
-			if (!__eval(attr, false))
+			if (!eval_attr_false(op, *attr))
 				goto fail;
 		} else if (name == "INTERPOLATE"){
-			_attr_interpolate(*this, op, attr, _interp);
+			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
 		} else {
-			_attr_ignore(op, attr);
+			warn_ignored_attribute(op, *attr);
 		}
 		
 	}
 	
-	if (hasExpr){
-		swap(this->interpolateText, _interp);
-		runChildren(op, dst);
-		this->interpolateText = _interp;
-		this->branch = true;
-		return true;
-	} else {
-		WARN("IF: Missing any TRUE or FALSE expression attributes.");
-		goto fail;
-	}
+	// pass:
+	runChildren(op, dst);
+	MacroEngine::currentInterpolation = _interp;
+	MacroEngine::currentBranch_block = Branch::END;
+	return;
 	
 	fail:
-	this->branch = false;
-	return false;
+	MacroEngine::currentInterpolation = _interp;
+	MacroEngine::currentBranch_block = Branch::ELSE;
 }
 
 
-bool MacroEngineObject::branch_elif(const xml_node op, xml_node dst){
-	if (this->branch.empty()){
-		WARN("ELSE-IF: Missing preceding IF tag.");
-		return false;
-	} else if (this->branch == true){
-		return false;
-	} else {
-		return branch_if(op, dst);
+void MacroEngine::branch_elif(const Node& op, Node& dst){
+	switch (MacroEngine::currentBranch_block){
+		case Branch::NONE:
+			::error(op, "Missing preceding " ANSI_PURPLE "<IF>" ANSI_RESET " tag.");
+		case Branch::END:
+			return;
+		case Branch::ELSE:
+			branch_if(op, dst);
 	}
 }
 
 
-bool MacroEngineObject::branch_else(const xml_node op, xml_node dst){
-	assert(op.root() != dst.root());
-	
-	if (branch.empty()){
-		WARN("ELSE: Missing preceding IF tag.");
-		return false;
-	} else if (branch == true){
-		this->branch = nullptr;
-		return false;
+void MacroEngine::branch_else(const Node& op, Node& dst){
+	switch (MacroEngine::currentBranch_block){
+		case Branch::NONE:
+			::error(op, "Missing preceding " ANSI_PURPLE "<IF>" ANSI_RESET " tag.");
+		case Branch::END:
+			MacroEngine::currentBranch_block = Branch::NONE;
+			return;
+		case Branch::ELSE:
+			break;
 	}
 	
-	bool _interp = this->interpolateText;
+	auto _interp = MacroEngine::currentInterpolation;
 	
-	for (xml_attribute attr : op.attributes()){
-		if (attr.name() == "INTERPOLATE"sv)
-			_attr_interpolate(*this, op, attr, _interp);
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		if (attr->name() == "INTERPOLATE")
+			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
 		else
-			_attr_ignore(op, attr);
+			warn_ignored_attribute(op, *attr);
 	}
 	
 	// Run
-	swap(this->interpolateText, _interp);
 	runChildren(op, dst);
-	this->interpolateText = _interp;
-	this->branch = nullptr;
 	
-	return true;
+	MacroEngine::currentInterpolation = _interp;
+	MacroEngine::currentBranch_block = Branch::NONE;
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-int MacroEngineObject::loop_for(const xml_node op, xml_node dst){
-	assert(op.root() != dst.root());
-	bool _interpolate = this->interpolateText;
-	xml_attribute setup_attr;
-	xml_attribute cond_attr;
-	xml_attribute inc_attr;
+long MacroEngine::loop_for(const Node& op, Node& dst){
+	const auto _interp = MacroEngine::currentInterpolation;
 	
-	for (const xml_attribute attr : op.attributes()){
-		string_view name = attr.name();
+	bool cond_expected = true;
+	const Attr* attr_setup = nullptr;
+	const Attr* attr_cond = nullptr;
+	const Attr* attr_inc = nullptr;
+	
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view name = attr->name();
 		
 		if (name == "IF"){
-			if (!_attr_if(*this, op, attr))
+			if (!eval_attr_if(op, *attr))
 				return 0;
+		} else if (name == "INTERPOLATE"){
+			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
 		}
+		
+		// Second argument: condition
 		else if (name == "TRUE" || name == "FALSE"){
-			if (cond_attr.empty())
-				cond_attr = attr;
-			else
-				WARN("FOR: Duplicate condition attribute [%s=\"%s\"] and [%s=\"%s\"].", cond_attr.name(), cond_attr.value(), attr.name(), attr.value());
+			cond_expected = (name[0] == 'T');
+			
+			if (attr_cond != nullptr){
+				error_duplicate_attr(op, *attr_cond, *attr);
+				return 0;
+			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
+				warn_double_quote(op, *attr);
+			}
+			
+			attr_cond = attr;
 		}
-		else if (name == "INTERPOLATE"){
-			_attr_interpolate(*this, op, attr, _interpolate);
+		
+		// First argument: setup
+		else if (attr_cond == nullptr){
+			if (attr_setup != nullptr){
+				error_duplicate_attr(op, *attr_setup, *attr);
+				return 0;
+			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
+				warn_double_quote(op, *attr);
+			}
+			attr_setup = attr;
 		}
-		else if (cond_attr.empty()){
-			if (setup_attr.empty())
-				setup_attr = attr;
-			else
-				WARN("FOR: Duplicate setup attribute [%s=\"%s\"] and [%s=\"%s\"].", setup_attr.name(), setup_attr.value(), attr.name(), attr.value());
-		}
+		
+		// Third argument: increment
 		else {
-			if (inc_attr.empty())
-				inc_attr = attr;
-			else
-				WARN("FOR: Duplicate increment attribute [%s=\"%s\"] and [%s=\"%s\"].", inc_attr.name(), inc_attr.value(), attr.name(), attr.value());
+			if (attr_inc != nullptr){
+				error_duplicate_attr(op, *attr_inc, *attr);
+				return 0;
+			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
+				warn_double_quote(op, *attr);
+			}
+			attr_inc = attr;
 		}
 		
 		continue;
@@ -175,87 +191,100 @@ int MacroEngineObject::loop_for(const xml_node op, xml_node dst){
 	
 	
 	// Parse expressions
-	Expression::Parser parser = {};
-	pExpr setup_expr = nullptr;
-	pExpr cond_expr = nullptr;
-	pExpr inc_expr = nullptr;
+	pExpr expr_setup = nullptr;
+	pExpr expr_cond = nullptr;
+	pExpr expr_inc = nullptr;
 	
-	if (!cond_attr.empty()){
-		cond_expr = parser.parse(cond_attr.value());
-		if (cond_expr == nullptr){
-			ERROR("FOR: Invalid expression in attribute [%s=\"%s\"].", cond_attr.name(), cond_attr.value());
+	if (attr_setup != nullptr){
+		expr_setup = Parser().parse(attr_setup->value());
+		if (expr_setup == nullptr){
+			error_expression_parse(op, *attr_cond);
+			return 0;
+		}
+	}
+	
+	if (attr_cond != nullptr){
+		expr_cond = Parser().parse(attr_cond->value());
+		if (expr_cond == nullptr){
+			error_expression_parse(op, *attr_cond);
 			return 0;
 		}
 	} else {
-		ERROR("FOR: Missing loop condition attribute [TRUE=<expr>] or [FALSE=<expr>].");
+		error_missing_attr(op, "TRUE");
 		return 0;
 	}
 	
-	if (!setup_attr.empty()){
-		setup_expr = parser.parse(setup_attr.value());
-		if (setup_expr == nullptr){
-			ERROR("FOR: Ignored invalid expression in attribute [%s=\"%s\"].", setup_attr.name(), setup_attr.value());
-			return 0;
-		}
-	}
-	
-	if (!inc_attr.empty()){
-		inc_expr = parser.parse(inc_attr.value());
-		if (inc_expr == nullptr){
-			ERROR("FOR: Ignored invalid expression in attribute [%s=\"%s\"].", inc_attr.name(), inc_attr.value());
+	if (attr_inc != nullptr){
+		expr_inc = Parser().parse(attr_inc->value());
+		if (expr_inc == nullptr){
+			error_expression_parse(op, *attr_cond);
 			return 0;
 		}
 	}
 	
 	
-	// Run
-	if (setup_expr != nullptr){
-		variables[setup_attr.name()] = setup_expr->eval(variables);
+	// Run setup
+	if (expr_setup != nullptr){
+		// TODO: fix variable index
+		variables[string(attr_setup->name())] = expr_setup->eval(variables);
 	}
 	
-	const bool _interpolate2 = this->interpolateText; 
-	int i = 0;
+	// Run loop
+	const auto _interp_2 = MacroEngine::currentInterpolation; 
+	long i = 0;
 	
-	assert(cond_expr != nullptr);
-	while (boolEval(cond_expr->eval(variables))){
-		this->interpolateText = _interpolate;
-		this->runChildren(op, dst);
+	assert(expr_cond != nullptr);
+	while (boolEval(expr_cond->eval(variables)) == cond_expected){
+		MacroEngine::currentInterpolation = _interp_2;
+		runChildren(op, dst);
 		
-		if (inc_expr != nullptr){
-			variables[inc_attr.name()] = inc_expr->eval(variables);
+		// Increment
+		if (expr_inc != nullptr){
+			// TODO: fix variable index
+			variables[string(attr_inc->name())] = expr_inc->eval(variables);
 		}
 		
 		i++;
 	}
 	
-	this->interpolateText = _interpolate2;
+	
+	// Restore state
+	MacroEngine::currentInterpolation = _interp;
 	return i;
 }
 
 
-int MacroEngineObject::loop_while(const xml_node op, xml_node dst){
-	assert(op.root() != dst.root());
-	bool _interpolate = this->interpolateText;
-	xml_attribute cond_attr;
+long MacroEngine::loop_while(const Node& op, Node& dst){
+	const auto _interp = MacroEngine::currentInterpolation;
 	
-	for (const xml_attribute attr : op.attributes()){
-		string_view name = attr.name();
+	bool cond_expected = true;
+	const Attr* attr_cond = nullptr;
+	
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view name = attr->name();
 		
 		if (name == "IF"){
-			if (!_attr_if(*this, op, attr))
+			if (!eval_attr_if(op, *attr))
 				return 0;
+		} else if (name == "INTERPOLATE"){
+			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
 		}
+		
 		else if (name == "TRUE" || name == "FALSE"){
-			if (cond_attr.empty())
-				cond_attr = attr;
-			else
-				WARN("WHILE: Duplicate condition attribute [%s=\"%s\"] and [%s=\"%s\"].", cond_attr.name(), cond_attr.value(), attr.name(), attr.value());
+			cond_expected = (name[0] == 'T');
+			
+			if (attr_cond != nullptr){
+				error_duplicate_attr(op, *attr_cond, *attr);
+				return 0;
+			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
+				warn_double_quote(op, *attr);
+			}
+			
+			attr_cond = attr;
 		}
-		else if (name == "INTERPOLATE"){
-			_attr_interpolate(*this, op, attr, _interpolate);
-		}
+		
 		else {
-			WARN("WHILE: Ignored unknown macro attribute [%s=\"%s\"].", attr.name(), attr.value());
+			warn_ignored_attribute(op, *attr);
 		}
 		
 		continue;
@@ -263,33 +292,34 @@ int MacroEngineObject::loop_while(const xml_node op, xml_node dst){
 	
 	
 	// Parse expressions
-	Expression::Parser parser = {};
-	pExpr cond_expr = nullptr;
+	pExpr expr_cond = nullptr;
 	
-	if (!cond_attr.empty()){
-		cond_expr = parser.parse(cond_attr.value());
-		if (cond_expr == nullptr){
-			ERROR("WHILE: Invalid expression in attribute [%s=\"%s\"].", cond_attr.name(), cond_attr.value());
+	if (attr_cond != nullptr){
+		expr_cond = Parser().parse(attr_cond->value());
+		if (expr_cond == nullptr){
+			error_expression_parse(op, *attr_cond);
 			return 0;
 		}
 	} else {
-		ERROR("WHILE: Missing loop condition attribute [TRUE=<expr>] or [FALSE=<expr>].");
+		error_missing_attr(op, "TRUE");
 		return 0;
 	}
 	
 	
 	// Run
-	const bool _interpolate2 = this->interpolateText;
-	int i = 0;
+	const auto _interp_2 = MacroEngine::currentInterpolation;
+	long i = 0;
 	
-	assert(cond_expr != nullptr);
-	while (boolEval(cond_expr->eval(variables))){
-		this->interpolateText = _interpolate;
-		this->runChildren(op, dst);
+	assert(expr_cond != nullptr);
+	while (boolEval(expr_cond->eval(variables)) == cond_expected){
+		MacroEngine::currentInterpolation = _interp_2;
+		runChildren(op, dst);
 		i++;
 	}
 	
-	this->interpolateText = _interpolate2;
+	
+	// Restore state
+	MacroEngine::currentInterpolation = _interp;
 	return i;
 }
 

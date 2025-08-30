@@ -118,6 +118,17 @@ void warn_missing_attr(const Node& node, const char* name){
 }
 
 
+void warn_missing_attr_value(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_WARN(doc.file(), row, col,
+		"Attribute " PURPLE "'%s'" RS " missing value in tag " PURPLE "<%s>" RS ".",
+		CNAME(attr), CNAME(node)
+	);
+}
+
+
 void warn_ignored_attribute(const Node& node, const Attr& attr){
 	const Document& doc = node.root();
 	long row = doc.row(attr.name_p);
@@ -137,6 +148,54 @@ void warn_macro_not_found(const Node& node, const Attr& attr){
 		"Macro " PURPLE "'%s'" RS " not found from tag " PURPLE "<%s>" RS ".",
 		CVALUE(attr), CNAME(node)
 	);
+}
+
+
+void warn_double_quote(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_WARN(doc.file(), row, col,
+		"Attribute " PURPLE "%s" RS " in tag " PURPLE "<%s>" RS " expected single quotes. "
+		"Value is always interpreted as an expression.",
+		CNAME(attr), CNAME(node)
+	);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void error_expression_parse(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.value_p);
+	long col = doc.col(attr.value_p);
+	_ERROR(doc.file(), row, col,
+		"Failed to parse expression " PURPLE "[%s]" RS ".",
+		CVALUE(attr)
+	);
+}
+
+
+void error_duplicate_attr(const Node& node, const Attr& attr_1, const Attr& attr_2){
+	const Document& doc = node.root();
+	long row_0 = doc.row(node.value_p);
+	long col_0 = doc.col(node.value_p);
+	long row_1 = doc.row(attr_1.name_p);
+	long col_1 = doc.col(attr_1.name_p);
+	long row_2 = doc.row(attr_2.name_p);
+	long col_2 = doc.col(attr_2.name_p);
+	
+	ERROR(
+		BOLD "%s:%ld:%ld:" RS
+		" Duplicate attribute in tag " PURPLE "<%s>" RS ":\n"
+		"  %s:%ld:%ld: [%s='%s']\n"
+		"  %s:%ld:%ld: [%s='%s']",
+		doc.file(), row_0, col_0, CNAME(node),
+		doc.file(), row_1, col_1, CNAME(attr_1), CVALUE(attr_1),
+		doc.file(), row_2, col_2, CNAME(attr_2), CVALUE(attr_2)
+	);
+	
 }
 
 

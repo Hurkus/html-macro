@@ -1,5 +1,4 @@
 #include "MacroEngine.hpp"
-// #include "MacroEngine-Common.hpp"
 #include "Debug.hpp"
 
 using namespace std;
@@ -26,25 +25,25 @@ static string_view trim_whitespace(string_view s){
 
 
 struct LogInfo {
-	string_view msg = {};
-	bool interpolate = false;
+	string msg = {};
 };
 
 
 static bool eval(const Node& op, LogInfo& out){
+	Interpolate interp = MacroEngine::currentInterpolation;
+	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		// string_view name = attr->name();
+		string_view name = attr->name();
 		
-		// if (name == "IF"){
-		// 	if (!_attr_if(*this, op, attr))
-		// 		return;
-		// } else if (name == "INTERPOLATE"){
-		// 	_attr_interpolate(*this, op, attr, intrp);
-		// } else {
-		// 	_attr_ignore(op, attr);
-		// }
+		if (name == "IF"){
+			if (!eval_attr_if(op, *attr))
+				return false;
+		} else if (name == "INTERPOLATE"){
+			interp = eval_attr_interp(op, *attr);
+		} else {
+			warn_ignored_attribute(op, *attr);
+		}
 		
-		warn_ignored_attribute(op, *attr);
 	}
 	
 	const Node* txt = op.child;
@@ -53,8 +52,15 @@ static bool eval(const Node& op, LogInfo& out){
 		return false;
 	}
 	
-	out.msg = trim_whitespace(txt->value());
-	out.interpolate = isSet(txt->options, NodeOptions::INTERPOLATE);
+	string_view msg = trim_whitespace(txt->value());
+	
+	// Interpolate
+	if (interp % Interpolate::CONTENT){
+		Expression::interpolate(msg, MacroEngine::variables, out.msg);
+	} else {
+		out.msg = msg;
+	}
+	
 	return true;
 }
 
