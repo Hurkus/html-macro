@@ -35,8 +35,7 @@ static bool registerMacro(const Macro& parent, Node&& macro){
 	m->name = a->value();
 	
 	// Transfer node
-	m->doc.buffer_owned = parent.doc.buffer_owned;
-	m->doc.buffer_unowned = parent.doc.buffer_unowned;
+	m->doc.buffer = parent.doc.buffer;
 	m->doc.srcFile = parent.doc.srcFile;
 	swap(macro.options, m->doc.options);
 	swap(macro.value_len, m->doc.value_len);
@@ -50,7 +49,7 @@ static bool registerMacro(const Macro& parent, Node&& macro){
 }
 
 
-static Macro* loadFile(string&& path){
+static Macro* parseFile(string&& path){
 	unique_ptr<Macro> macro = make_unique<Macro>();
 	ParseResult res = macro->doc.parseFile(move(path));
 	
@@ -102,7 +101,7 @@ const Macro* Macro::load(string_view path){
 	}
 	
 	// Parse new file
-	return loadFile(move(file));
+	return parseFile(move(file));
 }
 
 

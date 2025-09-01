@@ -136,6 +136,7 @@ public:
 	Node* extractChild(Node* child);
 	
 	bool removeAttr(Attr* attr);
+	bool removeAttr(std::string_view name);
 	void removeAttributes();
 	Attr* extractAttr(Attr* child);
 	
@@ -236,9 +237,7 @@ public:
 class html::Document : public Node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	std::shared_ptr<char> buffer_owned = nullptr;		// c-string
-	const char* buffer_unowned = nullptr;
-	
+	std::shared_ptr<const std::string> buffer;
 	std::shared_ptr<const std::string> srcFile;			// Path to source file.
 	
 // ---------------------------------- [ Constructors ] -------------------------------------- //
@@ -257,31 +256,25 @@ public:
 	}
 	
 	~Document(){
-		reset();
+		Node::clear();
 	}
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	/**
 	 * @brief Parse HTML from string.
-	 * @param buff String buffer, whose lifetime must exceede that of `this` object.
+	 * @param buff String buffer.
 	 * @return `parse_result` containing parsing status.
 	 */
-	ParseResult parseBuff(const char* buff);
+	ParseResult parseBuff(std::shared_ptr<const std::string>&& buff);
 	
 	/**
 	 * @brief Open file from `path` and parse HTML.
-	 *        `buffer` is owned by `this` object.
+	 *        Content buffer is owned by `this` object.
 	 * @param path Path to file.
 	 * @return `parse_result` containing parsing status.
 	 */
-	ParseResult parseFile(std::string&& path){
-		srcFile = std::make_shared<std::string>(std::move(path));
-		return parseFile();
-	}
-	
-private:
-	ParseResult parseFile();
+	ParseResult parseFile(std::string&& path);
 	
 public:
 	/**
@@ -289,8 +282,7 @@ public:
 	 */
 	void reset(){
 		Node::clear();
-		buffer_owned = nullptr;
-		buffer_unowned = nullptr;
+		buffer.reset();
 	}
 	
 	/**

@@ -138,6 +138,31 @@ bool Node::removeAttr(Attr* a){
 }
 
 
+bool Node::removeAttr(string_view name){
+	Attr* prev = nullptr;
+	Attr* attr = this->attribute;
+	
+	// Find previous attribute
+	while (attr != nullptr && attr->name() != name){
+		prev = attr;
+		attr = attr->next;
+	}
+	
+	// Remove from linked list
+	if (attr == nullptr){
+		return false;
+	} else if (prev == nullptr){
+		this->attribute = attr->next;
+	} else {
+		prev->next = attr->next;
+	}
+	
+	_free_str(*attr);
+	html::del(attr);
+	return true;
+}
+
+
 void Node::removeAttributes(){
 	Attr* a = this->attribute;
 	this->attribute = nullptr;

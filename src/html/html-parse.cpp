@@ -117,8 +117,11 @@ inline void pop(Parser& state){
 
 
 long Document::row(const char* const p) const noexcept {
-	const char* b = (buffer_owned ? buffer_owned.get() : buffer_unowned);
-	if (b == nullptr || p == nullptr || p < b){
+	if (p == nullptr || buffer == nullptr){
+		return -1;
+	}
+	const char* b = buffer->data();
+	if (p < b){
 		return -1;
 	}
 	
@@ -136,8 +139,11 @@ long Document::row(const char* const p) const noexcept {
 
 
 long Document::col(const char* const p) const noexcept {
-	const char* b = (buffer_owned ? buffer_owned.get() : buffer_unowned);
-	if (b == nullptr || p == nullptr || p < b){
+	if (p == nullptr || buffer == nullptr){
+		return -1;
+	}
+	const char* b = buffer->data();
+	if (p < b){
 		return -1;
 	}
 	
@@ -739,26 +745,28 @@ static ParseResult parse(Document& doc, const char* buff){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static char* readFile(const char* path){
+static unique_ptr<string> readFile(const char* path){
+	unique_ptr<string> buff;
+	
 	ifstream in = ifstream(path);
 	if (!in){
-		return nullptr;
+		return buff;
 	}
 	
 	if (!in.seekg(0, ios_base::end)){
-		return nullptr;
+		return buff;
 	}
 	
 	const streampos pos = in.tellg();
 	if (pos < 0 || !in.seekg(0, ios_base::beg)){
-		return nullptr;
+		return buff;
 	}
 	
 	const size_t size = size_t(pos);
 	size_t total = 0;
-	char* buff = (char*)::operator new (size + 1);
+	buff = make_unique<string>(0, size);
 	
-	while (total < size && in.read(buff, size - total)){
+	while (total < size && in.read(buff->data() + total, size - total)){
 		
 		const streamsize n = in.gcount();
 		if (n <= 0){
@@ -768,21 +776,20 @@ static char* readFile(const char* path){
 		total += size_t(n);
 	}
 	
-	buff[total] = 0;
+	buff->resize(total);
 	return buff;
 }
 
 
-ParseResult Document::parseBuff(const char* buff){
+ParseResult Document::parseBuff(shared_ptr<const string>&& buff){
 	reset();
-	this->buffer_unowned = buff;
-	return parse(*this, buff);
+	this->buffer = move(buff);
+	return parse(*this, this->buffer->c_str());
 }
 
 
-ParseResult Document::parseFile(){
-	assert(this->srcFile != nullptr);
-	char* buff = readFile(srcFile->c_str());
+ParseResult Document::parseFile(string&& path){
+	unique_ptr<string> buff = readFile(srcFile->c_str());
 	
 	if (buff == nullptr){
 		return ParseResult {
@@ -791,8 +798,9 @@ ParseResult Document::parseFile(){
 	}
 	
 	reset();
-	this->buffer_owned = shared_ptr<char>(buff);
-	return parse(*this, buff);
+	this->srcFile = make_shared<string>(move(path));
+	this->buffer = move(buff);
+	return parse(*this, this->buffer->c_str());
 }
 
 
