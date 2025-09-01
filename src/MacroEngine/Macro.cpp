@@ -4,7 +4,6 @@
 #include "Debug.hpp"
 
 using namespace std;
-using namespace pugi;
 using namespace html;
 using namespace MacroEngine;
 
@@ -49,21 +48,33 @@ static bool registerMacro(const Macro& parent, Node&& macro){
 }
 
 
-static Macro* parseFile(string&& path){
-	unique_ptr<Macro> macro = make_unique<Macro>();
-	ParseResult res = macro->doc.parseFile(move(path));
+static void err(const Document& doc, const ParseResult& res){
+	const char* file = (doc.srcFile == nullptr) ? "buffer" : doc.srcFile->c_str();
+	const char* msg = html::errstr(res.status);
 	
 	switch (res.status){
-		case ParseStatus::OK:
+		case ParseStatus::IO:
+		case ParseStatus::MEMORY:
+			ERROR(ANSI_BOLD "%s:" ANSI_RESET " %s", file, msg);
 			break;
-		default: {
-			const char* file = macro->doc.file();
-			long row = macro->doc.row(res.pos);
-			long col = macro->doc.col(res.pos);
-			const char* msg = html::errstr(res.status);
+		default:
+			long row = doc.row(res.pos);
+			long col = doc.col(res.pos);
 			ERROR(ANSI_BOLD "%s:%ld:%ld:" ANSI_RESET " %s", file, row, col, msg);
-			return nullptr;
-		}
+			break;
+	}
+	
+}
+
+
+static Macro* parseFile(string&& path){
+	unique_ptr<Macro> macro = make_unique<Macro>();
+	
+	// Parse
+	ParseResult res = macro->doc.parseFile(move(path));
+	if (res.status != ParseStatus::OK){
+		err(macro->doc, res);
+		return nullptr;
 	}
 	
 	// Extract all <MACRO> nodes.
@@ -82,19 +93,12 @@ static Macro* parseFile(string&& path){
 
 static unique_ptr<Macro> parseBuffer(shared_ptr<const string>&& buff){
 	unique_ptr<Macro> macro = make_unique<Macro>();
-	ParseResult res = macro->doc.parseBuff(move(buff));
 	
-	switch (res.status){
-		case ParseStatus::OK:
-			break;
-		default: {
-			const char* file = macro->doc.file();
-			long row = macro->doc.row(res.pos);
-			long col = macro->doc.col(res.pos);
-			const char* msg = html::errstr(res.status);
-			ERROR(ANSI_BOLD "%s:%ld:%ld:" ANSI_RESET " %s", file, row, col, msg);
-			return nullptr;
-		}
+	// Parse
+	ParseResult res = macro->doc.parseBuff(move(buff));
+	if (res.status != ParseStatus::OK){
+		err(macro->doc, res);
+		return nullptr;
 	}
 	
 	// Extract all <MACRO> nodes.

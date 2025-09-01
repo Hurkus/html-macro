@@ -746,31 +746,28 @@ static ParseResult parse(Document& doc, const char* buff){
 
 
 static unique_ptr<string> readFile(const char* path){
-	unique_ptr<string> buff;
-	
 	ifstream in = ifstream(path);
 	if (!in){
-		return buff;
+		return nullptr;
 	}
 	
 	if (!in.seekg(0, ios_base::end)){
-		return buff;
+		return nullptr;
 	}
 	
 	const streampos pos = in.tellg();
 	if (pos < 0 || !in.seekg(0, ios_base::beg)){
-		return buff;
+		return nullptr;
 	}
 	
 	const size_t size = size_t(pos);
+	unique_ptr<string> buff = make_unique<string>(size, 0);
 	size_t total = 0;
-	buff = make_unique<string>(0, size);
 	
 	while (total < size && in.read(buff->data() + total, size - total)){
-		
 		const streamsize n = in.gcount();
 		if (n <= 0){
-			break;
+			return nullptr;
 		}
 		
 		total += size_t(n);
@@ -789,7 +786,7 @@ ParseResult Document::parseBuff(shared_ptr<const string>&& buff){
 
 
 ParseResult Document::parseFile(string&& path){
-	unique_ptr<string> buff = readFile(srcFile->c_str());
+	unique_ptr<string> buff = readFile(path.c_str());
 	
 	if (buff == nullptr){
 		return ParseResult {
