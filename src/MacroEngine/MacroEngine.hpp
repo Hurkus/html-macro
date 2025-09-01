@@ -126,9 +126,13 @@ void call(const html::Node& op, const html::Attr& opAttr, html::Node& dst);
 
 bool include(const html::Node& op, html::Node& dst);
 
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
+/**
+ * @brief Execute content of operation node as a shell command and
+ *         include results in the document.
+ * @param op Operation node from which to extract the shell command.
+ * @param dst Destination parent node for any created nodes.
+ */
+void shell(const html::Node& op, html::Node& dst);
 
 /**
  * @brief Set variable.
@@ -142,9 +146,12 @@ void branch_else(const html::Node& op, html::Node& dst);
 long loop_for(const html::Node& op, html::Node& dst);
 long loop_while(const html::Node& op, html::Node& dst);
 
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
+void setAttr(const html::Node& op, html::Node& dst);
+void getAttr(const html::Node& op, html::Node& dst);
+void delAttr(const html::Node& op, html::Node& dst);
+void setTag(const html::Node& op, html::Node& dst);
+void getTag(const html::Node& op, html::Node& dst);
+void delTag(const html::Node& op, html::Node& dst);
 
 void info(const html::Node& op);
 void warn(const html::Node& op);
@@ -161,51 +168,6 @@ bool eval_attr_false(const html::Node& op, const html::Attr& attr);
 Interpolate eval_attr_interp(const html::Node& op, const html::Attr& attr);
 
 
-// ------------------------------------------------------------------------------------------ //
-};
-
-
-
-
-
-
-class MacroEngineObject {
-// ----------------------------------- [ Variables ] ---------------------------------------- //
-public:
-	// pugi::xml_document doc;
-	// string_map<std::shared_ptr<MacroObject>> macros;
-	// Expression::VariableMap variables;
-	
-public:
-	// const MacroObject* currentMacro = nullptr;
-	// optbool branch = nullptr;
-	// bool interpolateText = true;
-	
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-public:
-	bool execBuff(std::string_view buff, pugi::xml_node dst);
-	
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-public:
-	bool setAttr(const pugi::xml_node op, pugi::xml_node dst);
-	bool getAttr(const pugi::xml_node op, pugi::xml_node dst);
-	bool delAttr(const pugi::xml_node op, pugi::xml_node dst);
-	bool setTag(const pugi::xml_node op, pugi::xml_node dst);
-	bool getTag(const pugi::xml_node op, pugi::xml_node dst);
-	bool delTag(const pugi::xml_node op, pugi::xml_node dst);
-	
-public:
-	bool shell(const pugi::xml_node op, pugi::xml_node dst);
-	
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-public:
-	/**
-	 * @brief Interpolate string for any expressions and store result into the attribute value.
-	 * @param str String for interpolation.
-	 * @param dst Attribute of which the value is set to the interpolated string.
-	 */
-	void interpolateAttr(const char* str, pugi::xml_attribute dst);
-	
 // ------------------------------------------------------------------------------------------ //
 };
 

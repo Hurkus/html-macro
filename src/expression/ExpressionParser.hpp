@@ -36,3 +36,10 @@ private:
 // ------------------------------------------------------------------------------------------ //
 };
 }
+
+
+namespace Expression {
+	inline pExpr parse(std::string_view str){
+		return Parser().parse(str);
+	}
+}

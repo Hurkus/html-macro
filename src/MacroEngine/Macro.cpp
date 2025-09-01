@@ -80,6 +80,34 @@ static Macro* parseFile(string&& path){
 };
 
 
+static unique_ptr<Macro> parseBuffer(shared_ptr<const string>&& buff){
+	unique_ptr<Macro> macro = make_unique<Macro>();
+	ParseResult res = macro->doc.parseBuff(move(buff));
+	
+	switch (res.status){
+		case ParseStatus::OK:
+			break;
+		default: {
+			const char* file = macro->doc.file();
+			long row = macro->doc.row(res.pos);
+			long col = macro->doc.col(res.pos);
+			const char* msg = html::errstr(res.status);
+			ERROR(ANSI_BOLD "%s:%ld:%ld:" ANSI_RESET " %s", file, row, col, msg);
+			return nullptr;
+		}
+	}
+	
+	// Extract all <MACRO> nodes.
+	for (Node* m : res.macros){
+		assert(m != nullptr && m->parent != nullptr);
+		registerMacro(*macro, move(*m));
+		Node::del(m);
+	}
+	
+	return macro;
+};
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -91,7 +119,7 @@ const Macro* Macro::get(string_view name){
 }
 
 
-const Macro* Macro::load(string_view path){
+const Macro* Macro::loadFile(string_view path){
 	string file = resolve(path).string();
 	
 	// Check if cached files.
@@ -102,6 +130,11 @@ const Macro* Macro::load(string_view path){
 	
 	// Parse new file
 	return parseFile(move(file));
+}
+
+
+unique_ptr<Macro> Macro::loadBuffer(shared_ptr<const string>&& buff){
+	return parseBuffer(move(buff));
 }
 
 

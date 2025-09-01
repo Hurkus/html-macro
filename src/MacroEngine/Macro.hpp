@@ -1,9 +1,4 @@
 #pragma once
-#include <memory>
-#include <string>
-#include <vector>
-#include <filesystem>
-
 #include "html.hpp"
 #include "pugixml.hpp"
 
@@ -22,21 +17,8 @@ public:
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	static const Macro* get(std::string_view name);
-	static const Macro* load(std::string_view filePath);
-	
-// ------------------------------------------------------------------------------------------ //
-};
-
-
-
-
-// TODO: REMOVE
-class MacroObject {
-// ------------------------------------[ Properties ] --------------------------------------- //
-public:
-	pugi::xml_document root;
-	std::string name;
-	std::shared_ptr<std::filesystem::path> srcFile;
+	static const Macro* loadFile(std::string_view filePath);
+	static std::unique_ptr<Macro> loadBuffer(std::shared_ptr<const std::string>&& buff);
 	
 // ------------------------------------------------------------------------------------------ //
 };

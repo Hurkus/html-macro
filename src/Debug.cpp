@@ -163,6 +163,17 @@ void warn_double_quote(const Node& node, const Attr& attr){
 }
 
 
+void warn_ignored_attr_value(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_WARN(doc.file(), row, col,
+		"Value of attribute " PURPLE "%s" RS " in tag " PURPLE "<%s>" RS " ignored.",
+		CNAME(attr), CNAME(node)
+	);
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -196,6 +207,17 @@ void error_duplicate_attr(const Node& node, const Attr& attr_1, const Attr& attr
 		doc.file(), row_2, col_2, CNAME(attr_2), CVALUE(attr_2)
 	);
 	
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void warn_shell_exit(const Node& node, int i){
+	const Document& doc = node.root();
+	long row = doc.row(node.value_p);
+	long col = doc.col(node.value_p);
+	_WARN(doc.file(), row, col, "Command exited with status (%d).", i);
 }
 
 

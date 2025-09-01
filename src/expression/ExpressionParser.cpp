@@ -331,10 +331,11 @@ pExpr Parser::makeTree(vector<pExpr>& args, vector<int>& ops){
 	}
 	
 	// Merge multiplications
-	for (int i = 0 ; i < int(ops.size()) ; i++){
-		assert(i+1 < args.size());
+	for (long i = 0 ; i < long(ops.size()) ; i++){
+		assert(size_t(i+1) < args.size());
 		
 		if (ops[i] == '*' || ops[i] == '/' || ops[i] == '%'){
+			assert(i > 0);
 			pExpr e = _binop(move(args[i]), move(args[i+1]), ops[i]);
 			args[i] = move(e);
 			
@@ -346,8 +347,8 @@ pExpr Parser::makeTree(vector<pExpr>& args, vector<int>& ops){
 	}
 	
 	// Merge additions
-	for (int i = 0 ; i < int(ops.size()) ; i++){
-		assert(i+1 < args.size());
+	for (long i = 0 ; i < long(ops.size()) ; i++){
+		assert(size_t(i+1) < args.size());
 		
 		if (ops[i] == '+' || ops[i] == '-'){
 			pExpr e = _binop(move(args[i]), move(args[i+1]), ops[i]);
@@ -361,8 +362,8 @@ pExpr Parser::makeTree(vector<pExpr>& args, vector<int>& ops){
 	}
 	
 	// Merge comparisons
-	for (int i = 0 ; i < int(ops.size()) ; i++){
-		assert(i+1 < args.size());
+	for (long i = 0 ; i < long(ops.size()) ; i++){
+		assert(size_t(i+1) < args.size());
 		// `args[0]` is cummulative expression
 		pExpr e = _binop(move(args[0]), move(args[i+1]), ops[i]);
 		args[0] = move(e);

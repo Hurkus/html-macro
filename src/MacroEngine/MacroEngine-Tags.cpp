@@ -1,9 +1,11 @@
 #include "MacroEngine.hpp"
+#include "ExpressionParser.hpp"
 #include "Debug.hpp"
 
 using namespace std;
 using namespace html;
 using namespace MacroEngine;
+using namespace Expression;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -93,154 +95,230 @@ void MacroEngine::tag(const Node& op, Node& dst){
 }
 
 
-// ------------------------------------------------------------------------------------------ //
-
-
-
-
-
-
-
-
-
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-// bool MacroEngineObject::setAttr(const xml_node op, xml_node dst){
-// 	// Check IF conditional
-// 	for (const xml_attribute attr : op.attributes()){
-// 		if (attr.name() == "IF"sv){
-// 			if (!_attr_if(*this, op, attr))
-// 				return false;
-// 		}
-// 	}
+void MacroEngine::setAttr(const Node& op, Node& dst){
+	// Check conditional
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		if (attr->name() == "IF"){
+			if (!eval_attr_if(op, *attr))
+				return;
+		}
+	}
 	
-// 	// Copy or set attributes
-// 	for (const xml_attribute src_attr : op.attributes()){
-// 		const char* cname = src_attr.name();
-// 		if (cname == "IF"sv){
-// 			continue;
-// 		}
+	string buff = {};
+	
+	// Copy or set attributes
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view name = attr->name();
+		if (name == "IF"){
+			continue;
+		}
 		
-// 		xml_attribute dst_attr = dst.attribute(cname);
-// 		if (dst_attr.empty()){
-// 			dst_attr = dst.append_attribute(cname);
-// 		}
+		Attr& a = dst.appendAttribute();
+		a.name(name);
 		
-// 		interpolateAttr(src_attr.value(), dst_attr);
-// 	}
-	
-// 	return true;
-// }
-
-
-// bool MacroEngineObject::getAttr(const xml_node op, xml_node dst){
-// 	// Check IF conditional
-// 	for (const xml_attribute attr : op.attributes()){
-// 		if (attr.name() == "IF"sv){
-// 			if (!_attr_if(*this, op, attr))
-// 				return false;
-// 		}
-// 	}
-	
-// 	for (const xml_attribute attr : op.attributes()){
-// 		const char* var_name = attr.name();
-// 		if (var_name == "IF"sv){
-// 			continue;
-// 		}
+		// Evaluate expression
+		if (attr->options % NodeOptions::SINGLE_QUOTE){
+			pExpr expr = Expression::parse(attr->value());
+			if (expr == nullptr){
+				dst.removeAttr(&a);
+				error_expression_parse(op, *attr);
+				return;
+			}
+			
+			buff.clear();
+			Value val = expr->eval(MacroEngine::variables);
+			Expression::str(val, buff);
+			a.value(buff.data(), buff.length());
+		}
 		
-// 		const char* attr_name = attr.value();
-// 		variables[var_name] = dst.attribute(attr_name).value();
-// 	}
-	
-// 	return true;
-// }
-
-
-// bool MacroEngineObject::delAttr(const xml_node op, xml_node dst){
-// 	// Check IF conditional
-// 	for (const xml_attribute attr : op.attributes()){
-// 		if (attr.name() == "IF"sv){
-// 			if (!_attr_if(*this, op, attr))
-// 				return false;
-// 		}
-// 	}
-	
-// 	// Copy or set attributes
-// 	for (const xml_attribute attr : op.attributes()){
-// 		const char* cname = attr.name();
-// 		if (cname != "IF"sv)
-// 			dst.remove_attribute(attr.value());
-// 	}
-	
-// 	return true;
-// }
-
-
-// bool MacroEngineObject::setTag(const xml_node op, xml_node dst){
-// 	xml_attribute name_attr;
-	
-// 	// Check IF conditional
-// 	for (const xml_attribute attr : op.attributes()){
-// 		string_view name = attr.name();
+		// Interpolate
+		else if (attr->options % NodeOptions::INTERPOLATE){
+			buff.clear();
+			interpolate(attr->value(), MacroEngine::variables, buff);
+			a.value(buff.data(), buff.length());
+		}
 		
-// 		if (name == "IF"){
-// 			if (!_attr_if(*this, op, attr))
-// 				return false;
-// 		} else if (name == "NAME"){
-// 			if (name_attr.empty())
-// 				name_attr = attr;
-// 			else
-// 				_attr_duplicate(op, name_attr, attr);
-// 		} else {
-// 			_attr_ignore(op, attr);
-// 		}
+		// Plain text
+		else {
+			a.value(attr->value());
+		}
 		
-// 	}
+	}
 	
-// 	if (name_attr.empty()){
-// 		_attr_missing(op, "NAME");
-// 		return false;
-// 	}
-	
-// 	const char* cname = name_attr.value();
-// 	if (cname[0] == 0){
-// 		ERROR("%s: Attribute 'NAME' cannot be empty.", op.name());
-// 		return false;
-// 	}
-	
-// 	string buff;
-// 	interpolate(cname, variables, buff);
-// 	return dst.set_name(buff.c_str(), buff.length());
-// }
+}
 
 
-// bool MacroEngineObject::getTag(const xml_node op, xml_node dst){
-// 	// Check IF conditional
-// 	for (const xml_attribute attr : op.attributes()){
-// 		if (attr.name() == "IF"sv){
-// 			if (!_attr_if(*this, op, attr))
-// 				return false;
-// 		}
-// 	}
+void MacroEngine::getAttr(const Node& op, Node& dst){
+	// Check conditional
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		if (attr->name() == "IF"){
+			if (!eval_attr_if(op, *attr))
+				return;
+		}
+	}
 	
-// 	for (const xml_attribute attr : op.attributes()){
-// 		const char* var_name = attr.name();
-// 		if (var_name == "IF"sv){
-// 			continue;
-// 		}
+	string buff;
+	
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view varName = attr->name();
+		if (varName == "IF"){
+			continue;
+		}
 		
-// 		variables[var_name] = dst.name();
-// 	}
+		string_view attrName = attr->value();
+		
+		// Evaluate expression
+		if (attr->options % NodeOptions::SINGLE_QUOTE){
+			pExpr expr = Expression::parse(attrName);
+			if (expr == nullptr){
+				error_expression_parse(op, *attr);
+				return;
+			}
+			
+			buff.clear();
+			Value val = expr->eval(MacroEngine::variables);
+			Expression::str(val, buff);
+			attrName = buff;
+		}
+		
+		// Interpolate
+		else if (attr->options % NodeOptions::INTERPOLATE){
+			buff.clear();
+			Expression::interpolate(attrName, MacroEngine::variables, buff);
+			attrName = buff;
+		}
+		
+		// Find attribute and copy value to variable
+		for (const Attr* a = dst.attribute ; a != nullptr ; a = a->next){
+			if (a->name() == attrName){
+				// TODO: fix variable index
+				variables[string(varName)] = Value(in_place_type<string>, a->value());
+				break;
+			}
+		}
+		
+	}
 	
-// 	return true;
-// }
+}
 
 
-// bool MacroEngineObject::delTag(const xml_node op, xml_node dst){
-// 	assert(false);
-// 	return false;
-// }
+void MacroEngine::delAttr(const Node& op, Node& dst){
+	// Check conditional
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		if (attr->name() == "IF"){
+			if (!eval_attr_if(op, *attr))
+				return;
+		}
+	}
+	
+	// Delete attributes
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		if (attr->name() != "IF")
+			dst.removeAttr(attr->name());
+	}
+	
+}
+
+
+void MacroEngine::setTag(const Node& op, Node& dst){
+	const Attr* attr_nameName = nullptr;
+	const Attr* attr_valName = nullptr;
+	
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view name = attr->name();
+		
+		if (name == "IF"){
+			if (!eval_attr_if(op, *attr))
+				return;
+		} else if (name == "NAME"){
+			if (attr_nameName != nullptr){
+				error_duplicate_attr(op, *attr_nameName, *attr);
+				return;
+			} else if (attr_valName != nullptr){
+				error_duplicate_attr(op, *attr_valName, *attr);
+				return;
+			}  else {
+				attr_valName = attr;
+			}
+		} else {
+			if (attr_nameName != nullptr){
+				error_duplicate_attr(op, *attr_nameName, *attr);
+				return;
+			} else if (attr_valName != nullptr){
+				error_duplicate_attr(op, *attr_valName, *attr);
+				return;
+			}  else {
+				attr_nameName = attr;
+			}
+		}
+		
+	}
+	
+	// Set simple name
+	if (attr_nameName != nullptr){
+		dst.name(attr_nameName->name());
+		return;
+	} else if (attr_valName == nullptr){
+		error_missing_attr(op, "NAME");
+		return;
+	}
+	
+	string newName = {};
+	
+	// Evaluate expression
+	if (attr_valName->options % NodeOptions::SINGLE_QUOTE){
+		pExpr expr = Expression::parse(attr_valName->value());
+		if (expr == nullptr){
+			error_expression_parse(op, *attr_valName);
+			return;
+		}
+		
+		Value val = expr->eval(MacroEngine::variables);
+		Expression::str(val, newName);
+	}
+		
+	// Interpolate
+	else if (attr_valName->options % NodeOptions::INTERPOLATE){
+		Expression::interpolate(attr_valName->value(), MacroEngine::variables, newName);
+	}
+	
+	dst.name(newName.data(), newName.length());
+}
+
+
+void MacroEngine::getTag(const Node& op, Node& dst){
+	// Check conditional
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		if (attr->name() == "IF"){
+			if (!eval_attr_if(op, *attr))
+				return;
+		}
+	}
+	
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view varName = attr->name();
+		if (varName == "IF"){
+			continue;
+		}
+		
+		if (attr->value_len > 0){
+			warn_ignored_attr_value(op, *attr);
+		}
+		
+		// TODO: fix variable index
+		MacroEngine::variables[string(varName)] = string(dst.name());
+	}
+	
+}
+
+
+void MacroEngine::delTag(const Node& op, Node& dst){
+	::error(op, "Not yet implemented.");
+	assert(false);
+}
 
 
 // ------------------------------------------------------------------------------------------ //

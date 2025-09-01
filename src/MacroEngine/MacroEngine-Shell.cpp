@@ -8,11 +8,12 @@ extern "C" {
 	#include <sys/wait.h>
 }
 
-#include "MacroParser.hpp"
-#include "MacroEngine-Common.hpp"
+#include "Paths.hpp"
+#include "Debug.hpp"
 
 using namespace std;
-using namespace pugi;
+using namespace html;
+using namespace MacroEngine;
 
 
 // ----------------------------------- [ Structures ] --------------------------------------- //
@@ -22,11 +23,10 @@ constexpr size_t STDIN_CHUNK_SIZE = 4096;
 
 
 struct ShellCmd {
-	const char* cmd = nullptr;
+	string_view cmd;
 	const Expression::VariableMap* vars = nullptr;
 	const vector<string_view>* env = nullptr;
 	string* capture = nullptr;
-	const filesystem::path* cwd = nullptr;
 };
 
 
@@ -97,8 +97,11 @@ static void _setEnv(const Expression::VariableMap& vars, const vector<string_vie
 
 
 static int _shell(const ShellCmd& cmd) noexcept {
-	assert(cmd.cmd != nullptr);
-	if (cmd.cmd == nullptr){
+	assert(MacroEngine::cwd != nullptr);
+	assert(filesystem::is_directory(*MacroEngine::cwd));
+	assert(!cmd.cmd.empty());
+	
+	if (cmd.cmd.empty()){
 		return 0;
 	}
 	
@@ -123,15 +126,10 @@ static int _shell(const ShellCmd& cmd) noexcept {
 		}
 		
 		// Set current directory
-		if (cmd.cwd != nullptr){
-			try {
-				if (filesystem::is_directory(*cmd.cwd))
-					filesystem::current_path(*cmd.cwd);
-				else
-					filesystem::current_path(cmd.cwd->parent_path());
-			} catch (const exception&) {
-				exit(102);
-			}
+		try {
+			filesystem::current_path(*MacroEngine::cwd);
+		} catch (const exception&) {
+			exit(102);
 		}
 		
 		if (cmd.env != nullptr && cmd.vars != nullptr){
@@ -170,73 +168,77 @@ static int _shell(const ShellCmd& cmd) noexcept {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static void _extractVars(const char* csv, vector<string_view>& vars){
+static void _extractVars(string_view csv, vector<string_view>& vars){
+	const char* p = csv.data();
+	const char* end = p + csv.length();
 	const char* beg = nullptr;
 	
-	while (*csv != 0){
+	while (p != end){
 		
-		if (isspace(*csv) || *csv == ','){
+		if (isspace(*p) || *p == ','){
 			if (beg != nullptr){
-				vars.emplace_back(string_view(beg, csv));
+				vars.emplace_back(string_view(beg, p));
 				beg = nullptr;
 			}
 		} else if (beg == nullptr){
-			beg = csv;
+			beg = p;
 		}
 		
-		csv++;
+		p++;
 	}
 	
 	if (beg != nullptr){
-		vars.emplace_back(string_view(beg, csv));
+		vars.emplace_back(string_view(beg, end));
 	}
 	
+}
+
+
+static void _execBuff(string&& buff, Node& dst){
+	unique_ptr<Macro> m = Macro::loadBuffer(make_shared<string>(move(buff)));
+	if (m != nullptr)
+		MacroEngine::exec(*m, dst);
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngineObject::shell(const xml_node op, xml_node dst){
-	vector<string_view> vars = {};
-	
+void MacroEngine::shell(const Node& op, Node& dst){
 	enum class Capture {
 		VOID,
-		PCDATA,
+		TEXT,
 		HTML,
 		VAR
-	} capture = Capture::PCDATA;
+	} capture = Capture::TEXT;
 	
+	vector<string_view> vars = {};
 	string_view captureVar = {};
 	
-	
-	for (const xml_attribute attr : op.attributes()){
-		string_view name = attr.name();
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view name = attr->name();
 		
 		if (name == "IF"){
-			if (!_attr_if(*this, op, attr))
-				return true;
-		}
-		else if (name == "VARS"){
-			_extractVars(attr.value(), vars);
-		}
-		else if (name == "STDOUT"){
-			string_view val = attr.value();
+			if (!eval_attr_if(op, *attr))
+				return;
+		} else if (name == "VARS"){
+			_extractVars(attr->value(), vars);
+		} else if (name == "STDOUT"){
+			string_view val = attr->value();
 			
 			if (val == "" || val == "VOID"){
 				capture = Capture::VOID;
 			} else if (val == "HTML"){
 				capture = Capture::HTML;
 			} else if (val == "TEXT"){
-				capture = Capture::PCDATA;
+				capture = Capture::TEXT;
 			} else {
 				capture = Capture::VAR;
 				captureVar = val;
 			}
 			
-		}
-		else {
-			WARN("SHELL: Ignored unknown macro attribute [%s=\"%s\"].", attr.name(), attr.value());
+		} else {
+			warn_ignored_attribute(op, *attr);
 		}
 		
 	}
@@ -246,61 +248,53 @@ bool MacroEngineObject::shell(const xml_node op, xml_node dst){
 	string result;
 	
 	ShellCmd cmd = {
-		.vars = &this->variables,
+		.vars = &MacroEngine::variables,
 		.env = &vars,
 		.capture = (capture != Capture::VOID) ? &result : nullptr
 	};
 	
-	// Only one text child
-	xml_node content = op.first_child();
-	if (content.next_sibling().empty() && !content.text().empty()){
-		cmd.cmd = content.value();
-		status = _shell(cmd);
+	// Read command from child node.
+	Node* content = op.child;
+	if (content == nullptr){
+		::warn(op, "Unused shell command node.");
+		return;
+	} else if (content->type != NodeType::TEXT){
+		::error(op, "Plaintext expected for shell command.");
+		return;
 	}
 	
-	// Build command from child nodes
-	else {
-		stringstream ss = {};
-		
-		for (const xml_node child : op){
-			child.print(ss, "", format_raw);
-		}
-		
-		string cmdbuff = move(ss).str();
-		cmd.cmd = cmdbuff.c_str();
-		status = _shell(cmd);
-	}
-	
+	cmd.cmd = content->value();
+	status = _shell(cmd);
 	if (status != 0){
-		ERROR("SHELL: Exited with status (" ANSI_RED "%d" ANSI_RESET ").", status);
+		::warn_shell_exit(op, status);
+		return;
 	}
 	
 	// Apply result
 	switch (capture){
 		case Capture::VOID: {
-			return true;
+			break;
 		}
 		
-		case Capture::PCDATA: {
-			xml_text txt = dst.append_child(xml_node_type::node_pcdata).text();
-			txt.set(result.c_str(), result.length());
-			return true;
+		case Capture::TEXT: {
+			Node& txt = dst.appendChild(NodeType::TEXT);
+			txt.value(result.data(), result.length());
+			break;
 		}
 		
 		case Capture::HTML: {
-			return execBuff(string_view(result), dst);
+			_execBuff(move(result), dst);
+			break;
 		}
 		
 		case Capture::VAR: {
-			if (!captureVar.empty())
-				variables[string(captureVar)] = move(result);
-			return true;
+			// TODO: fix variable index
+			variables[string(captureVar)] = move(result);
+			break;
 		}
 		
 	}
 	
-	
-	return true;
 }
 
 
