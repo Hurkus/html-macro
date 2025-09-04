@@ -18,7 +18,7 @@ void MacroEngine::text(const Node& src, Node& dst){
 	if (src.options % NodeOptions::INTERPOLATE){
 		string s = {};
 		Expression::interpolate(src.value(), MacroEngine::variables, s);
-		txt.value(s.data(), s.length());
+		txt.value(html::newStr(s), s.length());
 	} else {
 		txt.value(src.value());
 	}
@@ -26,16 +26,33 @@ void MacroEngine::text(const Node& src, Node& dst){
 }
 
 
-void MacroEngine::attribute(const Attr& src, Node& dst){
+void MacroEngine::attribute(const Node& op, const Attr& op_attr, Node& dst){
 	Attr& attr = dst.appendAttribute();
-	attr.name(src.name());
+	attr.name(op_attr.name());
 	
-	if (MacroEngine::currentInterpolation % Interpolate::ATTRIBUTE){
-		string s = {};
-		Expression::interpolate(src.value(), MacroEngine::variables, s);
-		attr.value(s.data(), s.length());
-	} else {
-		attr.value(src.value());
+	// Evaluate expression
+	if (op_attr.options % NodeOptions::SINGLE_QUOTE){
+		pExpr expr = Expression::parse(op_attr.value());
+		if (expr == nullptr){
+			error_expression_parse(op, op_attr);
+			return;
+		}
+		
+		string buff;
+		Expression::str(expr->eval(MacroEngine::variables), buff);
+		attr.value(html::newStr(buff), buff.length());
+	}
+	
+	// Interpolate
+	else if (op_attr.options % NodeOptions::INTERPOLATE){
+		string buff;
+		Expression::interpolate(op_attr.value(), MacroEngine::variables, buff);
+		attr.value(html::newStr(buff), buff.length());
+	}
+	
+	// Text value
+	else {
+		attr.value(op_attr.value());
 	}
 	
 }
@@ -55,7 +72,7 @@ void MacroEngine::tag(const Node& op, Node& dst){
 		string_view name = attr->name();
 		
 		if (name.length() < 1 || !isupper(name[0])){
-			attribute(*attr, *child);
+			attribute(op, *attr, *child);
 		} else if (name == "IF"){
 			if (!eval_attr_if(op, *attr))
 				return;
@@ -67,7 +84,7 @@ void MacroEngine::tag(const Node& op, Node& dst){
 			attr_call_after = attr;
 		} else {
 			warn_unknown_attribute(op, *attr);
-			attribute(*attr, *child);
+			attribute(op, *attr, *child);
 		}
 		
 	}
@@ -129,16 +146,15 @@ void MacroEngine::setAttr(const Node& op, Node& dst){
 			}
 			
 			buff.clear();
-			Value val = expr->eval(MacroEngine::variables);
-			Expression::str(val, buff);
-			a.value(buff.data(), buff.length());
+			Expression::str(expr->eval(MacroEngine::variables), buff);
+			a.value(html::newStr(buff), buff.length());
 		}
 		
 		// Interpolate
 		else if (attr->options % NodeOptions::INTERPOLATE){
 			buff.clear();
 			interpolate(attr->value(), MacroEngine::variables, buff);
-			a.value(buff.data(), buff.length());
+			a.value(html::newStr(buff), buff.length());
 		}
 		
 		// Plain text
@@ -179,8 +195,7 @@ void MacroEngine::getAttr(const Node& op, Node& dst){
 			}
 			
 			buff.clear();
-			Value val = expr->eval(MacroEngine::variables);
-			Expression::str(val, buff);
+			Expression::str(expr->eval(MacroEngine::variables), buff);
 			attrName = buff;
 		}
 		
@@ -275,8 +290,7 @@ void MacroEngine::setTag(const Node& op, Node& dst){
 			return;
 		}
 		
-		Value val = expr->eval(MacroEngine::variables);
-		Expression::str(val, newName);
+		Expression::str(expr->eval(MacroEngine::variables), newName);
 	}
 		
 	// Interpolate
@@ -284,7 +298,7 @@ void MacroEngine::setTag(const Node& op, Node& dst){
 		Expression::interpolate(attr_valName->value(), MacroEngine::variables, newName);
 	}
 	
-	dst.name(newName.data(), newName.length());
+	dst.name(html::newStr(newName), newName.length());
 }
 
 

@@ -538,7 +538,7 @@ static const char* parse_openTag(Parser& state, const char* s){
 				if (name == "img" || name == "col" || name == "wbr")
 					goto void_tag;
 				else if (name == "pre")
-					return parse_rawpcData(state, node, s+1);
+					goto raw_pcdata;
 				else
 					goto regular_tag;
 			case 4:
@@ -547,8 +547,8 @@ static const char* parse_openTag(Parser& state, const char* s){
 				else
 					goto regular_tag;
 			case 5:
-				if (name == "style")
-					return parse_rawpcData(state, node, s+1);
+				if (name == "style" || name == "SHELL")
+					goto raw_pcdata;
 				else if (name == "input" || name == "embed" || name == "param" || name == "track")
 					goto void_tag;
 				else if (name == "MACRO")
@@ -557,7 +557,7 @@ static const char* parse_openTag(Parser& state, const char* s){
 					goto regular_tag;
 			case 6:
 				if (name == "script")
-					return parse_rawpcData(state, node, s+1);
+					goto raw_pcdata;
 				else if (name == "source")
 					goto void_tag;
 				else
@@ -565,6 +565,10 @@ static const char* parse_openTag(Parser& state, const char* s){
 			default:
 				goto regular_tag;
 		}
+		
+		raw_pcdata:
+		addChild(state, node);
+		return parse_rawpcData(state, node, s+1);
 		
 		macro_tag:
 		state.macros->emplace_back(node);
@@ -696,6 +700,11 @@ const char* parse_all(Parser& state, const char* s){
 		else if (s[1] == '!'){
 			s = parse_exclamation(state, s+1);
 			continue;
+		}
+		
+		else {
+			state.result.pos = s+1;
+			throw ParseStatus::INVALID_TAG_NAME;
 		}
 		
 	}

@@ -25,9 +25,7 @@ enum class Interpolate {
 
 
 extern Expression::VariableMap variables;
-extern html::Document doc;
 
-extern const Macro* currentMacro;
 extern Branch currentBranch_block;
 extern Branch currentBranch_inline;
 extern Interpolate currentInterpolation;
@@ -40,8 +38,6 @@ void setVariableConstants();
 
 inline void reset(){
 	variables.clear();
-	doc.reset();
-	currentMacro = nullptr;
 	currentBranch_block = Branch::NONE;
 	currentBranch_inline = Branch::NONE;
 	currentInterpolation = Interpolate::ALL;
@@ -102,7 +98,7 @@ void tag(const html::Node& op, html::Node& dst);
  * @param attr Source attribute for copying.
  * @param dst Destination node for the copied attribute.
  */
-void attribute(const html::Attr& attr, html::Node& dst);
+void attribute(const html::Node& op, const html::Attr& op_attr, html::Node& dst);
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //

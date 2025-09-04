@@ -11,9 +11,7 @@ using namespace MacroEngine;
 
 
 Expression::VariableMap MacroEngine::variables;
-Document MacroEngine::doc;
 
-const Macro* MacroEngine::currentMacro = nullptr;
 Branch MacroEngine::currentBranch_block = Branch::NONE;
 Branch MacroEngine::currentBranch_inline = Branch::NONE;
 Interpolate MacroEngine::currentInterpolation = Interpolate::ALL;
@@ -130,19 +128,16 @@ void MacroEngine::runChildren(const Node& macroParent, Node& dst){
 
 
 void MacroEngine::exec(const Macro& macro, Node& dst){
-	auto _macro = MacroEngine::currentMacro;
 	auto _branch_1 = MacroEngine::currentBranch_block;
 	auto _branch_2 = MacroEngine::currentBranch_inline;
 	auto _interp = MacroEngine::currentInterpolation;
 	
-	MacroEngine::currentMacro = &macro;
 	MacroEngine::currentBranch_block = Branch::NONE;
 	MacroEngine::currentBranch_inline = Branch::NONE;
 	MacroEngine::currentInterpolation = Interpolate::ALL;
 	
 	runChildren(macro.doc, dst);
 	
-	MacroEngine::currentMacro = _macro;
 	MacroEngine::currentBranch_block = _branch_1;
 	MacroEngine::currentBranch_inline = _branch_2;
 	MacroEngine::currentInterpolation = _interp;

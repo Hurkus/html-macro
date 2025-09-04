@@ -142,6 +142,7 @@ struct Expr::Gte : public Expr::BinaryOp {
 
 bool boolEval(const Value& val);
 void str(const Value& val, std::string& buff);
+void str(Value&& val, std::string& buff);
 
 // bool hasInterpolation(const char* str, size_t* out_len = nullptr);
 void interpolate(std::string_view str, const VariableMap& vars, std::string& buff);

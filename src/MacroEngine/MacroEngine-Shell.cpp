@@ -71,6 +71,17 @@ static size_t _slurp(int fd, string& out){
 }
 
 
+static string_view trim_whitespace(string_view s){
+	const char* beg = s.begin();
+	const char* end = beg + s.length();
+	
+	while (beg != end && isspace(beg[+0])) beg++;
+	while (end != beg && isspace(end[-1])) end--;
+	
+	return string_view(beg, end);
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -85,9 +96,7 @@ static void _setEnv(const Expression::VariableMap& vars, const vector<string_vie
 		}
 		
 		buff.clear();
-		const Expression::Value& val = keyval->value;
-		Expression::str(val, buff);
-		
+		Expression::str(keyval->value, buff);
 		setenv(keyval->key, buff.c_str(), 1);
 	}
 	
@@ -134,7 +143,8 @@ static int _shell(const ShellCmd& cmd) noexcept {
 			_setEnv(*cmd.vars, *cmd.env);
 		}
 		
-		execlp("bash", "bash", "-c", cmd.cmd, NULL);
+		string cmd_s = string(trim_whitespace(cmd.cmd));
+		execlp("bash", "bash", "-c", cmd_s.c_str(), NULL);
 		exit(1);
 	}
 	
@@ -159,7 +169,7 @@ static int _shell(const ShellCmd& cmd) noexcept {
 		return 105;
 	}
 	
-	return -1;
+	return 255;
 }
 
 
@@ -193,9 +203,10 @@ static void _extractVars(string_view csv, vector<string_view>& vars){
 
 
 static void _execBuff(string&& buff, Node& dst){
-	unique_ptr<Macro> m = Macro::loadBuffer(make_shared<string>(move(buff)));
-	if (m != nullptr)
-		MacroEngine::exec(*m, dst);
+	// MEMORY LEAK, buffer of `m` should not be freed untill the main document releases it's data.
+	// unique_ptr<Macro> m = Macro::loadBuffer(make_shared<string>(move(buff)));
+	// if (m != nullptr)
+	// 	MacroEngine::exec(*m, dst);
 }
 
 
@@ -268,6 +279,11 @@ void MacroEngine::shell(const Node& op, Node& dst){
 		return;
 	}
 	
+	// Trim last newline
+	if (result.ends_with('\n')){
+		result.pop_back();
+	}
+	
 	// Apply result
 	switch (capture){
 		case Capture::VOID: {
@@ -276,12 +292,13 @@ void MacroEngine::shell(const Node& op, Node& dst){
 		
 		case Capture::TEXT: {
 			Node& txt = dst.appendChild(NodeType::TEXT);
-			txt.value(result.data(), result.length());
+			txt.value(html::newStr(result), result.length());
 			break;
 		}
 		
 		case Capture::HTML: {
 			_execBuff(move(result), dst);
+			::error(op, "HTML stdout not yet implemented.");
 			break;
 		}
 		

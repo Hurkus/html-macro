@@ -3,11 +3,7 @@
 
 
 namespace MacroEngine {
-	class Macro;
-};
-
-
-class MacroEngine::Macro {
+class Macro {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
 	html::Document doc;
@@ -21,3 +17,4 @@ public:
 	
 // ------------------------------------------------------------------------------------------ //
 };
+}

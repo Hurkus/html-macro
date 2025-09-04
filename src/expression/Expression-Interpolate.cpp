@@ -40,6 +40,17 @@ void Expression::str(const Value& val, string& buff){
 }
 
 
+void Expression::str(Value&& val, string& buff){
+	auto f = [&](const auto& val){
+		if constexpr (isStr(val))
+			buff = move(val);
+		else
+			buff.append(to_string(val));
+	};
+	visit(f, val);
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -108,6 +119,7 @@ void Expression::interpolate(string_view str, const VariableMap& vars, string& b
 		// Evaluate expression
 		pExpr expr = Parser().parse(string_view(a+1, b));
 		if (expr != nullptr){
+			// Don't use Value&& because it must be *appended* to buff.
 			Value val = expr->eval(vars);
 			Expression::str(val, buff);
 		} else {
