@@ -1,5 +1,6 @@
 #include "Macro.hpp"
-#include "string_map.hpp"
+#include <unordered_map>
+
 #include "Paths.hpp"
 #include "Debug.hpp"
 

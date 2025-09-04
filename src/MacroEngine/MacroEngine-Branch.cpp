@@ -23,8 +23,7 @@ void MacroEngine::set(const Node& op){
 			return;
 		}
 		
-		// TODO: update variable map index
-		Value& var = MacroEngine::variables[string(name)];
+		Value& var = MacroEngine::variables[name];
 		
 		// Expression
 		if (attr->options % NodeOptions::SINGLE_QUOTE){
@@ -225,8 +224,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	
 	// Run setup
 	if (expr_setup != nullptr){
-		// TODO: fix variable index
-		variables[string(attr_setup->name())] = expr_setup->eval(variables);
+		variables[attr_setup->name()] = expr_setup->eval(variables);
 	}
 	
 	// Run loop
@@ -240,8 +238,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 		
 		// Increment
 		if (expr_inc != nullptr){
-			// TODO: fix variable index
-			variables[string(attr_inc->name())] = expr_inc->eval(variables);
+			variables[attr_inc->name()] = expr_inc->eval(variables);
 		}
 		
 		i++;

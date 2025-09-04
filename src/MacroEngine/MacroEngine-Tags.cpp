@@ -194,8 +194,7 @@ void MacroEngine::getAttr(const Node& op, Node& dst){
 		// Find attribute and copy value to variable
 		for (const Attr* a = dst.attribute ; a != nullptr ; a = a->next){
 			if (a->name() == attrName){
-				// TODO: fix variable index
-				variables[string(varName)] = Value(in_place_type<string>, a->value());
+				variables[varName] = Value(in_place_type<string>, a->value());
 				break;
 			}
 		}
@@ -308,8 +307,7 @@ void MacroEngine::getTag(const Node& op, Node& dst){
 			warn_ignored_attr_value(op, *attr);
 		}
 		
-		// TODO: fix variable index
-		MacroEngine::variables[string(varName)] = string(dst.name());
+		MacroEngine::variables[varName] = Value(in_place_type<string>, dst.name());
 	}
 	
 }

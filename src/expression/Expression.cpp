@@ -34,9 +34,9 @@ constexpr bool isStr(const T& e){
 
 Value Expr::Var::eval(const VariableMap& vars) noexcept {
 	try {
-		auto p = vars.find(this->var);
-		if (p != vars.end())
-			return p->second;
+		const Value* val = vars.get(this->var);
+		if (val != nullptr)
+			return *val;
 	} catch (const exception& e){}
 	
 	WARN("Undefined varialbe '%s' defaulted to 0.", this->var.c_str());

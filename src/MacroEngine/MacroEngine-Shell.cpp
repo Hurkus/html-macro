@@ -78,19 +78,17 @@ static size_t _slurp(int fd, string& out){
 static void _setEnv(const Expression::VariableMap& vars, const vector<string_view>& env){
 	string buff = {};
 	
-	for (string_view namev : env){
-		
-		auto p = vars.find(namev);
-		if (p == vars.end()){
+	for (string_view name : env){
+		const auto* keyval = vars.find(name);
+		if (keyval == nullptr){
 			continue;
 		}
 		
 		buff.clear();
-		const string& name = p->first;
-		const Expression::Value& val = p->second;
+		const Expression::Value& val = keyval->value;
 		Expression::str(val, buff);
 		
-		setenv(name.c_str(), buff.c_str(), 1);
+		setenv(keyval->key, buff.c_str(), 1);
 	}
 	
 }
@@ -288,8 +286,7 @@ void MacroEngine::shell(const Node& op, Node& dst){
 		}
 		
 		case Capture::VAR: {
-			// TODO: fix variable index
-			variables[string(captureVar)] = move(result);
+			variables[captureVar] = move(result);
 			break;
 		}
 		

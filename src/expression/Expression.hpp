@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <variant>
-#include "string_map.hpp"
+#include "str_map.hpp"
 
 
 namespace Expression {
@@ -18,7 +18,7 @@ struct Expr;
 using pExpr = std::unique_ptr<Expr>;
 
 
-using VariableMap = string_map<Value>;
+using VariableMap = str_map<Value>;
 
 
 // ----------------------------------- [ Structures ] --------------------------------------- //
