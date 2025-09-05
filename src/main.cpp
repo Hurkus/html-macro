@@ -6,7 +6,7 @@
 #include "MacroParser.hpp"
 #include "Expression.hpp"
 #include "ExpressionParser.hpp"
-#include "CLI.hpp"
+#include "cli.hpp"
 #include "Debug.hpp"
 
 #include "html.hpp"
@@ -22,13 +22,13 @@ using namespace std;
 
 
 void version(){
-	INFO(ANSI_BOLD PROGRAM_NAME ": " ANSI_RESET ANSI_YELLOW VERSION ANSI_RESET ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
+	INFO(ANSI_BOLD "html-macro: " ANSI_RESET ANSI_YELLOW VERSION ANSI_RESET ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
 }
 
 
 void help(){
 	version();
-	INFO(ANSI_BOLD "Usage:" ANSI_RESET " %s [options] <files>", CLI::name());
+	INFO(ANSI_BOLD "Usage:" ANSI_RESET " %s [options] <files>", opt.program);
 	INFO(ANSI_BOLD "Options:" ANSI_RESET);
 	INFO("  " Y("--help") ", " Y("-h") " .................... Print help.");
 	INFO("  " Y("--version") ", " Y("-v") " ................. Print program version.");
