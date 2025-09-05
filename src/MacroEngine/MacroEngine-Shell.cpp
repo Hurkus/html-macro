@@ -19,29 +19,32 @@ using namespace MacroEngine;
 // ----------------------------------- [ Structures ] --------------------------------------- //
 
 
-constexpr size_t STDIN_CHUNK_SIZE = 4096;
+constexpr size_t STDIN_CHUNK_SIZE = 1024;
+
+
+struct str_chunks {
+	vector<vector<char>> chunks;
+	size_t total = 0;
+};
 
 
 struct ShellCmd {
 	string_view cmd;
 	const Expression::VariableMap* vars = nullptr;
 	const vector<string_view>* env = nullptr;
-	string* capture = nullptr;
+	str_chunks* capture = nullptr;
 };
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static size_t _slurp(int fd, string& out){
-	// Array chunks that are concatenated into final string after EOF.
-	size_t totalSize = 0;
-	vector<vector<char>> buffs = {};
-	buffs.reserve(4);
+static void _slurp(int fd, str_chunks& out_chunks){
+	out_chunks.chunks.reserve(4);
 	
 	while (true){
-		vector<char>& buff = buffs.emplace_back();
-		buff.resize(buffs.size() * STDIN_CHUNK_SIZE);	// Each larger than previous.
+		vector<char>& buff = out_chunks.chunks.emplace_back();
+		buff.resize(out_chunks.chunks.size() * STDIN_CHUNK_SIZE);	// Each larger than previous.
 		
 		size_t space = buff.size();
 		size_t offset = 0;
@@ -51,23 +54,31 @@ static size_t _slurp(int fd, string& out){
 			const ssize_t n = read(fd, buff.data() + offset, space);
 			if (n <= 0){
 				buff.resize(offset);
-				goto eof;
+				return;
 			}
 			
 			space -= size_t(n);
 			offset += size_t(n);
-			totalSize += size_t(n);
+			out_chunks.total += size_t(n);
 		}
 		
-	} eof:
-	
-	// Concatenate buffers
-	out.reserve(out.length() + totalSize);
-	for (const vector<char>& buff : buffs){
-		out.append(buff.begin(), buff.end());
 	}
 	
-	return totalSize;
+}
+
+
+static size_t concat(const vector<vector<char>>& chunks, char* buff, size_t buff_len){
+	size_t n = 0;
+	
+	for (const vector<char>& chunk : chunks){
+		if (n >= buff_len) break;
+		size_t space = buff_len - n;
+		size_t count = min(chunk.size(), space);
+		memcpy(buff + n, chunk.data(), count);
+		n += count;
+	}
+	
+	return n;
 }
 
 
@@ -202,14 +213,6 @@ static void _extractVars(string_view csv, vector<string_view>& vars){
 }
 
 
-static void _execBuff(string&& buff, Node& dst){
-	// MEMORY LEAK, buffer of `m` should not be freed untill the main document releases it's data.
-	// unique_ptr<Macro> m = Macro::loadBuffer(make_shared<string>(move(buff)));
-	// if (m != nullptr)
-	// 	MacroEngine::exec(*m, dst);
-}
-
-
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -217,7 +220,6 @@ void MacroEngine::shell(const Node& op, Node& dst){
 	enum class Capture {
 		VOID,
 		TEXT,
-		HTML,
 		VAR
 	} capture = Capture::TEXT;
 	
@@ -237,8 +239,6 @@ void MacroEngine::shell(const Node& op, Node& dst){
 			
 			if (val == "" || val == "VOID"){
 				capture = Capture::VOID;
-			} else if (val == "HTML"){
-				capture = Capture::HTML;
 			} else if (val == "TEXT"){
 				capture = Capture::TEXT;
 			} else {
@@ -254,7 +254,7 @@ void MacroEngine::shell(const Node& op, Node& dst){
 	
 	
 	int status;
-	string result;
+	str_chunks result;
 	
 	ShellCmd cmd = {
 		.vars = &MacroEngine::variables,
@@ -279,11 +279,6 @@ void MacroEngine::shell(const Node& op, Node& dst){
 		return;
 	}
 	
-	// Trim last newline
-	if (result.ends_with('\n')){
-		result.pop_back();
-	}
-	
 	// Apply result
 	switch (capture){
 		case Capture::VOID: {
@@ -291,21 +286,38 @@ void MacroEngine::shell(const Node& op, Node& dst){
 		}
 		
 		case Capture::TEXT: {
-			Node& txt = dst.appendChild(NodeType::TEXT);
-			txt.value(html::newStr(result), result.length());
-			break;
-		}
-		
-		case Capture::HTML: {
-			_execBuff(move(result), dst);
-			::error(op, "HTML stdout not yet implemented.");
-			break;
-		}
+			if (result.total > 0){
+				Node& txt = dst.appendChild(NodeType::TEXT);
+				
+				char* s = html::newStr(result.total + 1);
+				size_t n = concat(result.chunks, s, result.total);
+				s[n] = 0;
+				
+				// Trim last newline
+				if (n > 0 && s[n-1] == '\n'){
+					s[--n] = 0;
+				}
+				
+				txt.value(s, n);
+			}
+		} break;
 		
 		case Capture::VAR: {
-			variables[captureVar] = move(result);
-			break;
-		}
+			if (result.total <= 0){
+				variables.insert(captureVar, in_place_type<string>);
+			} else {
+				string& s = variables[captureVar].emplace<string>();
+				s.resize(result.total);
+				size_t n = concat(result.chunks, s.data(), s.size());
+				s.resize(n);
+				
+				// Trim last newline
+				if (s.ends_with('\n')){
+					s.pop_back();
+				}
+				
+			}
+		} break;
 		
 	}
 	

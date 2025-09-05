@@ -92,27 +92,6 @@ static Macro* parseFile(string&& path){
 };
 
 
-static unique_ptr<Macro> parseBuffer(shared_ptr<const string>&& buff){
-	unique_ptr<Macro> macro = make_unique<Macro>();
-	
-	// Parse
-	ParseResult res = macro->doc.parseBuff(move(buff));
-	if (res.status != ParseStatus::OK){
-		err(macro->doc, res);
-		return nullptr;
-	}
-	
-	// Extract all <MACRO> nodes.
-	for (Node* m : res.macros){
-		assert(m != nullptr && m->parent != nullptr);
-		registerMacro(*macro, move(*m));
-		Node::del(m);
-	}
-	
-	return macro;
-};
-
-
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -135,11 +114,6 @@ const Macro* Macro::loadFile(string_view path){
 	
 	// Parse new file
 	return parseFile(move(file));
-}
-
-
-unique_ptr<Macro> Macro::loadBuffer(shared_ptr<const string>&& buff){
-	return parseBuffer(move(buff));
 }
 
 
