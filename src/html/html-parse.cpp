@@ -179,9 +179,29 @@ long Document::col(const char* const p) const noexcept {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-constexpr bool isMasked(auto i, uint64_t mask){
-	return ((uint64_t(1) << i) & mask) != 0;
+// (c & 0b11000000) == 0
+constexpr bool isMasked(char c, uint64_t mask){
+	return ((uint64_t(1) << uint8_t(c)) & mask) != 0;
 }
+
+constexpr bool isMasked(char c, uint64_t mask, uint8_t maskBase){
+	return ((c & 0b11000000) == (maskBase & 0b11000000)) & isMasked(c & 0b00111111, mask);
+}
+
+consteval uint64_t mask(const char* chars){
+	assert(chars != nullptr);
+	
+	auto pfx = uint8_t(chars[0]) & 0b11000000;
+	uint64_t m = 0;
+	
+	for (const char* c = chars ; *c != 0 ; c++){
+		assert((*c & 0b11000000) == pfx);
+		m |= (uint64_t(1) << (*c & 0b00111111));
+	}
+	
+	return m;
+}
+
 
 constexpr bool isWhitespace(char c){
 	return c == ' ' || c == '\t' || c == '\n' || c == '\r';
@@ -192,39 +212,24 @@ constexpr bool isQuote(char c){
 }
 
 // [a-zA-Z:_-]
-constexpr bool isTagChar(char c){
-	constexpr uint64_t MASK_1 = []() consteval {
-		uint64_t m = 0;
-		m |= (uint64_t(1) << (':' & 0b00111111));
-		m |= (uint64_t(1) << ('-' & 0b00111111));
-		
-		for (char c = '0' ; c <= '9' ; c++)
-			m |= (uint64_t(1) << (c & 0b00111111));
-		
-		return m;
-	}();
+bool isTagChar(char c){
+	constexpr uint64_t MASK_1 = mask("0123456789-:");
 	constexpr uint64_t MASK_2 = []() consteval {
-		uint64_t m = 0;
-		m |= (uint64_t(1) << ('_' & 0b00111111));
-		
-		for (char c = 'A' ; c <= 'Z' ; c++)
+		uint64_t m = mask("_");
+		for (uint8_t c = 'A' ; c <= 'Z' ; c++)
 			m |= (uint64_t(1) << (c & 0b00111111));
-		for (char c = 'a' ; c <= 'z' ; c++)
+		for (uint8_t c = 'a' ; c <= 'z' ; c++)
 			m |= (uint64_t(1) << (c & 0b00111111));
-		
 		return m;
 	}();
 	
-	if (c < 64){
+	if (uint8_t(c) < 64){
 		return isMasked(c, MASK_1);
 	} else {
-		uint8_t b2 = c >> 6;
-		uint8_t b6 = c & 0b00111111;
-		return ((b2 == 0b01) & isMasked(b6, MASK_2));
+		return isMasked(c, MASK_2, 'a');
 	}
 	
 }
-
 
 constexpr bool isVoidTag(string_view name){
 	switch (name.length()){
@@ -488,7 +493,7 @@ static const char* parse_attribute(Parser& state, const char* s, Attr& attr){
 }
 
 
-static const char* parse_openTag(Parser& state, const char* s){
+static const char* parse_openTag(Parser& state, const char* s, NodeOptions options){
 	if (!isTagChar(*s)){
 		throw ParseStatus::INVALID_TAG_NAME;
 	}
@@ -506,6 +511,8 @@ static const char* parse_openTag(Parser& state, const char* s){
 		if (s[1] != '>'){
 			state.result.pos = s;
 			throw ParseStatus::UNCLOSED_TAG;
+		} else {
+			s += 2;
 		}
 		
 		html::Node* node = addChild(state, allocNode(NodeType::TAG));
@@ -513,19 +520,25 @@ static const char* parse_openTag(Parser& state, const char* s){
 		node->value_len = name_len;
 		node->attribute = firstAttr;
 		
+		if (isWhitespace(*s))
+			options |= NodeOptions::SPACE_AFTER;
+		node->options |= options | NodeOptions::SELF_CLOSE;
+		
 		if (string_view(name_p, name_len) == "MACRO"){
 			state.macros->emplace_back(node);
 		}
 		
-		return s + 2; 
+		return s; 
 	}
 	
 	// End
 	else if (s[0] == '>'){ tag_end:
 		html::Node* node = allocNode(NodeType::TAG);
+		node->options |= options;
 		node->value_p = name_p;
 		node->value_len = name_len;
 		node->attribute = firstAttr;
+		s++;
 		
 		const string_view name = string_view(name_p, name_len);
 		switch (name.length()){
@@ -568,17 +581,18 @@ static const char* parse_openTag(Parser& state, const char* s){
 		
 		raw_pcdata:
 		addChild(state, node);
-		return parse_rawpcData(state, node, s+1);
+		return parse_rawpcData(state, node, s);
 		
 		macro_tag:
 		state.macros->emplace_back(node);
 		regular_tag:
 		push(state, addChild(state, node));
-		return s + 1;
+		return s;
 		
 		void_tag:
+		node->options |= NodeOptions::SELF_CLOSE;
 		addChild(state, node);
-		return s + 1;
+		return s;
 	}
 	
 	// Check for attributes
@@ -624,8 +638,11 @@ static const char* parse_openTag(Parser& state, const char* s){
 
 static const char* parse_closeTag(Parser& state, const char* s){
 	assert(s[0] == '/');
-	uint32_t len = state.current->value_len;
-	const char* name = state.current->value_p;
+	assert(state.current != nullptr);
+	
+	Node* node = state.current;
+	uint32_t len = node->value_len;
+	const char* name = node->value_p;
 	const char* beg = s;
 	
 	s++;
@@ -640,7 +657,8 @@ static const char* parse_closeTag(Parser& state, const char* s){
 	s = parse_whiteSpace(state, s);
 	if (*s == '>'){
 		pop(state);
-		return s + 1;
+		s++;
+		goto suffix;
 	}
 	
 	check_void_tag:
@@ -651,14 +669,23 @@ static const char* parse_closeTag(Parser& state, const char* s){
 	// Discard void tag
 	if (isVoidTag(string_view(beg + 1, s))){
 		s = parse_whiteSpace(state, s);
-		if (*s == '>')
-			return s + 1;
+		if (*s == '>'){
+			s++;
+			goto suffix;
+		}
 	}
 	
 	// Error
 	name = state.current->value_p;
 	state.result.pos = (name != nullptr ? name : beg);
 	throw ParseStatus::MISSING_END_TAG;
+	
+	suffix:
+	if (isWhitespace(*s)){
+		node->options |= NodeOptions::SPACE_AFTER;
+	}
+	
+	return s;
 }
 
 
@@ -676,19 +703,21 @@ const char* parse_all(Parser& state, const char* s){
 				break;
 			} else {
 				s = parse_pcData(state, beg, s);
+				beg = s;
 				goto check_tag;
 			}
 		}
 		
 		// Close tag
 		else if (s[1] == '/'){
-			s = parse_closeTag(state, s + 1);
+			s = parse_closeTag(state, s+1);
 			continue;
 		}
 		
 		// Tag
 		else if (isTagChar(s[1])) [[likely]] {
-			s = parse_openTag(state, s + 1);
+			NodeOptions opts = (beg != s) ? NodeOptions::SPACE_BEFORE : NodeOptions::NONE;
+			s = parse_openTag(state, s+1, opts);
 			continue;
 		}
 		

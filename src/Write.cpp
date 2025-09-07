@@ -1,176 +1,192 @@
-#include "MacroParser.hpp"
-#include <cassert>
-#include <array>
-#include <string_view>
-#include <algorithm>
-
-#include "Debug.hpp"
+#include "html.hpp"
+#include <vector>
+#include <ostream>
 
 using namespace std;
-using namespace pugi;
+using namespace html;
 
 
-// ----------------------------------- [ Constants ] ---------------------------------------- //
+// ---------------------------------- [ Definitions ] --------------------------------------- //
 
 
-static constexpr array<string_view,14> voidTags = {
-	"area", "base", "br", "col", "embed", "hr", "img", "input",
-	"link", "meta", "param", "source", "track", "wbr"
-};
-
-
-static constexpr array<string_view,2> noEscapeTags = {
-	"script", "style"
-};
-
-
-static constexpr string_view tabs = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
+#define TAB_4		"\t\t\t\t"
+#define SPACE_4		"    "
+#define SPACE_16	SPACE_4 SPACE_4 SPACE_4 SPACE_4
 
 
 // ----------------------------------- [ Structures ] --------------------------------------- //
 
 
-struct DocWriter {
-public:
-	bool compress = false;
-	ostream* out = nullptr;
+// struct flushstream {
+// 	ostream& out;
 	
-public:
-	void write(const xml_node node, int tab);
+// 	template<typename T>
+// 	flushstream& operator<<(T&& s){
+// 		out << forward<T>(s);
+// 		out.flush();
+// 		return *this;
+// 	}
 	
-private:
-	void writeElement(const xml_node element, int tab);
-	void writeText(const xml_node text);
-	void writeDocument(const xml_node root, int tab);
-	void writeUnknown(const xml_node unknown, int tab);
-	
-};
+// };
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-template <typename C, typename E>
-inline bool contains(const C& collection, const E& element){
-	return find(collection.begin(), collection.end(), element) != collection.end();
+constexpr string_view trim_whitespace(string_view s){
+	const char* beg = s.begin();
+	const char* end = beg + s.length();
+	
+	while (beg != end && isspace(beg[+0])) beg++;
+	while (end != beg && isspace(end[-1])) end--;
+	
+	return string_view(beg, end);
 }
 
 
-constexpr string_view _tab(int tab) noexcept {
-	assert(tab >= 0);
-	if (tab >= int(tabs.length()))
-		return tabs;
-	return tabs.substr(0, tab);
+constexpr string_view tabs(int tab){
+	constexpr string_view TABS = TAB_4 TAB_4 TAB_4 TAB_4;
+	return TABS.substr(0, tab);
+	// constexpr string_view TABS = SPACE_16 SPACE_16 SPACE_16 SPACE_16;
+	// return TABS.substr(0, tab*4);
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void DocWriter::writeUnknown(const xml_node node, int tab){
-	node.print(*out, "\t", pugi::format_raw, xml_encoding::encoding_utf8, tab);
-}
-
-
-void DocWriter::writeDocument(const xml_node root, int tab){
-	for (const xml_node child : root.children()){
-		write(child, tab);
-		*out << '\n' << _tab(tab);
-	}
-}
-
-
-void DocWriter::writeText(const xml_node txt){
-	if (contains(noEscapeTags, txt.parent().name()))
-		*out << txt.text().get();
-	else
-		txt.print(*out, "", pugi::format_default, xml_encoding::encoding_utf8);
-}
-
-
-void DocWriter::writeElement(const xml_node element, int tab){
-	assert(!element.empty());
-	assert(this->out != nullptr);
+static void writeAttributes(ostream& out, const Node& node, vector<const Attr*>& stack){
+	assert(stack.empty());
 	
-	// Write tag header
-	*out << '<' << element.name();
-	for (xml_attribute attr : element.attributes()){
-		*out << ' ' << attr.name() << "=\"" << attr.value() << '"';
+	for (const Attr* attr = node.attribute ; attr != nullptr ; attr = attr->next){
+		stack.emplace_back(attr);
 	}
 	
-	// Check self closing
-	if (contains(voidTags, element.name())){
-		*out << "/>";
-		return;
-	} else {
-		*out << '>';
-	}
-	
-	// Write children
-	bool prev_txt = false;
-	for (const xml_node child : element){
+	while (!stack.empty()){
+		const Attr& a = *stack.back();
+		stack.pop_back();
 		
-		if (child.type() == xml_node_type::node_pcdata){
-			writeText(child);
-			prev_txt = true;
-		} else if (prev_txt){
-			prev_txt = false;
-			write(child, tab+1);
-		} else {
-			*out << '\n' << _tab(tab+1);
-			write(child, tab+1);
+		out << ' ' << a.name();
+		if (a.value_p != nullptr){
+			out << "=\"" << a.value() << '"';
 		}
 		
 	}
-	
-	if (!prev_txt && !element.first_child().empty()){
-		*out << '\n' << _tab(tab);
-	}
-	
-	// Write end tag
-	*out << "</" << element.name() << '>';
 }
 
 
-// ----------------------------------- [ Functions ] ---------------------------------------- //
+// --------------------------------- [ Main Function ] -------------------------------------- //
 
 
-void DocWriter::write(const xml_node root, int tab){
-	assert(out != nullptr);
+bool write(ostream& out, const Document& doc){
+	vector<const Node*> node_stack = {};
+	vector<const Attr*> attr_stack = {};
+	node_stack.reserve(128);
+	attr_stack.reserve(16);
 	
-	switch (root.type()){
-		case xml_node_type::node_element:
-			writeElement(root, tab);
-			break;
+	assert(!(doc.options % NodeOptions::LIST_FORWARDS));
+	for (const Node* child = doc.child ; child != nullptr ; child = child->next){
+		node_stack.emplace_back(child);
+	}
+	
+	int depth = 0;
+	bool add_space = false;
+	bool skip_space = false;
+	
+	while (!node_stack.empty()){
+		const Node* node = node_stack.back();
 		
-		case xml_node_type::node_document:
-			writeDocument(root, tab);
-			break;
+		switch (node->type){
+			case NodeType::TEXT:
+				goto text;
+			case NodeType::TAG:
+				goto tag;
+			default:
+				goto pop;
+		}
 		
-		case xml_node_type::node_pi:
-			assert(false && "No PI nodes should be present in the output.");
-			break;
+		
+		text: {
+			out << node->value();
+			skip_space = true;
+			add_space = false;
+			goto pop;
+		} continue;
+		
+		
+		tag: {
+			if (!skip_space && (add_space || node->options % NodeOptions::SPACE_BEFORE)){
+				out << '\n';
+				out << tabs(depth);
+			}
 			
-		case xml_node_type::node_null:
-		case xml_node_type::node_declaration:
-			break;
+			add_space = false;
+			skip_space = false;
+			
+			// Tag name
+			out << '<' << node->name();
+			writeAttributes(out, *node, attr_stack);
+			
+			if (node->child == nullptr && node->options % NodeOptions::SELF_CLOSE){
+				out << "/>";
+				add_space = node->options % NodeOptions::SPACE_AFTER;
+				goto pop;
+			} else {
+				out << '>';
+			}
+			
+			// Enqueue children
+			if (node->child != nullptr){
+				
+				assert(!(node->options % NodeOptions::LIST_FORWARDS));
+				for (const Node* child = node->child ; child != nullptr ; child = child->next){
+					node_stack.emplace_back(child);
+				}
+				
+				depth++;
+				continue;
+			}
+			
+			// Empty
+			else {
+				out << "</" << node->name() << ">";
+				add_space = node->options % NodeOptions::SPACE_AFTER;
+				goto pop;
+			}
+			
+		} continue;
 		
-		default:
-			writeUnknown(root, tab);
-			break;
+		
+		pop: {
+			node_stack.pop_back();
+			
+			// Last of children
+			while (!node_stack.empty() && node_stack.back() == node->parent){
+				node = node_stack.back();
+				node_stack.pop_back();
+				
+				depth--;
+				if (!skip_space && add_space){
+					out << '\n';
+					out << tabs(depth);
+				}
+				
+				out << "</" << node->name() << ">";
+				
+				skip_space = false;
+				add_space = node->options % NodeOptions::SPACE_AFTER;
+			}
+		}
+		
+		
+		continue;
 	}
 	
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-void write(const xml_node root, ostream& out){
-	DocWriter wr = {};
-	wr.compress = false;
-	wr.out = &out;
-	wr.write(root, 0);
+	if (add_space){
+		out << '\n';
+	}
+	
+	return true;
 }
 
 

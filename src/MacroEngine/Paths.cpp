@@ -8,7 +8,7 @@ using namespace MacroEngine;
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 
-shared_ptr<filepath> MacroEngine::cwd = make_shared<filepath>(filesystem::current_path());
+shared_ptr<const filepath> MacroEngine::cwd;
 vector<filepath> MacroEngine::paths;
 
 

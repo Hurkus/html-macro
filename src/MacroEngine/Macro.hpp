@@ -14,6 +14,10 @@ public:
 	static const Macro* get(std::string_view name);
 	static const Macro* loadFile(std::string_view filePath);
 	
+public:
+	static void clearCache();
+	static void releaseCache();
+	
 // ------------------------------------------------------------------------------------------ //
 };
 }

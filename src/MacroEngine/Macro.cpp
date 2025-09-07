@@ -56,7 +56,7 @@ static void err(const Document& doc, const ParseResult& res){
 	switch (res.status){
 		case ParseStatus::IO:
 		case ParseStatus::MEMORY:
-			ERROR(ANSI_BOLD "%s:" ANSI_RESET " %s", file, msg);
+			ERROR("%s", msg);
 			break;
 		default:
 			long row = doc.row(res.pos);
@@ -73,9 +73,19 @@ static Macro* parseFile(string&& path){
 	
 	// Parse
 	ParseResult res = macro->doc.parseFile(move(path));
-	if (res.status != ParseStatus::OK){
-		err(macro->doc, res);
-		return nullptr;
+	switch (res.status){
+		case ParseStatus::OK:
+			break;
+		case ParseStatus::IO:
+			if (!filesystem::exists(path)){
+				ERROR("Failed to read file '%s'. No such file exists.", path.c_str());
+			} else {
+				ERROR("Failed to read file '%s'.", path.c_str());
+			}
+			return nullptr;
+		default:
+			err(macro->doc, res);
+			return nullptr;
 	}
 	
 	// Extract all <MACRO> nodes.
@@ -114,6 +124,15 @@ const Macro* Macro::loadFile(string_view path){
 	
 	// Parse new file
 	return parseFile(move(file));
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void Macro::clearCache(){
+	macroFileCache.clear();
+	macroNameCache.clear();
 }
 
 

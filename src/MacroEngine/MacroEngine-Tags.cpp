@@ -90,6 +90,7 @@ void MacroEngine::tag(const Node& op, Node& dst){
 	}
 	
 	child->type = NodeType::TAG;
+	child->options |= (op.options & (NodeOptions::SELF_CLOSE | NodeOptions::SPACE_AFTER | NodeOptions::SPACE_BEFORE));
 	child->name(op.name());
 	
 	// Link child to parent

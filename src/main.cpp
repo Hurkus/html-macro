@@ -1,17 +1,18 @@
 #include <iostream>
 #include <fstream>
 #include <string_view>
+#include <array>
+#include <algorithm>
 
-#include "MacroEngine.hpp"
-#include "MacroParser.hpp"
-#include "Expression.hpp"
-#include "ExpressionParser.hpp"
 #include "cli.hpp"
+#include "MacroEngine.hpp"
+#include "Paths.hpp"
+
 #include "Debug.hpp"
 
-#include "html.hpp"
-
 using namespace std;
+using namespace html;
+using namespace MacroEngine;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -21,55 +22,57 @@ using namespace std;
 #define VERSION 	"Alpha v0.1.0"
 
 
-void version(){
-	INFO(ANSI_BOLD "html-macro: " ANSI_RESET ANSI_YELLOW VERSION ANSI_RESET ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
-}
-
-
 void help(){
-	version();
-	INFO(ANSI_BOLD "Usage:" ANSI_RESET " %s [options] <files>", opt.program);
-	INFO(ANSI_BOLD "Options:" ANSI_RESET);
-	INFO("  " Y("--help") ", " Y("-h") " .................... Print help.");
-	INFO("  " Y("--version") ", " Y("-v") " ................. Print program version.");
-	INFO("  " Y("--output <path>") ", " Y("-o <path>") " .... Write output to file instead of stdout.");
-	INFO("");
+	info(ANSI_BOLD "html-macro: " ANSI_RESET ANSI_YELLOW VERSION ANSI_RESET ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
+	info(ANSI_BOLD "Usage:" ANSI_RESET " %s [options] <files>", opt.program);
+	info(ANSI_BOLD "Options:" ANSI_RESET);
+	info("  " Y("--help") ", " Y("-h") " ................... Print help.");
+	info("  " Y("--output <path>") ", " Y("-o <path>") " ... Write output to file instead of stdout.");
+	info("  " Y("--include <path>") ", " Y("-i <path>") " .. Add folder to list of path searches when including files with relative paths.");
+	info("");
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool run(const vector<filesystem::path>& files){
-	ofstream outf;	// Delay opening of file.
+bool write(ostream& out, const Document& doc);
+
+
+static bool run(const char* file){
+	MacroEngine::reset();
+	MacroEngine::cwd = make_unique<filepath>(filesystem::current_path());
+	Macro::clearCache();
 	
-	// Execute all macro files
-	for (const filesystem::path& file : files){
-		MacroEngine engine = {};
-		engine.setVariableConstants();
-		
-		shared_ptr<Macro> main = engine.loadFile(file);
-		if (main == nullptr){
+	// Open output file
+	ofstream outf;
+	if (opt.outFilePath != nullptr){
+		outf = ofstream(opt.outFilePath);
+		if (!outf.is_open()){
+			ERROR("Failed to open output file '%s'.", opt.outFilePath);
 			return false;
 		}
-		
-		engine.exec(*main, engine.doc);
-		
-		// Open output file
-		if (!outf.is_open() && !CLI::options.outPath.empty()){
-			outf = ofstream(CLI::options.outPath);
-			if (outf.fail()){
-				ERROR("Failed to open file '%s'.", CLI::options.outPath.c_str());
-				return false;
-			}
-		}
-		
-		// Select output stream and write
-		ostream& out = (outf.is_open()) ? outf : cout;
-		write(engine.doc, out);
-		out.flush();
 	}
 	
+	// Parse input file
+	const Macro* m = Macro::loadFile(file);
+	if (m == nullptr){
+		return false;
+	}
+	
+	// Run
+	html::Document doc = {};
+	MacroEngine::exec(*m, doc);
+	
+	
+	// Select output stream and write
+	ostream& out = (outf.is_open()) ? outf : cout;
+	if (!write(out, doc)){
+		out.flush();
+		return false;
+	}
+	
+	out.flush();
 	return true;
 }
 
@@ -78,33 +81,44 @@ static bool run(const vector<filesystem::path>& files){
 
 
 int main(int argc, char const* const* argv){
-	try {
-		CLI::parse(argc, argv);
-	} catch (const exception& e){
-		ERROR("%s\nUse '%s --help' for help.", e.what(), CLI::name());
+	#ifdef DEBUG
+		const char* _argv[] = {
+			argv[0],
+			"test/test-1.in.html"
+		};
+		if (argc < 2){
+			argv = _argv;
+			argc = sizeof(_argv) / sizeof(*_argv);
+		}
+	#endif
+	
+	
+	if (argc < 2){
+		help();
+		return 1;
+	} else if (!parseCLI(argv, argc)){
+		return 1;
 	}
 	
-	// #ifdef DEBUG
-	// 	// CLI::options.outPath = "obj/main.html";
-	// 	if (CLI::options.files.empty()){
-	// 		CLI::options.files.emplace_back("./assets/test-1.html");
-	// 		// CLI::options.files.emplace_back("./assets/test-2.html");
-	// 	}
-	// #endif
-	
-	if (CLI::options.help){
+	if (opt.help){
 		help();
 		return 0;
-	} else if (CLI::options.version){
-		version();
-		return 0;
-	} else if (CLI::options.files.empty()){
-		ERROR("No input files.\nUse '%s --help' for help.", CLI::options.callName.c_str());
+	} else if (opt.files.empty()){
+		ERROR("No input files.");
+		return 1;
+	} else if (opt.files.size() > 1){
+		ERROR("Too many input files: '%s'", opt.files[1]);
 		return 1;
 	}
 	
-	if (!run(CLI::options.files)){
-		return 1;
+	for (const char* file : opt.includes){
+		filepath& inc = MacroEngine::paths.emplace_back(file);
+		if (inc.empty())
+			MacroEngine::paths.pop_back();
+	}
+	
+	if (!run(opt.files[0])){
+		return 2;
 	}
 	
 	return 0;

@@ -8,6 +8,7 @@ extern struct Opt {
 	std::vector<const char*> files;
 	bool help = false;
 	const char* outFilePath = nullptr;
+	std::vector<const char*> includes;
 } opt;
 
 

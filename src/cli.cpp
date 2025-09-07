@@ -4,7 +4,7 @@
 #include <array>
 #include <iostream>
 
-#include "ANSI.h"
+#include "Debug.hpp"
 
 using namespace std;
 
@@ -20,7 +20,8 @@ Opt opt;
 
 enum class OptId {
 	HELP,
-	OUTPUT
+	OUTPUT,
+	INCLUDE
 };
 
 struct OptInfo {
@@ -30,9 +31,10 @@ struct OptInfo {
 	bool hasValue = false;
 };
 
-constexpr array info = {
-	OptInfo { "-h", "--help", OptId::HELP,   false },
-	OptInfo { "-o", "--out",  OptId::OUTPUT, true  },
+constexpr array options = {
+	OptInfo { "-h", "--help",    OptId::HELP,    false },
+	OptInfo { "-o", "--out",     OptId::OUTPUT,  true  },
+	OptInfo { "-i", "--include", OptId::INCLUDE, true  },
 };
 
 
@@ -45,7 +47,15 @@ static bool onOption(OptId id, const char* value){
 			opt.help = true;
 			return true;
 		case OptId::OUTPUT:
-			opt.outFilePath = value;
+			if (opt.outFilePath != nullptr){
+				ERROR("Multiple outputs not allowed.");
+				return false;
+			} else {
+				opt.outFilePath = value;
+				return true;
+			}
+		case OptId::INCLUDE:
+			opt.includes.emplace_back(value);
 			return true;
 	}
 	return false;
@@ -58,17 +68,17 @@ static bool onFile(const char* arg){
 
 
 static bool err_invalidOption(const char* arg){
-	fprintf(stderr, ANSI_RED "error:" ANSI_RESET " Invalid option '%s'.\n", arg);
+	ERROR("Invalid option '%s'.", arg);
 	return false;
 }
 
 static bool err_invalidValue(const char* arg){
-	fprintf(stderr, ANSI_RED "error:" ANSI_RESET " Option '%s' does not expect a value.\n", arg);
+	ERROR("Option '%s' does not expect a value.", arg);
 	return false;
 }
 
 static bool err_missingValue(const char* arg){
-	fprintf(stderr, ANSI_RED "error:" ANSI_RESET " Option '%s' is missing a value.\n", arg);
+	ERROR("Option '%s' is missing a value.", arg);
 	return false;
 }
 
@@ -97,7 +107,7 @@ constexpr const OptInfo* getOptInfo(const char* arg, int& len){
 		
 		const string_view name = string_view(arg, len);
 		
-		for (const OptInfo& i : info){
+		for (const OptInfo& i : options){
 			if (name == i.name2)
 				return &i;
 		}
@@ -110,7 +120,7 @@ constexpr const OptInfo* getOptInfo(const char* arg, int& len){
 		len = 2;
 		const string_view name = string_view(arg, 2);
 		
-		for (const OptInfo& i : info){
+		for (const OptInfo& i : options){
 			if (name == i.name1)
 				return &i;
 		}
@@ -221,7 +231,7 @@ bool parseCLI(char const* const* argv, int argc){
 
 
 consteval bool verifyOptions(){
-	for (const OptInfo& i : info){
+	for (const OptInfo& i : options){
 		if (i.name1.empty() && i.name2.empty()){
 			return false;
 		}
