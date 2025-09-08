@@ -34,6 +34,7 @@ enum class html::ParseStatus {
 	INVALID_TAG_NAME,		// <...
 	INVALID_TAG_CHAR,		// <...>
 	MISSING_END_TAG,		// Some tags are unclosed: </tag>
+	INVALID_END_TAG,		// Too many </tag>.
 	MISSING_ATTR_VALUE,		// attr=
 	MEMORY,					// Out of memory.
 	IO,						// Failed to read file.
@@ -68,8 +69,8 @@ template<> inline constexpr bool has_enum_operators<html::NodeOptions> = true;
 
 struct html::ParseResult {
 	ParseStatus status;
-	const char* pos = nullptr;	// Last parsing position. Usefull for `document::row()`.
-	std::vector<Node*> macros;	// Pointers to nodes `<MACRO>`
+	std::string_view pos;			// Last parsing context.
+	std::vector<Node*> macros;		// Pointers to nodes `<MACRO>`
 };
 
 

@@ -67,7 +67,7 @@ linepos findLine(const char* beg, const char* end, const char* p) noexcept {
 	long col = 1;
 	long row = 1;
 	bool tabs = false;
-	const char* line_beg;
+	const char* line_beg = beg;
 	
 	// Find line begining and row
 	const char* b = beg;
@@ -165,16 +165,6 @@ string getCodeView(const linepos& line, string_view mark, string_view color){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static void print_file_loc(const linepos& pos){
-	if (pos.row > 0 && pos.col > 0)
-		fprintf(stderr, BOLD "%s:%ld:%ld: " RESET, pos.file, pos.row, pos.col);
-	else if (pos.row > 0)
-		fprintf(stderr, BOLD "%s:%ld: " RESET, pos.file, pos.row);
-	else
-		fprintf(stderr, BOLD "%s: " RESET, pos.file);
-}
-
-
 static void print_error_pfx(const linepos& pos){
 	if (pos.row > 0 && pos.col > 0)
 		fprintf(stderr, BOLD "%s:%ld:%ld: " COLOR_ERROR "error: " RESET, pos.file, pos.row, pos.col);
@@ -191,10 +181,6 @@ static void print_warn_pfx(const linepos& pos){
 		fprintf(stderr, BOLD "%s:%ld: " COLOR_WARN "warn: " RESET, pos.file, pos.row);
 	else
 		fprintf(stderr, BOLD "%s: " COLOR_WARN "warn: " RESET, pos.file);
-}
-
-static void print_info_pfx(const linepos& pos){
-	print_file_loc(pos);
 }
 
 static void print_error_codeView(const linepos& line, string_view mark){
@@ -222,7 +208,7 @@ void warn(const Node& node, const char* msg){
 
 
 void info(const Node& node, const char* msg){
-	print_info_pfx(findLine(node.root(), node.value_p));
+	print(findLine(node.root(), node.value_p));
 	fprintf(stderr, "%s\n", msg);
 }
 

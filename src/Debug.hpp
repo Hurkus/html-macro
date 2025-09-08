@@ -31,7 +31,29 @@
 #define INFO(...)	HERE(::info(__VA_ARGS__))
 
 
+// ----------------------------------- [ Structures ] --------------------------------------- //
+
+
+struct linepos {
+	const char* file = nullptr;
+	const char* beg = nullptr;		// Begining of line.
+	const char* end = nullptr;		// End of line (at next '\n' or EOF).
+	long row = -1;
+	long col = -1;
+};
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static void print(const linepos& pos){
+	if (pos.row > 0 && pos.col > 0)
+		fprintf(stderr, ANSI_BOLD "%s:%ld:%ld: " ANSI_RESET, pos.file, pos.row, pos.col);
+	else if (pos.row > 0)
+		fprintf(stderr, ANSI_BOLD "%s:%ld: " ANSI_RESET, pos.file, pos.row);
+	else
+		fprintf(stderr, ANSI_BOLD "%s: " ANSI_RESET, pos.file);
+}
 
 
 template <typename ...T>
@@ -42,10 +64,22 @@ static void error(const char* fmt, T... arg){
 }
 
 template <typename ...T>
+static void error(const linepos& line, const char* fmt, T... arg){
+	print(line);
+	error(fmt, std::forward<T>(arg)...);
+}
+
+template <typename ...T>
 static void warn(const char* fmt, T... arg){
 	std::fprintf(stderr, ANSI_YELLOW ANSI_BOLD "warn: " ANSI_RESET);
 	std::fprintf(stderr, fmt, arg...);
 	std::fprintf(stderr, "\n");
+}
+
+template <typename ...T>
+static void warn(const linepos& line, const char* fmt, T... arg){
+	print(line);
+	warn(fmt, std::forward<T>(arg)...);
 }
 
 template <typename ...T>
@@ -92,14 +126,6 @@ void error_expression_parse(const html::Node& node, const html::Attr& attr);
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-struct linepos {
-	const char* file = nullptr;
-	const char* beg = nullptr;		// Begining of line.
-	const char* end = nullptr;		// End of line (at next '\n' or EOF).
-	long row = -1;
-	long col = -1;
-};
-
 /**
  * @brief Find line containing `p` relative to beggining of the source buffer.
  *        This function is very slow (iterates over the whole buffer).
@@ -112,6 +138,14 @@ struct linepos {
 linepos findLine(const char* beg, const char* end, const char* p) noexcept;
 
 
+/**
+ * @brief Get line of source code and underline marked focus section.
+ *        Usefull for printing parsing errors.
+ * @param line Line position information. Use `findLine()`.
+ * @param mark Substring of `line` which should be marked.
+ * @param color ANSI color code for marked section.
+ * @return std::string Marked view of source code ready for printing.
+ */
 std::string getCodeView(const linepos& line, std::string_view mark, std::string_view color);
 
 

@@ -52,7 +52,9 @@ const char* html::errstr(ParseStatus status) noexcept {
 		case ParseStatus::INVALID_TAG_CHAR:
 			return "Invalid character in tag.";
 		case ParseStatus::MISSING_END_TAG:
-			return "Missing closing tag.";
+			return "Missing end tag.";
+		case ParseStatus::INVALID_END_TAG:
+			return "Invalid end tag doesn't close any opened tag.";
 		case ParseStatus::MISSING_ATTR_VALUE:
 			return "Missing value of attribute.";
 		case ParseStatus::MEMORY:
@@ -224,9 +226,9 @@ static const char* parse_pcData(Parser& state, const char* beg, const char* s){
 
 
 static const char* parse_rawpcData(Parser& state, Node* parent, const char* s){
-	const char* name = parent->value_p;
-	size_t len = parent->value_len;
-	assert(len > 0 && name != nullptr);
+	const char* const name = parent->value_p;
+	const size_t name_len = parent->value_len;
+	assert(name != nullptr && name_len > 0);
 	
 	const char* beg = s;
 	const char* end = s;
@@ -237,8 +239,7 @@ static const char* parse_rawpcData(Parser& state, Node* parent, const char* s){
 			if (s[1] == '/')
 				goto check_end_tag;
 		} else if (*s == 0){
-			state.result.pos = name;
-			throw ParseStatus::MISSING_END_TAG;
+			goto err_no_end;
 		}
 		
 		s++;
@@ -250,7 +251,7 @@ static const char* parse_rawpcData(Parser& state, Node* parent, const char* s){
 		s += 2;
 		
 		// Compare names
-		for (size_t i = 0 ; i < len ; i++, s++){
+		for (size_t i = 0 ; i < name_len ; i++, s++){
 			if (*s != name[i])
 				goto loop;
 		}
@@ -260,7 +261,8 @@ static const char* parse_rawpcData(Parser& state, Node* parent, const char* s){
 			break;
 		}
 		
-		state.result.pos = end;
+		err_no_end:
+		state.result.pos = string_view(name, name_len);
 		throw ParseStatus::MISSING_END_TAG;
 	}
 	
@@ -303,7 +305,7 @@ inline const char* parse_string(Parser& state, const char* s, NodeOptions& out_o
 		if (*s == '{')
 			out_opts |= NodeOptions::INTERPOLATE;
 		else if (*s == 0){
-			state.result.pos = beg;
+			state.result.pos = string_view(beg, s);
 			throw ParseStatus::UNCLOSED_STRING;
 		}
 		s++;
@@ -329,7 +331,7 @@ static const char* parse_question(Parser& state, const char* s){
 	}
 	
 	if (s[0] != '?' || s[1] != '>'){
-		state.result.pos = beg - 1;
+		state.result.pos = string_view(beg - 2, 2);
 		throw ParseStatus::UNCLOSED_QUESTION;
 	}
 	
@@ -347,7 +349,7 @@ static const char* parse_comment(Parser& state, const char* s){
 	
 	while (s[0] != '-' || s[1] != '-' || s[2] != '>'){
 		if (s[0] == 0){
-			state.result.pos = beg;
+			state.result.pos = string_view(beg - 1, s);
 			throw ParseStatus::UNCLOSED_COMMENT;
 		}
 		s++;
@@ -382,7 +384,7 @@ static const char* parse_exclamation(Parser& state, const char* s){
 			else if (isMasked(*s, MASK_QUOTE))
 				s = parse_string(state, s, __trash);
 			else if (*s == 0){
-				state.result.pos = beg;
+				state.result.pos = string_view(beg - 1, 2);
 				throw ParseStatus::UNCLOSED_TAG;
 			}
 		}
@@ -423,7 +425,7 @@ static const char* parse_attribute(Parser& state, const char* s, Attr& attr){
 			attr.value_len = uint32_t(min(s - attr.value_p - 1, long(UINT32_MAX)));
 			break;
 		default:
-			state.result.pos = attr.name_p + attr.name_len;
+			state.result.pos = string_view(attr.name_p, s);
 			throw ParseStatus::MISSING_ATTR_VALUE;
 	}
 	
@@ -447,7 +449,7 @@ static const char* parse_openTag(Parser& state, const char* s, NodeOptions optio
 	// Self close
 	if (s[0] == '/'){ tag_self_close:
 		if (s[1] != '>'){
-			state.result.pos = s;
+			state.result.pos = string_view(s, 1);
 			throw ParseStatus::UNCLOSED_TAG;
 		} else {
 			s += 2;
@@ -535,7 +537,7 @@ static const char* parse_openTag(Parser& state, const char* s, NodeOptions optio
 	
 	// Check for attributes
 	else if (!isWhitespace(s[0])){
-		state.result.pos = s;
+		state.result.pos = string_view(name_p, s+1);
 		throw (s[0] == 0) ? ParseStatus::UNCLOSED_TAG : ParseStatus::INVALID_TAG_NAME;
 	}
 	
@@ -543,21 +545,24 @@ static const char* parse_openTag(Parser& state, const char* s, NodeOptions optio
 		s = parse_whiteSpace(state, s);
 		
 		// Self-close
-		if (s[0] == '/'){
+		if (*s == '/'){
 			goto tag_self_close;
-		} else if (s[0] == '>'){
+		} else if (*s == '>'){
 			goto tag_end;
 		}
 		
-		else if (!isTagChar(s[0])){
-			state.result.pos = s;
-			throw ParseStatus::INVALID_TAG_CHAR;
+		else if (!isTagChar(*s)){
+			if (*s == 0){
+				state.result.pos = string_view(name_p, s);
+				throw ParseStatus::UNCLOSED_TAG;
+			} else {
+				state.result.pos = string_view(s, 1);
+				throw ParseStatus::INVALID_TAG_CHAR;
+			}
 		}
 		
 		// Attribute
 		Attr* attr = allocAttr();
-		s = parse_attribute(state, s, *attr);
-		
 		if (firstAttr == nullptr){
 			firstAttr = lastAttr = attr;
 		} else {
@@ -565,11 +570,12 @@ static const char* parse_openTag(Parser& state, const char* s, NodeOptions optio
 			lastAttr = attr;
 		}
 		
+		s = parse_attribute(state, s, *attr);
 		continue;
 	}
 	
 	// Error
-	state.result.pos = s;
+	state.result.pos = string_view(s, 1);
 	throw ParseStatus::UNCLOSED_TAG;
 }
 
@@ -577,22 +583,25 @@ static const char* parse_openTag(Parser& state, const char* s, NodeOptions optio
 static const char* parse_closeTag(Parser& state, const char* s){
 	assert(s[0] == '/');
 	assert(state.current != nullptr);
-	
-	Node* node = state.current;
-	uint32_t len = node->value_len;
-	const char* name = node->value_p;
 	const char* beg = s;
 	
-	s++;
-	while (len > 0){
-		if (*s != *name)
-			goto check_void_tag;
-		len--;
-		s++;
-		name++;
+	Node* node = state.current;
+	const uint32_t name_len = node->value_len;
+	const char* const name = node->value_p;
+	
+	if (name_len <= 0){
+		while (isTagChar(*(++s))) continue;
+		state.result.pos = string_view(beg - 1, s);
+		throw ParseStatus::INVALID_END_TAG;
 	}
 	
-	s = parse_whiteSpace(state, s);
+	s++;
+	for (size_t i = 0 ; i < name_len ; i++){
+		if (s[i] != name[i])
+			goto check_void_tag;
+	}
+	
+	s = parse_whiteSpace(state, s + name_len);
 	if (*s == '>'){
 		pop(state);
 		s++;
@@ -601,7 +610,6 @@ static const char* parse_closeTag(Parser& state, const char* s){
 	
 	check_void_tag:
 	// Parse tag name
-	s = beg;
 	while (isTagChar(*(++s))) continue;
 	
 	// Discard void tag
@@ -614,9 +622,8 @@ static const char* parse_closeTag(Parser& state, const char* s){
 	}
 	
 	// Error
-	name = state.current->value_p;
-	state.result.pos = (name != nullptr ? name : beg);
-	throw ParseStatus::MISSING_END_TAG;
+	state.result.pos = string_view(name, name_len);
+	throw ParseStatus::INVALID_END_TAG;
 	
 	suffix:
 	if (isWhitespace(*s)){
@@ -670,7 +677,7 @@ const char* parse_all(Parser& state, const char* s){
 		}
 		
 		else {
-			state.result.pos = s+1;
+			state.result.pos = string_view(s+1, 1);
 			throw ParseStatus::INVALID_TAG_NAME;
 		}
 		
@@ -678,10 +685,8 @@ const char* parse_all(Parser& state, const char* s){
 	
 	// Check if parsed completely
 	if (state.current->parent != nullptr){
-		if (state.current->value_p != nullptr)
-			state.result.pos = state.current->value_p;
-		else
-			state.result.pos = s;
+		assert(state.current != nullptr && state.current->value_p != nullptr);
+		state.result.pos = state.current->value();
 		throw ParseStatus::MISSING_END_TAG;
 	}
 	
@@ -702,7 +707,7 @@ static ParseResult parse(Document& doc, const char* buff){
 			.macros = &parser.result.macros,
 			.result = {
 				.status = ParseStatus::OK,
-				.pos = buff
+				.pos = string_view(buff, 1)
 			}
 		};
 		parse_all(parser, buff);

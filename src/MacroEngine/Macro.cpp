@@ -71,7 +71,6 @@ static bool registerMacro(const Macro& parent, Node&& macro){
 
 
 static void err(const Document& doc, const ParseResult& res){
-	const char* file = (doc.srcFile == nullptr) ? "buffer" : doc.srcFile->c_str();
 	const char* msg = html::errstr(res.status);
 	
 	switch (res.status){
@@ -80,8 +79,9 @@ static void err(const Document& doc, const ParseResult& res){
 			ERROR("%s", msg);
 			break;
 		default:
-			linepos pos =  findLine(doc, res.pos);
-			ERROR(ANSI_BOLD "%s:%ld:%ld:" ANSI_RESET " %s", file, pos.row, pos.col, msg);
+			linepos pos =  findLine(doc, res.pos.begin());
+			ERROR(pos, "%s", msg);
+			printf("%s\n", getCodeView(pos, res.pos, ANSI_RED).c_str());
 			break;
 	}
 	
