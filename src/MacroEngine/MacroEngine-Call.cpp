@@ -34,6 +34,8 @@ void MacroEngine::call(const Node& op, Node& dst){
 		
 	}
 	
+	const Macro* macro = nullptr;
+	
 	if (attr_name == nullptr){
 		warn_missing_attr(op, "NAME");
 		return;
@@ -42,10 +44,8 @@ void MacroEngine::call(const Node& op, Node& dst){
 		return;
 	}
 	
-	const Macro* macro = nullptr;
-	
 	// Evaluate expression
-	if (attr_name->options % NodeOptions::SINGLE_QUOTE){
+	else if (attr_name->options % NodeOptions::SINGLE_QUOTE){
 		pExpr expr = Expression::parse(attr_name->value());
 		if (expr == nullptr){
 			error_expression_parse(op, *attr_name);
@@ -149,60 +149,73 @@ void MacroEngine::call(const Node& op, const Attr& attr, Node& dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-// bool MacroEngineObject::include(const xml_node op, xml_node dst){
-// 	assert(op.root() != dst.root());
-// 	xml_attribute src_attr;
+void MacroEngine::include(const Node& op, Node& dst){
+	const Attr* attr_src = nullptr;
 	
-// 	for (const xml_attribute attr : op.attributes()){
-// 		string_view name = attr.name();
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view name = attr->name();
 		
-// 		if (name == "SRC"){
-// 			src_attr = attr;
-// 		} else if (name == "IF"){
-// 			if (!_attr_if(*this, op, attr))
-// 				return false;
-// 		} else {
-// 			_attr_ignore(op, attr);
-// 		}
+		if (name == "SRC"){
+			attr_src = attr;
+		} else if (name == "IF"){
+			if (!eval_attr_if(op, *attr))
+				return;
+		} else {
+			warn_ignored_attribute(op, *attr);
+		}
 		
-// 	}
+	}
 	
-// 	if (src_attr.empty()){
-// 		_attr_missing(op, "SRC");
-// 		return false;
-// 	}
+	string buff;
+	string_view path_view;
 	
-// 	// Modify relative path to current macro file path.
-// 	filesystem::path path;
-// 	try {
-// 		path = src_attr.value();
+	if (attr_src == nullptr){
+		error_missing_attr(op, "SRC");
+		return;
+	} else if (attr_src->value().empty()){
+		warn_missing_attr_value(op, *attr_src);
+		return;
+	}
+	
+	// Evaluate expression
+	else if (attr_src->options % NodeOptions::SINGLE_QUOTE){
+		pExpr expr = Expression::parse(attr_src->value());
+		if (expr == nullptr){
+			error_expression_parse(op, *attr_src);
+			return;
+		}
 		
-// 		if (!path.is_absolute()){
-// 			assert(currentMacro != nullptr);
-// 			if (currentMacro == nullptr || currentMacro->srcFile == nullptr){
-// 				ERROR("%s: Missing macro relative path.", op.name());
-// 				return false;
-// 			}
-			
-// 			filesystem::path dir = *currentMacro->srcFile;
-// 			dir.remove_filename();
-// 			path = dir / filesystem::proximate(move(path), dir);
-// 		}
-		
-// 	} catch (const exception& e){
-// 		ERROR("%s: Failed to construct path '%s'.", op.name(), src_attr.value());
-// 		return false;
-// 	}
+		Expression::str(expr->eval(MacroEngine::variables), buff);
+		path_view = buff;
+	}
 	
-// 	// Fetch and execute macro
-// 	shared_ptr<MacroObject> macro = loadFile(path);
-// 	if (macro == nullptr){
-// 		return false;
-// 	}
+	// Interpolate
+	else if (attr_src->options % NodeOptions::INTERPOLATE){
+		interpolate(attr_src->value(), MacroEngine::variables, buff);
+		path_view = buff;
+	}
 	
-// 	exec(*macro, dst);
-// 	return true;
-// }
+	// Plain text
+	else {
+		path_view = attr_src->value();
+	}
+	
+	
+	filepath path = MacroEngine::resolve(path_view);
+	if (!filesystem::exists(path)){
+		error_file_not_found(op, *attr_src, path.c_str());
+		return;
+	}
+	
+	// Fetch and execute macro
+	const Macro* macro = Macro::loadFile(path, false);
+	if (macro == nullptr){
+		::error(op, "rip");
+		return;
+	}
+	
+	exec(*macro, dst);
+}
 
 
 // ------------------------------------------------------------------------------------------ //

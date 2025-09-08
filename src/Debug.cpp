@@ -121,13 +121,28 @@ void error_macro_not_found(const Node& node, const Attr& attr, const char* name)
 	long row = doc.row(attr.name_p);
 	long col = doc.col(attr.name_p);
 	_ERROR(doc.file(), row, col,
-		"Macro " PURPLE "'%s'" RS " not found at tag " PURPLE "<%s>" RS ".",
-		name, CNAME(node)
+		"Macro " PURPLE "'%s'" RS " not found from tag " PURPLE "<%s %s='%s'>" RS ".",
+		name, CNAME(node), CNAME(attr), CVALUE(attr)
 	);
 }
 
 void error_macro_not_found(const Node& node, const Attr& attr){
 	error_macro_not_found(node, attr, CVALUE(attr));
+}
+
+
+void error_file_not_found(const Node& node, const Attr& attr, const char* name){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_ERROR(doc.file(), row, col,
+		"File " PURPLE "'%s'" RS " not found from tag " PURPLE "<%s %s='%s'>" RS ".",
+		name, CNAME(node), CNAME(attr), CVALUE(attr)
+	);
+}
+
+void error_file_not_found(const Node& node, const Attr& attr){
+	error_file_not_found(node, attr, CVALUE(attr));
 }
 
 

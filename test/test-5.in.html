@@ -3,7 +3,7 @@
 	<title>Test 5 -- Macros</title>
 </head>
 <body>
-	<SET x="2" y="x + 1" p="pi" />
+	<SET x='2' y='x + 1' p='pi' />
 	
 	<!-- Call tests -->
 	<CALL NAME="title" />
@@ -12,7 +12,8 @@
 	
 	<!-- Include test -->
 	<div>
-		<INCLUDE SRC="test-5.inc.html"/>
+		<SET path="test-5.inc"/>
+		<INCLUDE SRC="{path}.html"/>
 		<CALL NAME="extern-macro"/>
 	</div>
 	

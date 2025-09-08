@@ -1,5 +1,6 @@
 #include "MacroEngine.hpp"
 #include <cmath>
+
 #include "Debug.hpp"
 
 using namespace std;
@@ -81,11 +82,9 @@ void MacroEngine::run(const Node& op, Node& dst){
 		
 		else if (name == "CALL"){
 			call(op, dst);
-		}
-		// else if (name == "INCLUDE"){
-		// 	include(op, dst);
-		// }
-		else if (name == "SHELL"){
+		} else if (name == "INCLUDE"){
+			include(op, dst);
+		} else if (name == "SHELL"){
 			shell(op, dst);
 		}
 		
@@ -131,16 +130,25 @@ void MacroEngine::exec(const Macro& macro, Node& dst){
 	auto _branch_1 = MacroEngine::currentBranch_block;
 	auto _branch_2 = MacroEngine::currentBranch_inline;
 	auto _interp = MacroEngine::currentInterpolation;
+	auto _cwd = move(MacroEngine::cwd);
 	
 	MacroEngine::currentBranch_block = Branch::NONE;
 	MacroEngine::currentBranch_inline = Branch::NONE;
 	MacroEngine::currentInterpolation = Interpolate::ALL;
 	
+	if (macro.srcDir != nullptr){
+		MacroEngine::cwd = macro.srcDir;
+	} else {
+		assert(macro.srcDir != nullptr);
+		MacroEngine::cwd = _cwd;
+	}
+	
 	runChildren(macro.doc, dst);
 	
-	MacroEngine::currentBranch_block = _branch_1;
-	MacroEngine::currentBranch_inline = _branch_2;
+	MacroEngine::cwd = move(_cwd);
 	MacroEngine::currentInterpolation = _interp;
+	MacroEngine::currentBranch_inline = _branch_2;
+	MacroEngine::currentBranch_block = _branch_1;
 }
 
 

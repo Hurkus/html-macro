@@ -77,14 +77,14 @@ void error(const html::Node& node, const char* msg);
 void warn(const html::Node& node, const char* msg);
 void info(const html::Node& node, const char* msg);
 
-
 void error_missing_attr(const html::Node& node, const char* name);
 void error_missing_attr_value(const html::Node& node, const html::Attr& attr);
 void error_macro_not_found(const html::Node& node, const html::Attr& attr);
 void error_macro_not_found(const html::Node& node, const html::Attr& attr, const char* name);
+void error_file_not_found(const html::Node& node, const html::Attr& attr);
+void error_file_not_found(const html::Node& node, const html::Attr& attr, const char* name);
 void error_expression_parse(const html::Node& node, const html::Attr& attr);
 void error_duplicate_attr(const html::Node& node, const html::Attr& attr_1, const html::Attr& attr_2);
-
 
 void warn_missing_attr(const html::Node& node, const char* name);
 void warn_missing_attr_value(const html::Node& node, const html::Attr& attr);
@@ -94,5 +94,6 @@ void warn_ignored_attribute(const html::Node& node, const html::Attr& attr);
 void warn_double_quote(const html::Node& node, const html::Attr& attr);
 void warn_ignored_attr_value(const html::Node& node, const html::Attr& attr);
 void warn_shell_exit(const html::Node& node, int status);
+
 
 // ------------------------------------------------------------------------------------------ //

@@ -1,7 +1,6 @@
 #include "Macro.hpp"
 #include <unordered_map>
 
-#include "Paths.hpp"
 #include "Debug.hpp"
 
 using namespace std;
@@ -33,6 +32,7 @@ static bool registerMacro(const Macro& parent, Node&& macro){
 	// Create new macro by moving <MACRO> node to new document.
 	unique_ptr<Macro> m = make_unique<Macro>();
 	m->name = a->value();
+	m->srcDir = parent.srcDir;
 	Node& root = m->doc;
 	
 	// Transfer node
@@ -93,6 +93,10 @@ static Macro* parseFile(string&& path){
 			return nullptr;
 	}
 	
+	assert(macro->doc.srcFile != nullptr);
+	filepath filePath = filepath(*macro->doc.srcFile);
+	macro->srcDir = make_shared<filepath>(move(filePath.remove_filename()));
+	
 	// Extract all <MACRO> nodes.
 	for (Node* m : res.macros){
 		assert(m != nullptr && m->parent != nullptr);
@@ -118,17 +122,31 @@ const Macro* Macro::get(string_view name){
 }
 
 
-const Macro* Macro::loadFile(string_view path){
-	string file = resolve(path).string();
-	
-	// Check if cached files.
-	auto p = macroFileCache.find(string_view(file));
-	if (p != macroFileCache.end()){
-		return p->second.get();
+const Macro* Macro::loadFile(const filepath& path, bool resolve){
+	if (resolve){
+		filepath _path = MacroEngine::resolve(path);
+		string_view file_view = _path.c_str();
+		
+		// Check if cached files.
+		auto p = macroFileCache.find(file_view);
+		if (p != macroFileCache.end()){
+			return p->second.get();
+		}
+		
+		// Parse new file
+		return parseFile(move(_path).string());
 	}
-	
-	// Parse new file
-	return parseFile(move(file));
+	else {
+		string_view file_view = path.c_str();
+		
+		// Check if cached files.
+		auto p = macroFileCache.find(file_view);
+		if (p != macroFileCache.end()){
+			return p->second.get();
+		}
+		
+		return parseFile(path.string());
+	}
 }
 
 
