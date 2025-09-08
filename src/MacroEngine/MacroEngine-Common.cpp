@@ -58,13 +58,50 @@ bool MacroEngine::eval_attr_false(const Node& op, const Attr& attr){
 }
 
 
+bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff, string_view& result){
+	if (attr.value_p == nullptr){
+		result = {};
+		return true;
+	}
+	
+	// Evaluate expression
+	else if (attr.options % NodeOptions::SINGLE_QUOTE){
+		
+		pExpr expr = Expression::parse(attr.value());
+		if (expr == nullptr){
+			HERE(error_expression_parse(op, attr));
+			return false;
+		}
+		
+		Expression::str(expr->eval(MacroEngine::variables), buff);
+		result = buff;
+		return true;
+	}
+	
+	// Interpolate
+	else if (attr.options % NodeOptions::INTERPOLATE){
+		interpolate(attr.value(), MacroEngine::variables, buff);
+		result = buff;
+		return true;
+	}
+	
+	// Plain text
+	else {
+		result = attr.value();
+		return true;
+	}
+	
+	return false;
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
 Interpolate MacroEngine::eval_attr_interp(const Node& op, const Attr& attr){
 	string_view expr_str = attr.value();
 	if (expr_str.empty()){
-		warn_missing_attr_value(op, attr));
+		HERE(warn_missing_attr_value(op, attr));
 		return Interpolate::NONE;
 	}
 	

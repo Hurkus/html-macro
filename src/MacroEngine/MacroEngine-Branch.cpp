@@ -23,8 +23,6 @@ void MacroEngine::set(const Node& op){
 			return;
 		}
 		
-		Value& var = MacroEngine::variables[name];
-		
 		// Expression
 		if (attr->options % NodeOptions::SINGLE_QUOTE){
 			pExpr expr = parser.parse(value);
@@ -33,18 +31,18 @@ void MacroEngine::set(const Node& op){
 				continue;
 			}
 			
-			var = expr->eval(MacroEngine::variables);
+			MacroEngine::variables.insert(name, expr->eval(MacroEngine::variables));
 		}
 		
 		// Interpolate
 		else if (attr->options % NodeOptions::INTERPOLATE){
-			string& s = var.emplace<string>();
-			interpolate(attr->value(), MacroEngine::variables, s);
+			Value& val = MacroEngine::variables[name];
+			interpolate(attr->value(), MacroEngine::variables, val.emplace<string>());
 		}
 		
 		// Plain text
 		else {
-			var.emplace<string>(attr->value());
+			MacroEngine::variables.insert(name, in_place_type<string>, attr->value());
 		}
 		
 	}

@@ -87,11 +87,12 @@ void Expression::str(Value&& val, string& buff){
 // }
 
 
-void Expression::interpolate(string_view str, const VariableMap& vars, string& buff){
+bool Expression::interpolate(string_view str, const VariableMap& vars, string& buff){
 	const char* beg = str.begin();
 	const char* end = beg + str.length();
 	
 	while (beg != end){
+		
 		// Find starting poing {
 		const char* a = beg;
 		while (a != end && *a != '{') a++;
@@ -103,7 +104,7 @@ void Expression::interpolate(string_view str, const VariableMap& vars, string& b
 				break;
 			} else if (*b == '\n'){
 				ERROR("Newline not allowed in interpolated expression [%s].", string(beg, b).c_str());
-				return;
+				return false;
 			}
 			b++;
 		}
@@ -111,7 +112,7 @@ void Expression::interpolate(string_view str, const VariableMap& vars, string& b
 		// Append prefix
 		if (b == end){
 			buff.append(beg, b);
-			return;
+			return true;
 		} else {
 			buff.append(beg, a);
 		}
@@ -124,11 +125,13 @@ void Expression::interpolate(string_view str, const VariableMap& vars, string& b
 			Expression::str(val, buff);
 		} else {
 			ERROR("Failed to parse expression [%s].", string(a, b+1).c_str());
-			return;
+			return false;
 		}
 		
 		beg = b+1;
 	}
+	
+	return false;
 }
 
 

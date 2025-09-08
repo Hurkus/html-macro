@@ -145,7 +145,7 @@ void str(const Value& val, std::string& buff);
 void str(Value&& val, std::string& buff);
 
 // bool hasInterpolation(const char* str, size_t* out_len = nullptr);
-void interpolate(std::string_view str, const VariableMap& vars, std::string& buff);
+bool interpolate(std::string_view str, const VariableMap& vars, std::string& buff);
 
 // std::string str(const Expr* expr);
 

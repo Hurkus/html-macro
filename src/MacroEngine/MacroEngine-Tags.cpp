@@ -30,29 +30,15 @@ void MacroEngine::attribute(const Node& op, const Attr& op_attr, Node& dst){
 	Attr& attr = dst.appendAttribute();
 	attr.name(op_attr.name());
 	
-	// Evaluate expression
-	if (op_attr.options % NodeOptions::SINGLE_QUOTE){
-		pExpr expr = Expression::parse(op_attr.value());
-		if (expr == nullptr){
-			HERE(error_expression_parse(op, op_attr));
-			return;
-		}
-		
-		string buff;
-		Expression::str(expr->eval(MacroEngine::variables), buff);
-		attr.value(html::newStr(buff), buff.length());
-	}
+	string buff;
+	string_view buff_view;
 	
-	// Interpolate
-	else if (op_attr.options % NodeOptions::INTERPOLATE){
-		string buff;
-		Expression::interpolate(op_attr.value(), MacroEngine::variables, buff);
+	if (!eval_attr_value(op, op_attr, buff, buff_view)){
+		return;
+	} else if (!buff.empty()){
 		attr.value(html::newStr(buff), buff.length());
-	}
-	
-	// Text value
-	else {
-		attr.value(op_attr.value());
+	} else {
+		attr.value(buff_view);
 	}
 	
 }
@@ -125,7 +111,8 @@ void MacroEngine::setAttr(const Node& op, Node& dst){
 		}
 	}
 	
-	string buff = {};
+	string buff;
+	string_view buff_view;
 	
 	// Copy or set attributes
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
@@ -134,33 +121,20 @@ void MacroEngine::setAttr(const Node& op, Node& dst){
 			continue;
 		}
 		
+		// Evaluate value
+		buff.clear();
+		if (!eval_attr_value(op, *attr, buff, buff_view)){
+			continue;
+		}
+		
+		// Create attribute
 		Attr& a = dst.appendAttribute();
 		a.name(name);
 		
-		// Evaluate expression
-		if (attr->options % NodeOptions::SINGLE_QUOTE){
-			pExpr expr = Expression::parse(attr->value());
-			if (expr == nullptr){
-				dst.removeAttr(&a);
-				HERE(error_expression_parse(op, *attr));
-				return;
-			}
-			
-			buff.clear();
-			Expression::str(expr->eval(MacroEngine::variables), buff);
+		if (!buff.empty()){
 			a.value(html::newStr(buff), buff.length());
-		}
-		
-		// Interpolate
-		else if (attr->options % NodeOptions::INTERPOLATE){
-			buff.clear();
-			interpolate(attr->value(), MacroEngine::variables, buff);
-			a.value(html::newStr(buff), buff.length());
-		}
-		
-		// Plain text
-		else {
-			a.value(attr->value());
+		} else {
+			a.value(buff_view);
 		}
 		
 	}
@@ -177,7 +151,8 @@ void MacroEngine::getAttr(const Node& op, Node& dst){
 		}
 	}
 	
-	string buff;
+	string attrName_buff;
+	string_view attrName;
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view varName = attr->name();
@@ -185,32 +160,16 @@ void MacroEngine::getAttr(const Node& op, Node& dst){
 			continue;
 		}
 		
-		string_view attrName = attr->value();
-		
-		// Evaluate expression
-		if (attr->options % NodeOptions::SINGLE_QUOTE){
-			pExpr expr = Expression::parse(attrName);
-			if (expr == nullptr){
-				HERE(error_expression_parse(op, *attr));
-				return;
-			}
-			
-			buff.clear();
-			Expression::str(expr->eval(MacroEngine::variables), buff);
-			attrName = buff;
-		}
-		
-		// Interpolate
-		else if (attr->options % NodeOptions::INTERPOLATE){
-			buff.clear();
-			Expression::interpolate(attrName, MacroEngine::variables, buff);
-			attrName = buff;
+		// Evaluate attribute name
+		attrName_buff.clear();
+		if (!eval_attr_value(op, *attr, attrName_buff, attrName)){
+			continue;
 		}
 		
 		// Find attribute and copy value to variable
 		for (const Attr* a = dst.attribute ; a != nullptr ; a = a->next){
 			if (a->name() == attrName){
-				variables[varName] = Value(in_place_type<string>, a->value());
+				MacroEngine::variables.insert(varName, in_place_type<string>, a->value());
 				break;
 			}
 		}
@@ -281,25 +240,16 @@ void MacroEngine::setTag(const Node& op, Node& dst){
 		return;
 	}
 	
-	string newName = {};
-	
-	// Evaluate expression
-	if (attr_valName->options % NodeOptions::SINGLE_QUOTE){
-		pExpr expr = Expression::parse(attr_valName->value());
-		if (expr == nullptr){
-			HERE(error_expression_parse(op, *attr_valName));
-			return;
-		}
-		
-		Expression::str(expr->eval(MacroEngine::variables), newName);
-	}
-		
-	// Interpolate
-	else if (attr_valName->options % NodeOptions::INTERPOLATE){
-		Expression::interpolate(attr_valName->value(), MacroEngine::variables, newName);
+	string newName_buff;
+	string_view newName;
+	if (!eval_attr_value(op, *attr_valName, newName_buff, newName)){
+		return;
+	} else if (!newName_buff.empty()){
+		dst.name(html::newStr(newName), newName.length());
+	} else {
+		dst.name(newName);
 	}
 	
-	dst.name(html::newStr(newName), newName.length());
 }
 
 
