@@ -137,7 +137,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 		} break;
 		
 		default: { unknown:
-			warn_unknown_macro(op);
+			HERE(warn_unknown_macro_tag(op));
 			goto regular_tag;
 		} break;
 		

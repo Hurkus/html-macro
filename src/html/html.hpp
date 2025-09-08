@@ -299,31 +299,5 @@ public:
 		this->next = nullptr;
 	}
 	
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-public:
-	/**
-	 * @brief Find line number of `p` relative to beggining of the source `buffer`.
-	 *        This function is very slow (iterates over `buffer`).
-	 * @note Recommended for error reporting only.
-	 * @param p Pointer to first character of string for which to find the line number.
-	 * @return Line number or `-1` if not found.
-	 */
-	long row(const char* p) const noexcept;
-	
-	/**
-	 * @brief Find colum number of `p` relative to beggining of the line in `buffer`.
-	 * @note Recommended for error reporting only.
-	 * @param p Pointer to first character of string for which to find the colum number.
-	 * @return Colum number or `-1` if not found.
-	 */
-	long col(const char* p) const noexcept;
-	
-	
-	const char* file() const {
-		if (srcFile != nullptr)
-			return srcFile->c_str();
-		return "";
-	}
-	
 // ------------------------------------------------------------------------------------------ //
 };

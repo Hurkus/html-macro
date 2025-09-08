@@ -35,7 +35,6 @@ struct Parser {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-
 const char* html::errstr(ParseStatus status) noexcept {
 	switch (status){
 		case ParseStatus::OK:
@@ -110,69 +109,6 @@ inline Node* push(Parser& state, Node* node){
 inline void pop(Parser& state){
 	state.current = state.current->parent;
 	state.lastChild.pop_back();
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-long Document::row(const char* const p) const noexcept {
-	if (p == nullptr || buffer == nullptr){
-		return -1;
-	}
-	const char* b = buffer->data();
-	if (p < b){
-		return -1;
-	}
-	
-	long row = 1;
-	while (p > b){
-		if (*b == '\n')
-			row++;
-		else if (*b == 0)
-			return -1;
-		b++;
-	}
-	
-	return row;
-}
-
-
-long Document::col(const char* const p) const noexcept {
-	if (p == nullptr || buffer == nullptr){
-		return -1;
-	}
-	const char* b = buffer->data();
-	if (p < b){
-		return -1;
-	}
-	
-	bool tabs = false;
-	
-	// Find begining of line
-	const char* beg = p;
-	while (beg > b){
-		tabs |= (*beg == '\t');
-		if (beg[-1] == '\n')
-			break;
-		beg--;
-	}
-	
-	// No tabs
-	if (!tabs){
-		return p - beg + 1;
-	}
-	
-	// Find colum number accounting tabs
-	long col = 1;
-	while (beg != p){
-		col++;
-		if (*beg == '\t')
-			col = ((col + 2) & ~0b11L) + 1;
-		beg++;
-	}
-	
-	return col;
 }
 
 

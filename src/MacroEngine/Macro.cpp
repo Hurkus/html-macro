@@ -17,6 +17,22 @@ static unordered_map<string_view,shared_ptr<Macro>> macroNameCache;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+static linepos findLine(const Document& doc, const char* p){
+	linepos l = {};
+	
+	if (doc.buffer != nullptr){
+		string_view buff = string_view(*doc.buffer);
+		l = findLine(buff.begin(), buff.end(), p);
+	}
+	
+	l.file = (doc.srcFile != nullptr) ? doc.srcFile->c_str() : nullptr;
+	return l;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 static bool registerMacro(const Macro& parent, Node&& macro){
 	// Find name
 	Attr* a = macro.attribute;
@@ -64,9 +80,8 @@ static void err(const Document& doc, const ParseResult& res){
 			ERROR("%s", msg);
 			break;
 		default:
-			long row = doc.row(res.pos);
-			long col = doc.col(res.pos);
-			ERROR(ANSI_BOLD "%s:%ld:%ld:" ANSI_RESET " %s", file, row, col, msg);
+			linepos pos =  findLine(doc, res.pos);
+			ERROR(ANSI_BOLD "%s:%ld:%ld:" ANSI_RESET " %s", file, pos.row, pos.col, msg);
 			break;
 	}
 	

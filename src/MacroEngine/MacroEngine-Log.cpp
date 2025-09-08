@@ -41,7 +41,7 @@ static bool eval(const Node& op, LogInfo& out){
 		} else if (name == "INTERPOLATE"){
 			interp = eval_attr_interp(op, *attr);
 		} else {
-			warn_ignored_attribute(op, *attr);
+			HERE(warn_ignored_attribute(op, *attr));
 		}
 		
 	}

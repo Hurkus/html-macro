@@ -14,13 +14,13 @@ using namespace Expression;
 bool MacroEngine::eval_attr_if(const Node& op, const Attr& attr){
 	string_view expr_str = attr.value();
 	if (expr_str.empty()){
-		warn_missing_attr_value(op, attr);
+		HERE(warn_missing_attr_value(op, attr));
 		return false;
 	}
 	
 	pExpr expr = Parser().parse(expr_str);
 	if (expr == nullptr){
-		error_expression_parse(op, attr);
+		HERE(error_expression_parse(op, attr));
 		return false;
 	}
 	
@@ -33,15 +33,15 @@ static bool eval_attr_bool(const Node& op, const Attr& attr, bool value){
 	string_view expr_str = attr.value();
 	
 	if (expr_str.empty()){
-		warn_missing_attr_value(op, attr);
+		HERE(warn_missing_attr_value(op, attr));
 		return false;
 	} else if (!(attr.options % NodeOptions::SINGLE_QUOTE)){
-		warn_double_quote(op, attr);
+		HERE(warn_attr_double_quote(op, attr));
 	}
 	
 	pExpr expr = Parser().parse(expr_str);
 	if (expr == nullptr){
-		error_expression_parse(op, attr);
+		HERE(error_expression_parse(op, attr));
 		return false;
 	}
 	
@@ -64,13 +64,13 @@ bool MacroEngine::eval_attr_false(const Node& op, const Attr& attr){
 Interpolate MacroEngine::eval_attr_interp(const Node& op, const Attr& attr){
 	string_view expr_str = attr.value();
 	if (expr_str.empty()){
-		warn_missing_attr_value(op, attr);
+		warn_missing_attr_value(op, attr));
 		return Interpolate::NONE;
 	}
 	
 	pExpr expr = Parser().parse(expr_str);
 	if (expr == nullptr){
-		error_expression_parse(op, attr);
+		HERE(error_expression_parse(op, attr));
 		return Interpolate::NONE;
 	}
 		

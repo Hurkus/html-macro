@@ -2,11 +2,6 @@
 #include <iostream>
 #include "ANSI.h"
 
-namespace html {
-	struct Node;
-	struct Attr;
-};
-
 
 // ---------------------------------- [ Definitions ] --------------------------------------- //
 
@@ -21,28 +16,19 @@ namespace html {
 // ---------------------------------- [ Definitions ] --------------------------------------- //
 
 
-#define PRINT_HERE(...)	\
-	std::fprintf(stderr, ANSI_BOLD "[%s:%ld]" ANSI_RESET "\n ", __FILE__, size_t(__LINE__))
-
-
 #ifdef DEBUG
-	#define ERROR(...)	{\
-		PRINT_HERE(); \
-		::error(__VA_ARGS__); \
-	}
-	#define WARN(...)	{\
-		PRINT_HERE(); \
-		::warn(__VA_ARGS__); \
-	}
-	#define INFO(...)	{\
-		PRINT_HERE(); \
-		::info(__VA_ARGS__); \
+	#define HERE(...)	{\
+		std::fprintf(stderr, ANSI_BOLD "[%s:%ld]" ANSI_RESET "\n", __FILE__, size_t(__LINE__)); \
+		__VA_ARGS__; \
 	}
 #else
-	#define ERROR(...)	::error(__VA_ARGS__)
-	#define WARN(...)	::warn(__VA_ARGS__)
-	#define INFO(...)	::info(__VA_ARGS__)
+	#define HERE(...) { __VA_ARGS__; }
 #endif
+
+
+#define ERROR(...)	HERE(::error(__VA_ARGS__))
+#define WARN(...)	HERE(::warn(__VA_ARGS__))
+#define INFO(...)	HERE(::info(__VA_ARGS__))
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -55,7 +41,6 @@ static void error(const char* fmt, T... arg){
 	std::fprintf(stderr, "\n");
 }
 
-
 template <typename ...T>
 static void warn(const char* fmt, T... arg){
 	std::fprintf(stderr, ANSI_YELLOW ANSI_BOLD "warn: " ANSI_RESET);
@@ -63,15 +48,20 @@ static void warn(const char* fmt, T... arg){
 	std::fprintf(stderr, "\n");
 }
 
-
 template <typename ...T>
 static void info(const char* fmt, T... arg){
 	std::fprintf(stderr, fmt, arg...);
 	std::fprintf(stderr, "\n");
 }
 
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
+
+namespace html {
+	struct Node;
+	struct Attr;
+};
 
 void error(const html::Node& node, const char* msg);
 void warn(const html::Node& node, const char* msg);
@@ -79,21 +69,50 @@ void info(const html::Node& node, const char* msg);
 
 void error_missing_attr(const html::Node& node, const char* name);
 void error_missing_attr_value(const html::Node& node, const html::Attr& attr);
+void warn_missing_attr(const html::Node& node, const char* name);
+void warn_missing_attr_value(const html::Node& node, const html::Attr& attr);
+void warn_ignored_attribute(const html::Node& node, const html::Attr& attr);
+void warn_ignored_attr_value(const html::Node& node, const html::Attr& attr);
+void error_duplicate_attr(const html::Node& node, const html::Attr& attr_1, const html::Attr& attr_2);
+
 void error_macro_not_found(const html::Node& node, const html::Attr& attr);
 void error_macro_not_found(const html::Node& node, const html::Attr& attr, const char* name);
 void error_file_not_found(const html::Node& node, const html::Attr& attr);
 void error_file_not_found(const html::Node& node, const html::Attr& attr, const char* name);
-void error_expression_parse(const html::Node& node, const html::Attr& attr);
-void error_duplicate_attr(const html::Node& node, const html::Attr& attr_1, const html::Attr& attr_2);
+void warn_file_include(const html::Node& node, const html::Attr& attr, const char* filePath);
 
-void warn_missing_attr(const html::Node& node, const char* name);
-void warn_missing_attr_value(const html::Node& node, const html::Attr& attr);
-void warn_unknown_macro(const html::Node& node);
-void warn_unknown_attribute(const html::Node& node, const html::Attr& attr);
-void warn_ignored_attribute(const html::Node& node, const html::Attr& attr);
-void warn_double_quote(const html::Node& node, const html::Attr& attr);
-void warn_ignored_attr_value(const html::Node& node, const html::Attr& attr);
+void warn_unknown_macro_tag(const html::Node& node);
+void warn_unknown_macro_attribute(const html::Node& node, const html::Attr& attr);
 void warn_shell_exit(const html::Node& node, int status);
+
+void warn_attr_double_quote(const html::Node& node, const html::Attr& attr);
+void error_expression_parse(const html::Node& node, const html::Attr& attr);
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+struct linepos {
+	const char* file = nullptr;
+	const char* beg = nullptr;		// Begining of line.
+	const char* end = nullptr;		// End of line (at next '\n' or EOF).
+	long row = -1;
+	long col = -1;
+};
+
+/**
+ * @brief Find line containing `p` relative to beggining of the source buffer.
+ *        This function is very slow (iterates over the whole buffer).
+ * @note Recommended for error reporting only.
+ * @param beg Beginning of the buffer containing `p`.
+ * @param end End of the buffer containing `p`.
+ * @param p Pointer to character between `beg` and `end` for which to find line information.
+ * @return Line, row number of `p` and colum number of `p` or empty if not found.
+ */
+linepos findLine(const char* beg, const char* end, const char* p) noexcept;
+
+
+std::string getCodeView(const linepos& line, std::string_view mark, std::string_view color);
 
 
 // ------------------------------------------------------------------------------------------ //

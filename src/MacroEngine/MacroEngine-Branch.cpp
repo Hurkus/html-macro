@@ -29,7 +29,7 @@ void MacroEngine::set(const Node& op){
 		if (attr->options % NodeOptions::SINGLE_QUOTE){
 			pExpr expr = parser.parse(value);
 			if (expr == nullptr){
-				error_expression_parse(op, *attr);
+				HERE(error_expression_parse(op, *attr));
 				continue;
 			}
 			
@@ -71,7 +71,7 @@ void MacroEngine::branch_if(const Node& op, Node& dst){
 		} else if (name == "INTERPOLATE"){
 			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
 		} else {
-			warn_ignored_attribute(op, *attr);
+			HERE(warn_ignored_attribute(op, *attr));
 		}
 		
 	}
@@ -91,7 +91,7 @@ void MacroEngine::branch_if(const Node& op, Node& dst){
 void MacroEngine::branch_elif(const Node& op, Node& dst){
 	switch (MacroEngine::currentBranch_block){
 		case Branch::NONE:
-			::error(op, "Missing preceding " ANSI_PURPLE "<IF>" ANSI_RESET " tag.");
+			HERE(::error(op, "Missing preceding " ANSI_PURPLE "<IF>" ANSI_RESET " tag."));
 		case Branch::END:
 			return;
 		case Branch::ELSE:
@@ -103,7 +103,7 @@ void MacroEngine::branch_elif(const Node& op, Node& dst){
 void MacroEngine::branch_else(const Node& op, Node& dst){
 	switch (MacroEngine::currentBranch_block){
 		case Branch::NONE:
-			::error(op, "Missing preceding " ANSI_PURPLE "<IF>" ANSI_RESET " tag.");
+			HERE(::error(op, "Missing preceding " ANSI_PURPLE "<IF>" ANSI_RESET " tag."));
 		case Branch::END:
 			MacroEngine::currentBranch_block = Branch::NONE;
 			return;
@@ -114,10 +114,11 @@ void MacroEngine::branch_else(const Node& op, Node& dst){
 	auto _interp = MacroEngine::currentInterpolation;
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		if (attr->name() == "INTERPOLATE")
+		if (attr->name() == "INTERPOLATE"){
 			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
-		else
-			warn_ignored_attribute(op, *attr);
+		} else {
+			HERE(warn_ignored_attribute(op, *attr));
+		}
 	}
 	
 	// Run
@@ -154,10 +155,10 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 			cond_expected = (name[0] == 'T');
 			
 			if (attr_cond != nullptr){
-				error_duplicate_attr(op, *attr_cond, *attr);
+				HERE(error_duplicate_attr(op, *attr_cond, *attr));
 				return 0;
 			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
-				warn_double_quote(op, *attr);
+				HERE(warn_attr_double_quote(op, *attr));
 			}
 			
 			attr_cond = attr;
@@ -166,10 +167,10 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 		// First argument: setup
 		else if (attr_cond == nullptr){
 			if (attr_setup != nullptr){
-				error_duplicate_attr(op, *attr_setup, *attr);
+				HERE(error_duplicate_attr(op, *attr_setup, *attr));
 				return 0;
 			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
-				warn_double_quote(op, *attr);
+				HERE(warn_attr_double_quote(op, *attr));
 			}
 			attr_setup = attr;
 		}
@@ -177,10 +178,10 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 		// Third argument: increment
 		else {
 			if (attr_inc != nullptr){
-				error_duplicate_attr(op, *attr_inc, *attr);
+				HERE(error_duplicate_attr(op, *attr_inc, *attr));
 				return 0;
 			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
-				warn_double_quote(op, *attr);
+				HERE(warn_attr_double_quote(op, *attr));
 			}
 			attr_inc = attr;
 		}
@@ -197,7 +198,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	if (attr_setup != nullptr){
 		expr_setup = Parser().parse(attr_setup->value());
 		if (expr_setup == nullptr){
-			error_expression_parse(op, *attr_cond);
+			HERE(error_expression_parse(op, *attr_cond));
 			return 0;
 		}
 	}
@@ -205,18 +206,18 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	if (attr_cond != nullptr){
 		expr_cond = Parser().parse(attr_cond->value());
 		if (expr_cond == nullptr){
-			error_expression_parse(op, *attr_cond);
+			HERE(error_expression_parse(op, *attr_cond));
 			return 0;
 		}
 	} else {
-		error_missing_attr(op, "TRUE");
+		HERE(error_missing_attr(op, "TRUE"));
 		return 0;
 	}
 	
 	if (attr_inc != nullptr){
 		expr_inc = Parser().parse(attr_inc->value());
 		if (expr_inc == nullptr){
-			error_expression_parse(op, *attr_cond);
+			HERE(error_expression_parse(op, *attr_cond));
 			return 0;
 		}
 	}
@@ -271,17 +272,17 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 			cond_expected = (name[0] == 'T');
 			
 			if (attr_cond != nullptr){
-				error_duplicate_attr(op, *attr_cond, *attr);
+				HERE(error_duplicate_attr(op, *attr_cond, *attr));
 				return 0;
 			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
-				warn_double_quote(op, *attr);
+				HERE(warn_attr_double_quote(op, *attr));
 			}
 			
 			attr_cond = attr;
 		}
 		
 		else {
-			warn_ignored_attribute(op, *attr);
+			HERE(warn_ignored_attribute(op, *attr));
 		}
 		
 		continue;
@@ -294,11 +295,11 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	if (attr_cond != nullptr){
 		expr_cond = Parser().parse(attr_cond->value());
 		if (expr_cond == nullptr){
-			error_expression_parse(op, *attr_cond);
+			HERE(error_expression_parse(op, *attr_cond));
 			return 0;
 		}
 	} else {
-		error_missing_attr(op, "TRUE");
+		HERE(error_missing_attr(op, "TRUE"));
 		return 0;
 	}
 	

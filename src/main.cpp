@@ -64,7 +64,6 @@ static bool run(const char* file){
 	html::Document doc = {};
 	MacroEngine::exec(*m, doc);
 	
-	
 	// Select output stream and write
 	ostream& out = (outf.is_open()) ? outf : cout;
 	if (!write(out, doc)){

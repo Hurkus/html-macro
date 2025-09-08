@@ -34,7 +34,7 @@ void MacroEngine::attribute(const Node& op, const Attr& op_attr, Node& dst){
 	if (op_attr.options % NodeOptions::SINGLE_QUOTE){
 		pExpr expr = Expression::parse(op_attr.value());
 		if (expr == nullptr){
-			error_expression_parse(op, op_attr);
+			HERE(error_expression_parse(op, op_attr));
 			return;
 		}
 		
@@ -83,7 +83,7 @@ void MacroEngine::tag(const Node& op, Node& dst){
 		} else if (name == "CALL-AFTER"){
 			attr_call_after = attr;
 		} else {
-			warn_unknown_attribute(op, *attr);
+			HERE(warn_unknown_macro_attribute(op, *attr));
 			attribute(op, *attr, *child);
 		}
 		
@@ -142,7 +142,7 @@ void MacroEngine::setAttr(const Node& op, Node& dst){
 			pExpr expr = Expression::parse(attr->value());
 			if (expr == nullptr){
 				dst.removeAttr(&a);
-				error_expression_parse(op, *attr);
+				HERE(error_expression_parse(op, *attr));
 				return;
 			}
 			
@@ -191,7 +191,7 @@ void MacroEngine::getAttr(const Node& op, Node& dst){
 		if (attr->options % NodeOptions::SINGLE_QUOTE){
 			pExpr expr = Expression::parse(attrName);
 			if (expr == nullptr){
-				error_expression_parse(op, *attr);
+				HERE(error_expression_parse(op, *attr));
 				return;
 			}
 			
@@ -250,20 +250,20 @@ void MacroEngine::setTag(const Node& op, Node& dst){
 				return;
 		} else if (name == "NAME"){
 			if (attr_nameName != nullptr){
-				error_duplicate_attr(op, *attr_nameName, *attr);
+				HERE(error_duplicate_attr(op, *attr_nameName, *attr));
 				return;
 			} else if (attr_valName != nullptr){
-				error_duplicate_attr(op, *attr_valName, *attr);
+				HERE(error_duplicate_attr(op, *attr_valName, *attr));
 				return;
 			}  else {
 				attr_valName = attr;
 			}
 		} else {
 			if (attr_nameName != nullptr){
-				error_duplicate_attr(op, *attr_nameName, *attr);
+				HERE(error_duplicate_attr(op, *attr_nameName, *attr));
 				return;
 			} else if (attr_valName != nullptr){
-				error_duplicate_attr(op, *attr_valName, *attr);
+				HERE(error_duplicate_attr(op, *attr_valName, *attr));
 				return;
 			}  else {
 				attr_nameName = attr;
@@ -277,7 +277,7 @@ void MacroEngine::setTag(const Node& op, Node& dst){
 		dst.name(attr_nameName->name());
 		return;
 	} else if (attr_valName == nullptr){
-		error_missing_attr(op, "NAME");
+		HERE(error_missing_attr(op, "NAME"));
 		return;
 	}
 	
@@ -287,7 +287,7 @@ void MacroEngine::setTag(const Node& op, Node& dst){
 	if (attr_valName->options % NodeOptions::SINGLE_QUOTE){
 		pExpr expr = Expression::parse(attr_valName->value());
 		if (expr == nullptr){
-			error_expression_parse(op, *attr_valName);
+			HERE(error_expression_parse(op, *attr_valName));
 			return;
 		}
 		
@@ -319,7 +319,7 @@ void MacroEngine::getTag(const Node& op, Node& dst){
 		}
 		
 		if (attr->value_len > 0){
-			warn_ignored_attr_value(op, *attr);
+			HERE(warn_ignored_attr_value(op, *attr));
 		}
 		
 		MacroEngine::variables[varName] = Value(in_place_type<string>, dst.name());

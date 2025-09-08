@@ -20,7 +20,7 @@ void MacroEngine::call(const Node& op, Node& dst){
 		
 		if (name == "NAME"){
 			if (attr_name != nullptr){
-				error_duplicate_attr(op, *attr_name, *attr);
+				HERE(error_duplicate_attr(op, *attr_name, *attr));
 				return;
 			} else {
 				attr_name = attr;
@@ -29,7 +29,7 @@ void MacroEngine::call(const Node& op, Node& dst){
 			if (!eval_attr_if(op, *attr))
 				return;
 		} else {
-			warn_ignored_attribute(op, *attr);
+			HERE(warn_ignored_attribute(op, *attr));
 		}
 		
 	}
@@ -37,7 +37,7 @@ void MacroEngine::call(const Node& op, Node& dst){
 	const Macro* macro = nullptr;
 	
 	if (attr_name == nullptr){
-		warn_missing_attr(op, "NAME");
+		HERE(warn_missing_attr(op, "NAME"));
 		return;
 	} else if (attr_name->value().empty()){
 		error_missing_attr_value(op, *attr_name);

@@ -24,8 +24,27 @@ public:
 private:
 	map_type map;
 	
-// ----------------------------------- [ Operators ] ---------------------------------------- //
+// ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
+	template<typename ...ARG>
+	value_type& insert(const key_type& key, ARG&& ...args){
+		auto p = map.try_emplace(key);
+		const key_type& rKey = p.first->first;
+		mapped_type& rEntry = p.first->second;
+		
+		// Created, create key-value pair
+		if (p.second){
+			rEntry = makeEntry(key);
+			(key_type&)rKey = key_type(rEntry->key, key.length());
+			new (&rEntry->value) value_type(std::forward<ARG>(args)...);
+		} else {
+			rEntry->value = value_type(std::forward<ARG>(args)...);
+		}
+		
+		assert(rEntry != nullptr);
+		return rEntry->value;
+	}
+	
 	value_type& operator[](const key_type& key){
 		auto p = map.try_emplace(key);
 		const key_type& rKey = p.first->first;
@@ -35,6 +54,7 @@ public:
 		if (p.second){
 			rEntry = makeEntry(key);
 			(key_type&)rKey = key_type(rEntry->key, key.length());
+			new (&rEntry->value) value_type();
 		}
 		
 		assert(rEntry != nullptr);
@@ -43,11 +63,6 @@ public:
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	template<typename ...ARG>
-	value_type& insert(const key_type& key, ARG&& ...args){
-		return this->operator[](key) = value_type(std::forward<ARG>(args)...);
-	}
-	
 	entry* find(const key_type& key){
 		auto p = map.find(key);
 		if (p != nullptr)

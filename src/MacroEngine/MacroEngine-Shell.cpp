@@ -247,7 +247,7 @@ void MacroEngine::shell(const Node& op, Node& dst){
 			}
 			
 		} else {
-			warn_ignored_attribute(op, *attr);
+			HERE(warn_ignored_attribute(op, *attr));
 		}
 		
 	}
@@ -275,7 +275,7 @@ void MacroEngine::shell(const Node& op, Node& dst){
 	cmd.cmd = content->value();
 	status = _shell(cmd);
 	if (status != 0){
-		::warn_shell_exit(op, status);
+		HERE(warn_shell_exit(op, status));
 		return;
 	}
 	
