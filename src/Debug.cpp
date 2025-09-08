@@ -77,38 +77,12 @@ void info(const Node& node, const char* msg){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void warn_unknown_macro(const Node& node){
-	const Document& doc = node.root();
-	long row = doc.row(node.value_p);
-	long col = doc.col(node.value_p);
-	_WARN(doc.file(), row, col,
-		"Unknown macro " PURPLE "<%s>" RS " treated as regular HTML tag.",
-		CNAME(node)
-	);
-}
-
-
-void warn_unknown_attribute(const Node& node, const Attr& attr){
-	const Document& doc = node.root();
-	long row = doc.row(attr.name_p);
-	long col = doc.col(attr.name_p);
-	_WARN(doc.file(), row, col,
-		"Unknown attribute " PURPLE "'%s'" RS " in tag " PURPLE "<%s>" RS " treated as regular HTML attribute.",
-		CNAME(attr), CNAME(node)
-	);
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
 void error_missing_attr(const Node& node, const char* name){
 	const Document& doc = node.root();
 	long row = doc.row(node.value_p);
 	long col = doc.col(node.value_p);
-	_ERROR(doc.file(), row, col, "Missing attribute '" PURPLE "%s" RS "'.", name);
+	_ERROR(doc.file(), row, col, "Tag <%s> missing attribute '" PURPLE "%s" RS "'.", CNAME(node), name);
 }
-
 
 void warn_missing_attr(const Node& node, const char* name){
 	const Document& doc = node.root();
@@ -117,6 +91,16 @@ void warn_missing_attr(const Node& node, const char* name){
 	_WARN(doc.file(), row, col, "Tag <%s> missing attribute '" PURPLE "%s" RS "'.", CNAME(node), name);
 }
 
+
+void error_missing_attr_value(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_ERROR(doc.file(), row, col,
+		"Attribute " PURPLE "'%s'" RS " missing value in tag " PURPLE "<%s>" RS ".",
+		CNAME(attr), CNAME(node)
+	);
+}
 
 void warn_missing_attr_value(const Node& node, const Attr& attr){
 	const Document& doc = node.root();
@@ -129,52 +113,22 @@ void warn_missing_attr_value(const Node& node, const Attr& attr){
 }
 
 
-void warn_ignored_attribute(const Node& node, const Attr& attr){
-	const Document& doc = node.root();
-	long row = doc.row(attr.name_p);
-	long col = doc.col(attr.name_p);
-	_WARN(doc.file(), row, col,
-		"Ignored attribute " PURPLE "'%s'" RS " in tag " PURPLE "<%s>" RS ".",
-		CNAME(attr), CNAME(node)
-	);
-}
-
-
-void warn_macro_not_found(const Node& node, const Attr& attr){
-	const Document& doc = node.root();
-	long row = doc.row(attr.name_p);
-	long col = doc.col(attr.name_p);
-	_WARN(doc.file(), row, col,
-		"Macro " PURPLE "'%s'" RS " not found from tag " PURPLE "<%s>" RS ".",
-		CVALUE(attr), CNAME(node)
-	);
-}
-
-
-void warn_double_quote(const Node& node, const Attr& attr){
-	const Document& doc = node.root();
-	long row = doc.row(attr.name_p);
-	long col = doc.col(attr.name_p);
-	_WARN(doc.file(), row, col,
-		"Attribute " PURPLE "%s" RS " in tag " PURPLE "<%s>" RS " expected single quotes. "
-		"Value is always interpreted as an expression.",
-		CNAME(attr), CNAME(node)
-	);
-}
-
-
-void warn_ignored_attr_value(const Node& node, const Attr& attr){
-	const Document& doc = node.root();
-	long row = doc.row(attr.name_p);
-	long col = doc.col(attr.name_p);
-	_WARN(doc.file(), row, col,
-		"Value of attribute " PURPLE "%s" RS " in tag " PURPLE "<%s>" RS " ignored.",
-		CNAME(attr), CNAME(node)
-	);
-}
-
-
 // ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void error_macro_not_found(const Node& node, const Attr& attr, const char* name){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_ERROR(doc.file(), row, col,
+		"Macro " PURPLE "'%s'" RS " not found at tag " PURPLE "<%s>" RS ".",
+		name, CNAME(node)
+	);
+}
+
+void error_macro_not_found(const Node& node, const Attr& attr){
+	error_macro_not_found(node, attr, CVALUE(attr));
+}
 
 
 void error_expression_parse(const Node& node, const Attr& attr){
@@ -211,6 +165,60 @@ void error_duplicate_attr(const Node& node, const Attr& attr_1, const Attr& attr
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void warn_unknown_macro(const Node& node){
+	const Document& doc = node.root();
+	long row = doc.row(node.value_p);
+	long col = doc.col(node.value_p);
+	_WARN(doc.file(), row, col,
+		"Unknown macro " PURPLE "<%s>" RS " treated as regular HTML tag.",
+		CNAME(node)
+	);
+}
+
+void warn_unknown_attribute(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_WARN(doc.file(), row, col,
+		"Unknown macro attribute " PURPLE "'%s'" RS " in tag " PURPLE "<%s>" RS " treated as regular HTML attribute.",
+		CNAME(attr), CNAME(node)
+	);
+}
+
+void warn_ignored_attribute(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_WARN(doc.file(), row, col,
+		"Ignored attribute " PURPLE "'%s'" RS " in tag " PURPLE "<%s>" RS ".",
+		CNAME(attr), CNAME(node)
+	);
+}
+
+
+void warn_double_quote(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_WARN(doc.file(), row, col,
+		"Attribute " PURPLE "%s" RS " in tag " PURPLE "<%s>" RS " expected single quotes. "
+		"Value is always interpreted as an expression.",
+		CNAME(attr), CNAME(node)
+	);
+}
+
+
+void warn_ignored_attr_value(const Node& node, const Attr& attr){
+	const Document& doc = node.root();
+	long row = doc.row(attr.name_p);
+	long col = doc.col(attr.name_p);
+	_WARN(doc.file(), row, col,
+		"Value of attribute " PURPLE "%s" RS " in tag " PURPLE "<%s>" RS " ignored.",
+		CNAME(attr), CNAME(node)
+	);
+}
 
 
 void warn_shell_exit(const Node& node, int i){

@@ -101,6 +101,8 @@ bool write(ostream& out, const Document& doc){
 				goto text;
 			case NodeType::TAG:
 				goto tag;
+			case NodeType::DIRECTIVE:
+				goto directive;
 			default:
 				goto pop;
 		}
@@ -111,7 +113,21 @@ bool write(ostream& out, const Document& doc){
 			skip_space = true;
 			add_space = false;
 			goto pop;
-		} continue;
+		}
+		
+		
+		directive: {
+			if (!skip_space && (add_space || node->options % NodeOptions::SPACE_BEFORE)){
+				out << '\n';
+				out << tabs(depth);
+			}
+			
+			out << '<' << node->value() << '>';
+			
+			skip_space = false;
+			add_space = node->options % NodeOptions::SPACE_AFTER;
+			goto pop;
+		}
 		
 		
 		tag: {
@@ -154,7 +170,8 @@ bool write(ostream& out, const Document& doc){
 				goto pop;
 			}
 			
-		} continue;
+			continue;
+		}
 		
 		
 		pop: {
@@ -176,8 +193,9 @@ bool write(ostream& out, const Document& doc){
 				skip_space = false;
 				add_space = node->options % NodeOptions::SPACE_AFTER;
 			}
+			
+			continue;
 		}
-		
 		
 		continue;
 	}

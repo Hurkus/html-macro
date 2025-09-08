@@ -33,15 +33,20 @@ static bool registerMacro(const Macro& parent, Node&& macro){
 	// Create new macro by moving <MACRO> node to new document.
 	unique_ptr<Macro> m = make_unique<Macro>();
 	m->name = a->value();
+	Node& root = m->doc;
 	
 	// Transfer node
 	m->doc.buffer = parent.doc.buffer;
 	m->doc.srcFile = parent.doc.srcFile;
-	swap(macro.options, m->doc.options);
-	swap(macro.value_len, m->doc.value_len);
-	swap(macro.value_p, m->doc.value_p);
-	swap(macro.child, m->doc.child);
-	swap(macro.attribute, m->doc.attribute);
+	swap(macro.options, root.options);
+	swap(macro.value_len, root.value_len);
+	swap(macro.value_p, root.value_p);
+	swap(macro.attribute, root.attribute);
+	swap(macro.child, root.child);
+	
+	for (Node* child = root.child ; child != nullptr ; child = child->next){
+		child->parent = &root;
+	}
 	
 	// Register new macro
 	macroNameCache[m->name] = move(m);

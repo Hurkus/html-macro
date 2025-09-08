@@ -98,14 +98,14 @@ void MacroEngine::tag(const Node& op, Node& dst){
 	dst.appendChild(child_p);
 	
 	if (attr_call_before != nullptr){
-		call(op, *attr_call_before, dst);
+		call(op, *attr_call_before, *child_p);
 	}
 	
 	// Resolve children
 	runChildren(op, *child_p);
 	
 	if (attr_call_after != nullptr){
-		call(op, *attr_call_after, dst);
+		call(op, *attr_call_after, *child_p);
 	}
 	
 	// Restore state

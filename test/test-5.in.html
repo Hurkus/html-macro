@@ -1,6 +1,6 @@
 <html>
 <head>
-	<title>Test 4 -- Macros</title>
+	<title>Test 5 -- Macros</title>
 </head>
 <body>
 	<SET x="2" y="x + 1" p="pi" />
@@ -16,6 +16,15 @@
 		<CALL NAME="extern-macro"/>
 	</div>
 	
+	<!-- Expressioned call name -->
+	<ol>
+		<FOR i='1' TRUE='i <= 3' i='i+1'>
+			<SET m="print"/>
+			<li><CALL NAME="{m}-{i}"/></li>
+			<li CALL='m + "-" + i'></li>
+		</FOR>
+	</ol>
+	
 </body>
 </html>
 
@@ -26,9 +35,13 @@
 <MACRO NAME="subtitle">Pages {x} and {y + 0.1}</MACRO>
 
 <MACRO NAME="checkpi">
-	<IF TRUE="p == pi">
+	<IF TRUE='p == pi'>
 		<p>PI is {pi}</p>
 	</IF><ELSE>
 		<p>PI is not {p}</p>
 	</ELSE>
 </MACRO>
+
+<MACRO NAME="print-1">value of i is {i}</MACRO>
+<MACRO NAME="print-2">value of i is {i}</MACRO>
+<MACRO NAME="print-3">value of i is {i}</MACRO>

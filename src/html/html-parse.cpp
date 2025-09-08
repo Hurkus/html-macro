@@ -295,7 +295,7 @@ static const char* parse_rawpcData(Parser& state, Node* parent, const char* s){
 	const char* beg = s;
 	const char* end = s;
 	
-	// Parse all plaintext untill
+	// Parse all plaintext untill </tag>
 	while (true){ loop:
 		if (s[0] == '<'){
 			if (s[1] == '/')
@@ -328,8 +328,10 @@ static const char* parse_rawpcData(Parser& state, Node* parent, const char* s){
 		throw ParseStatus::MISSING_END_TAG;
 	}
 	
-	if (end == beg){
-		return s + 1;
+	// Check suffix space
+	s++;
+	if (isWhitespace(*s)){
+		parent->options |= NodeOptions::SPACE_AFTER;
 	}
 	
 	assert(parent->child == nullptr);
@@ -351,7 +353,7 @@ static const char* parse_rawpcData(Parser& state, Node* parent, const char* s){
 		end -= len;
 	}
 	
-	return s + 1;
+	return s;
 }
 
 

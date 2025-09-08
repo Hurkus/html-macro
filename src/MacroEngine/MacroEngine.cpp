@@ -79,7 +79,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 			getTag(op, dst);
 		}
 		
-		if (name == "CALL"){
+		else if (name == "CALL"){
 			call(op, dst);
 		}
 		// else if (name == "INCLUDE"){

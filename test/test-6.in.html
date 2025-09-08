@@ -1,17 +1,17 @@
 <html>
 <head>
-	<title>Test 4 -- Shell</title>
+	<title>Test 6 -- Shell</title>
 </head>
 <body>
-	<SET x="2" y="x + 1" />
+	<SET x='2' y='x + 1' />
 	
 	<p>
 		<SHELL VARS="x,y">echo -n "$x * $y == $((x * y))"</SHELL>
 	</p>
 	
 	<SHELL VARS="x,y" STDOUT="z">echo "$((x * y))"</SHELL>
-	<SHELL VARS="x,y" STDOUT="HTML">echo -n '<span CALL="print-z"></span>'</SHELL>
 	
+	<span CALL="print-z"></span>
 </body>
 </html>
 
