@@ -28,6 +28,11 @@ void MacroEngine::setVariableConstants(){
 }
 
 
+constexpr bool isUpperCase(char c){
+	return 'A' <= c && c <= 'Z';
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -47,65 +52,98 @@ void MacroEngine::run(const Node& op, Node& dst){
 			text(op, dst);
 			return;
 		
-		default: return;
+		default:
+			::error(op, "Unsupported tag type.");
+			return;
 	}
 	
-	// Check for macro
 	string_view name = op.name();
-	if (name.length() >= 1 && isupper(name[0])){
-		
-		if (name == "SET"){
-			set(op);
-		} else if (name == "IF"){
-			branch_if(op, dst);
-		} else if (name == "ELSE-IF"){
-			branch_elif(op, dst);
-		} else if (name == "ELSE"){
-			branch_else(op, dst);
-		} else if (name == "FOR"){
-			loop_for(op, dst);
-		} else if (name == "WHILE"){
-			loop_while(op, dst);
-		}
-		
-		else if (name == "SET-ATTR"){
-			setAttr(op, dst);
-		} else if (name == "GET-ATTR"){
-			getAttr(op, dst);
-		} else if (name == "DEL-ATTR"){
-			delAttr(op, dst);
-		} else if (name == "SET-TAG"){
-			setTag(op, dst);
-		} else if (name == "GET-TAG"){
-			getTag(op, dst);
-		}
-		
-		else if (name == "CALL"){
-			call(op, dst);
-		} else if (name == "INCLUDE"){
-			include(op, dst);
-		} else if (name == "SHELL"){
-			shell(op, dst);
-		}
-		
-		else if (name == "INFO"){
-			info(op);
-		} else if (name == "WARN"){
-			warn(op);
-		} else if (name == "ERROR"){
-			error(op);
-		}
-		
-		else {
-			warn_unknown_macro(op);
-			tag(op, dst);
-		}
-		
+	if (name.empty()){
+		assert(!name.empty());
+		::warn(op, "Missing tag name.");
 		return;
 	}
 	
 	// Regular tag
-	tag(op, dst);
+	else if (!isUpperCase(name[0])){ regular_tag:
+		tag(op, dst);
+		return;
+	}
+	
+	// Macro tag
+	switch (name.length()){
+		case 2: {
+			if (name == "IF")
+				branch_if(op, dst);
+			else
+				goto unknown;
+		} break;
+		
+		case 3: {
+			if (name == "SET")
+				set(op);
+			else if (name == "FOR")
+				loop_for(op, dst);
+			else
+				goto unknown;
+		} break;
+			
+		case 4: {
+			if (name == "CALL")
+				call(op, dst);
+			else if (name == "ELSE")
+				branch_else(op, dst);
+			else if (name == "INFO")
+				info(op);
+			else if (name == "WARN")
+				warn(op);
+			else
+				goto unknown;
+		} break;
+		
+		case 5: {
+			if (name == "SHELL")
+				shell(op, dst);
+			else if (name == "WHILE")
+				loop_while(op, dst);
+			else if (name == "ERROR")
+				error(op);
+			else
+				goto unknown;
+		} break;
+		
+		case 7: {
+			if (name == "INCLUDE")
+				include(op, dst);
+			else if (name == "ELSE-IF")
+				branch_elif(op, dst);
+			else if (name == "GET-TAG")
+				getTag(op, dst);
+			else if (name == "SET-TAG")
+				setTag(op, dst);
+			else
+				goto unknown;
+		} break;
+		
+		case 8: {
+			if (name == "SET-ATTR")
+				setAttr(op, dst);
+			else if (name == "GET-ATTR")
+				getAttr(op, dst);
+			else if (name == "DEL-ATTR")
+				delAttr(op, dst);
+			else
+				goto unknown;
+		} break;
+		
+		default: { unknown:
+			warn_unknown_macro(op);
+			goto regular_tag;
+		} break;
+		
+	}
+	
+	return;
 }
 
 
