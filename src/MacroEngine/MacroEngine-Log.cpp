@@ -56,7 +56,7 @@ static bool eval(const Node& op, LogInfo& out){
 	
 	// Interpolate
 	if (interp % Interpolate::CONTENT){
-		Expression::interpolate(msg, MacroEngine::variables, out.msg);
+		eval_string(op, msg, out.msg);
 	} else {
 		out.msg = msg;
 	}

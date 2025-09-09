@@ -1,18 +1,14 @@
 #include "MacroEngine.hpp"
-#include "ExpressionParser.hpp"
 #include "Debug.hpp"
 
 using namespace std;
 using namespace html;
-using namespace Expression;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
 void MacroEngine::set(const Node& op){
-	Expression::Parser parser = {};
-	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		string_view value = attr->value();
@@ -25,19 +21,22 @@ void MacroEngine::set(const Node& op){
 		
 		// Expression
 		if (attr->options % NodeOptions::SINGLE_QUOTE){
-			pExpr expr = parser.parse(value);
-			if (expr == nullptr){
-				HERE(error_expression_parse(op, *attr));
-				continue;
-			}
-			
+			Expression::pExpr expr = parse_expr(op, value);
+			if (expr == nullptr)
+				return;
 			MacroEngine::variables.insert(name, expr->eval(MacroEngine::variables));
 		}
 		
 		// Interpolate
 		else if (attr->options % NodeOptions::INTERPOLATE){
-			Value& val = MacroEngine::variables[name];
-			interpolate(attr->value(), MacroEngine::variables, val.emplace<string>());
+			Expression::Value val;
+			string& s = val.emplace<string>();
+			
+			if (!eval_string(op, attr->value(), s)){
+				return;
+			}
+			
+			MacroEngine::variables.insert(name, move(val));
 		}
 		
 		// Plain text
@@ -46,7 +45,6 @@ void MacroEngine::set(const Node& op){
 		}
 		
 	}
-	
 }
 
 
@@ -155,8 +153,6 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 			if (attr_cond != nullptr){
 				HERE(error_duplicate_attr(op, *attr_cond, *attr));
 				return 0;
-			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
-				HERE(warn_attr_double_quote(op, *attr));
 			}
 			
 			attr_cond = attr;
@@ -167,8 +163,6 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 			if (attr_setup != nullptr){
 				HERE(error_duplicate_attr(op, *attr_setup, *attr));
 				return 0;
-			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
-				HERE(warn_attr_double_quote(op, *attr));
 			}
 			attr_setup = attr;
 		}
@@ -178,8 +172,6 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 			if (attr_inc != nullptr){
 				HERE(error_duplicate_attr(op, *attr_inc, *attr));
 				return 0;
-			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
-				HERE(warn_attr_double_quote(op, *attr));
 			}
 			attr_inc = attr;
 		}
@@ -189,41 +181,53 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	
 	
 	// Parse expressions
-	pExpr expr_setup = nullptr;
-	pExpr expr_cond = nullptr;
-	pExpr expr_inc = nullptr;
+	Expression::pExpr expr_setup = nullptr;
+	Expression::pExpr expr_cond = nullptr;
+	Expression::pExpr expr_inc = nullptr;
 	
 	if (attr_setup != nullptr){
-		expr_setup = Parser().parse(attr_setup->value());
+		if (attr_setup->options % NodeOptions::SINGLE_QUOTE == false){
+			HERE(warn_attr_double_quote(op, *attr_setup));
+		}
+		
+		expr_setup = parse_expr(op, attr_setup->value());
 		if (expr_setup == nullptr){
-			HERE(error_expression_parse(op, *attr_cond));
 			return 0;
 		}
 	}
 	
 	if (attr_cond != nullptr){
-		expr_cond = Parser().parse(attr_cond->value());
+		if (attr_cond->options % NodeOptions::SINGLE_QUOTE == false){
+			HERE(warn_attr_double_quote(op, *attr_cond));
+		}
+		
+		expr_cond = parse_expr(op, attr_cond->value());
 		if (expr_cond == nullptr){
-			HERE(error_expression_parse(op, *attr_cond));
 			return 0;
 		}
+		
 	} else {
 		HERE(error_missing_attr(op, "TRUE"));
 		return 0;
 	}
 	
 	if (attr_inc != nullptr){
-		expr_inc = Parser().parse(attr_inc->value());
+		if (attr_inc->options % NodeOptions::SINGLE_QUOTE == false){
+			HERE(warn_attr_double_quote(op, *attr_inc));
+		}
+		
+		expr_inc = parse_expr(op, attr_inc->value());
 		if (expr_inc == nullptr){
 			HERE(error_expression_parse(op, *attr_cond));
 			return 0;
 		}
+		
 	}
 	
 	
 	// Run setup
 	if (expr_setup != nullptr){
-		variables[attr_setup->name()] = expr_setup->eval(variables);
+		variables.insert(attr_setup->name(), expr_setup->eval(variables));
 	}
 	
 	// Run loop
@@ -231,13 +235,13 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	long i = 0;
 	
 	assert(expr_cond != nullptr);
-	while (boolEval(expr_cond->eval(variables)) == cond_expected){
+	while (Expression::boolEval(expr_cond->eval(variables)) == cond_expected){
 		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		
 		// Increment
 		if (expr_inc != nullptr){
-			variables[attr_inc->name()] = expr_inc->eval(variables);
+			variables.insert(attr_inc->name(), expr_inc->eval(variables));
 		}
 		
 		i++;
@@ -272,8 +276,6 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 			if (attr_cond != nullptr){
 				HERE(error_duplicate_attr(op, *attr_cond, *attr));
 				return 0;
-			} else if (attr->options % NodeOptions::SINGLE_QUOTE == false){
-				HERE(warn_attr_double_quote(op, *attr));
 			}
 			
 			attr_cond = attr;
@@ -288,14 +290,18 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	
 	
 	// Parse expressions
-	pExpr expr_cond = nullptr;
+	Expression::pExpr expr_cond = nullptr;
 	
 	if (attr_cond != nullptr){
-		expr_cond = Parser().parse(attr_cond->value());
+		if (attr_cond->options % NodeOptions::SINGLE_QUOTE == false){
+			HERE(warn_attr_double_quote(op, *attr_cond));
+		}
+		
+		expr_cond = parse_expr(op, attr_cond->value());
 		if (expr_cond == nullptr){
-			HERE(error_expression_parse(op, *attr_cond));
 			return 0;
 		}
+		
 	} else {
 		HERE(error_missing_attr(op, "TRUE"));
 		return 0;
@@ -307,7 +313,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	long i = 0;
 	
 	assert(expr_cond != nullptr);
-	while (boolEval(expr_cond->eval(variables)) == cond_expected){
+	while (Expression::boolEval(expr_cond->eval(variables)) == cond_expected){
 		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		i++;

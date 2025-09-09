@@ -97,6 +97,11 @@ namespace html {
 	struct Attr;
 };
 
+namespace Expression {
+	struct ParseResult;
+};
+
+
 void error(const html::Node& node, const char* msg);
 void warn(const html::Node& node, const char* msg);
 void info(const html::Node& node, const char* msg);
@@ -108,6 +113,7 @@ void warn_missing_attr_value(const html::Node& node, const html::Attr& attr);
 void warn_ignored_attribute(const html::Node& node, const html::Attr& attr);
 void warn_ignored_attr_value(const html::Node& node, const html::Attr& attr);
 void error_duplicate_attr(const html::Node& node, const html::Attr& attr_1, const html::Attr& attr_2);
+void warn_attr_double_quote(const html::Node& node, const html::Attr& attr);
 
 void error_macro_not_found(const html::Node& node, const html::Attr& attr);
 void error_macro_not_found(const html::Node& node, const html::Attr& attr, const char* name);
@@ -119,8 +125,10 @@ void warn_unknown_macro_tag(const html::Node& node);
 void warn_unknown_macro_attribute(const html::Node& node, const html::Attr& attr);
 void warn_shell_exit(const html::Node& node, int status);
 
-void warn_attr_double_quote(const html::Node& node, const html::Attr& attr);
 void error_expression_parse(const html::Node& node, const html::Attr& attr);
+void error_expression_parse(const html::Node& node, const Expression::ParseResult& err);
+
+void error_newline(const html::Node& node, const char* p);
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //

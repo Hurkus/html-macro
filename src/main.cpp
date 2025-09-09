@@ -83,7 +83,7 @@ int main(int argc, char const* const* argv){
 	#ifdef DEBUG
 		const char* _argv[] = {
 			argv[0],
-			"test/test-5.in.html"
+			"test/test-4.in.html"
 		};
 		if (argc < 2){
 			argv = _argv;

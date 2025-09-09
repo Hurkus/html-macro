@@ -1,5 +1,4 @@
 #include "MacroEngine.hpp"
-#include "ExpressionParser.hpp"
 #include "Debug.hpp"
 
 using namespace std;
@@ -16,9 +15,9 @@ void MacroEngine::text(const Node& src, Node& dst){
 	Node& txt = dst.appendChild(src.type);
 	
 	if (src.options % NodeOptions::INTERPOLATE){
-		string s = {};
-		Expression::interpolate(src.value(), MacroEngine::variables, s);
-		txt.value(html::newStr(s), s.length());
+		string buff;
+		eval_string(src, src.value(), buff);
+		txt.value(html::newStr(buff), buff.length());
 	} else {
 		txt.value(src.value());
 	}

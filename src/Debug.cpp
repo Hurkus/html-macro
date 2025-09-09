@@ -1,5 +1,6 @@
 #include "Debug.hpp"
 #include "Macro.hpp"
+#include "Expression.hpp"
 #include "Debug.hpp"
 
 using namespace std;
@@ -117,9 +118,10 @@ string getCodeView(const linepos& line, string_view mark, string_view color){
 		return {};
 	}
 	
-	const size_t capacity = (10 + 3)*2 + (line_view.length() + color.length() + sizeof(ANSI_RESET))*2;
+	const size_t capacity = (10 + 3)*2 + (line_view.length() + color.length() + sizeof(ANSI_RESET))*2 + 1;
 	
 	// Truncate mark
+	const bool at_end = (line.end == mark.begin() && mark.length() > 0);
 	mark = string_view(max(mark.begin(), line.beg), min(mark.end(), line.end));
 	
 	// Append line number
@@ -148,7 +150,12 @@ string getCodeView(const linepos& line, string_view mark, string_view color){
 	str.push_back('\n');
 	str.append(row_str_len, ' ').append(" | ");
 	
-	if (!mark.empty()){
+	if (at_end){
+		str.append(mark.begin() - line_view.begin(), ' ');
+		str.append(color);
+		str.push_back('^');
+		str.append(ANSI_RESET);
+	} else if (!mark.empty()){
 		str.append(mark.begin() - line_view.begin(), ' ');
 		str.append(color);
 		str.push_back('^');
@@ -326,6 +333,14 @@ void error_expression_parse(const Node& node, const Attr& attr){
 }
 
 
+void error_expression_parse(const Node& node, const Expression::ParseResult& err){
+	linepos pos = findLine(node.root(), err.errMark.begin());
+	print_error_pfx(pos);
+	fprintf(stderr, "Failed to parse expression.\n");
+	print_error_codeView(pos, err.errMark);
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -373,6 +388,17 @@ void warn_shell_exit(const Node& node, int i){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_warn_pfx(pos);
 	fprintf(stderr, "Shell existed with status (%d).\n", i);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void error_newline(const Node& node, const char* p){
+	linepos pos = findLine(node.root(), p);
+	print_error_pfx(pos);
+	fprintf(stderr, "Unexpected newline.\n");
+	print_error_codeView(pos, string_view(p, 1));
 }
 
 
