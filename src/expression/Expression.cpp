@@ -19,30 +19,34 @@ using namespace Expression;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-inline Value _eval(const VariableMap& vars, const pExpr& e){
+inline Value _eval(const VariableMap& vars, const pExpr& e, const LineDebugger& dbg){
+	assert(e != nullptr);
 	if (e == nullptr)
 		return Value(0);
 	else
-		return e->eval(vars);
+		return e->eval(vars, dbg);
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Value Expression::Var::eval(const VariableMap& vars) noexcept {
+Value Expression::Var::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
 	const Value* val = vars.get(this->var);
 	if (val != nullptr){
 		return *val;
 	}
 	
-	WARN("Undefined varialbe '%s' defaulted to 0.", this->var.c_str());
+	warn_expr_var_not_found(dbg.line(nullptr), dbg.mark(), this->var);
 	return Value(0);
 }
 
 
-Value Expression::Neg::eval(const VariableMap& vars) noexcept {
-	Value e = _eval(vars, this->e);
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+Value Expression::Neg::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	Value e = _eval(vars, this->e, dbg);
 	
 	if (const long* arg = get_if<long>(&e)){
 		return Value(-(*arg));
@@ -54,8 +58,8 @@ Value Expression::Neg::eval(const VariableMap& vars) noexcept {
 }
 
 
-Value Expression::Not::eval(const VariableMap& vars) noexcept {
-	Value e = _eval(vars, this->e);
+Value Expression::Not::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	Value e = _eval(vars, this->e, dbg);
 	
 	if (const long* arg = get_if<long>(&e)){
 		return Value(*arg == 0 ? 1l : 0l);
@@ -73,9 +77,9 @@ Value Expression::Not::eval(const VariableMap& vars) noexcept {
 
 
 template <typename OP>
-inline Value _arith_op(const VariableMap& vars, const Expression::BinaryOp& ab){
-	Value _a = _eval(vars, ab.a);
-	Value _b = _eval(vars, ab.b);
+inline Value _arith_op(const VariableMap& vars, const Expression::BinaryOp& ab, const LineDebugger& dbg){
+	Value _a = _eval(vars, ab.a, dbg);
+	Value _b = _eval(vars, ab.b, dbg);
 	
 	auto f = [&](const auto& a, const auto& b) -> Value {
 		if constexpr (IS_NUM(a) && IS_NUM(b))
@@ -90,9 +94,9 @@ inline Value _arith_op(const VariableMap& vars, const Expression::BinaryOp& ab){
 }
 
 
-Value Expression::Add::eval(const VariableMap& vars) noexcept {
-	Value _a = _eval(vars, this->a);
-	Value _b = _eval(vars, this->b);
+Value Expression::Add::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	Value _a = _eval(vars, this->a, dbg);
+	Value _b = _eval(vars, this->b, dbg);
 	
 	auto op = [](auto&& a, auto&& b) -> Value {
 		if constexpr (IS_NUM(a) && IS_STR(b))
@@ -107,16 +111,16 @@ Value Expression::Add::eval(const VariableMap& vars) noexcept {
 }
 
 
-Value Expression::Sub::eval(const VariableMap& vars) noexcept {
-	return _arith_op<std::minus<>>(vars, *this);
+Value Expression::Sub::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	return _arith_op<std::minus<>>(vars, *this, dbg);
 }
 
-Value Expression::Mul::eval(const VariableMap& vars) noexcept {
-	return _arith_op<std::multiplies<>>(vars, *this);
+Value Expression::Mul::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	return _arith_op<std::multiplies<>>(vars, *this, dbg);
 }
 
-Value Expression::Div::eval(const VariableMap& vars) noexcept {
-	return _arith_op<std::divides<>>(vars, *this);
+Value Expression::Div::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	return _arith_op<std::divides<>>(vars, *this, dbg);
 }
 
 
@@ -124,9 +128,9 @@ Value Expression::Div::eval(const VariableMap& vars) noexcept {
 
 
 template <typename OP>
-inline Value _comp_op(const VariableMap& vars, const Expression::BinaryOp& ab){
-	Value _a = _eval(vars, ab.a);
-	Value _b = _eval(vars, ab.b);
+inline Value _comp_op(const VariableMap& vars, const Expression::BinaryOp& ab, const LineDebugger& dbg){
+	Value _a = _eval(vars, ab.a, dbg);
+	Value _b = _eval(vars, ab.b, dbg);
 	
 	auto f = [](auto&& a, auto&& b) -> Value {
 		if constexpr (IS_STR(a) && IS_NUM(b))
@@ -141,35 +145,35 @@ inline Value _comp_op(const VariableMap& vars, const Expression::BinaryOp& ab){
 }
 
 
-Value Expression::Eq::eval(const VariableMap& vars) noexcept {
-	return _comp_op<std::equal_to<>>(vars, *this);
+Value Expression::Eq::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	return _comp_op<std::equal_to<>>(vars, *this, dbg);
 }
 
-Value Expression::Neq::eval(const VariableMap& vars) noexcept {
-	return _comp_op<std::not_equal_to<>>(vars, *this);
+Value Expression::Neq::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	return _comp_op<std::not_equal_to<>>(vars, *this, dbg);
 }
 
-Value Expression::Lt::eval(const VariableMap& vars) noexcept {
-	return _comp_op<std::less<>>(vars, *this);
+Value Expression::Lt::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	return _comp_op<std::less<>>(vars, *this, dbg);
 }
 
-Value Expression::Lte::eval(const VariableMap& vars) noexcept {
-	return _comp_op<std::less_equal<>>(vars, *this);
+Value Expression::Lte::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	return _comp_op<std::less_equal<>>(vars, *this, dbg);
 }
 
-Value Expression::Gt::eval(const VariableMap& vars) noexcept {
-	return _comp_op<std::greater<>>(vars, *this);
+Value Expression::Gt::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	return _comp_op<std::greater<>>(vars, *this, dbg);
 }
 
-Value Expression::Gte::eval(const VariableMap& vars) noexcept {
-	return _comp_op<std::greater_equal<>>(vars, *this);
+Value Expression::Gte::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
+	return _comp_op<std::greater_equal<>>(vars, *this, dbg);
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static Value _f_int(const VariableMap& vars, const vector<pExpr>& args) noexcept {
+static Value _f_int(const VariableMap& vars, const vector<pExpr>& args, const LineDebugger& dbg) noexcept {
 	if (args.size() < 1){
 		return Value(0);
 	}
@@ -181,11 +185,11 @@ static Value _f_int(const VariableMap& vars, const vector<pExpr>& args) noexcept
 			return long(v);
 	};
 	
-	return visit(cast, _eval(vars, args[0]));
+	return visit(cast, _eval(vars, args[0], dbg));
 }
 
 
-static Value _f_float(const VariableMap& vars, const vector<pExpr>& args){
+static Value _f_float(const VariableMap& vars, const vector<pExpr>& args, const LineDebugger& dbg){
 	if (args.size() < 1){
 		return Value(0.0);
 	}
@@ -197,11 +201,11 @@ static Value _f_float(const VariableMap& vars, const vector<pExpr>& args){
 			return double(v);
 	};
 	
-	return visit(cast, _eval(vars, args[0]));
+	return visit(cast, _eval(vars, args[0], dbg));
 }
 
 
-static Value _f_str(const VariableMap& vars, const vector<pExpr>& args){
+static Value _f_str(const VariableMap& vars, const vector<pExpr>& args, const LineDebugger& dbg){
 	if (args.size() < 1){
 		return Value(in_place_type<string>);
 	}
@@ -213,11 +217,11 @@ static Value _f_str(const VariableMap& vars, const vector<pExpr>& args){
 			return to_string(v);
 	};
 	
-	return visit(cast, _eval(vars, args[0]));
+	return visit(cast, _eval(vars, args[0], dbg));
 }
 
 
-static Value _f_len(const VariableMap& vars, const vector<pExpr>& args){
+static Value _f_len(const VariableMap& vars, const vector<pExpr>& args, const LineDebugger& dbg){
 	if (args.size() < 1){
 		return Value(0);
 	}
@@ -229,19 +233,19 @@ static Value _f_len(const VariableMap& vars, const vector<pExpr>& args){
 			return abs(v);
 	};
 	
-	return visit(cast, _eval(vars, args[0]));
+	return visit(cast, _eval(vars, args[0], dbg));
 }
 
 
-Value Expression::Func::eval(const VariableMap& vars) noexcept {
+Value Expression::Func::eval(const VariableMap& vars, const LineDebugger& dbg) noexcept {
 	if (name == "int")
-		return _f_int(vars, args);
+		return _f_int(vars, args, dbg);
 	else if (name == "float")
-		return _f_float(vars, args);
+		return _f_float(vars, args, dbg);
 	else if (name == "str")
-		return _f_str(vars, args);
+		return _f_str(vars, args, dbg);
 	else if (name == "len" || name == "abs")
-		return _f_len(vars, args);
+		return _f_len(vars, args, dbg);
 	return 0;
 }
 

@@ -3,7 +3,9 @@
 #include <string>
 #include <vector>
 #include <variant>
+
 #include "str_map.hpp"
+#include "Debug-Line.hpp"
 
 
 namespace Expression {
@@ -47,9 +49,7 @@ struct ParseResult {
 
 struct Expr {
 	virtual ~Expr(){}
-	virtual Value eval(const VariableMap& vars) noexcept {
-		return 0;
-	}
+	virtual Value eval(const VariableMap& vars, const LineDebugger&) noexcept = 0;
 };
 
 

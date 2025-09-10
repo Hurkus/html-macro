@@ -7,6 +7,81 @@ using namespace MacroEngine;
 using namespace Expression;
 
 
+// ----------------------------------- [ Structures ] --------------------------------------- //
+
+
+struct AttrExprDebugger : public LineDebugger {
+	const Node* node = nullptr;
+	const Attr* attr = nullptr;
+	
+	AttrExprDebugger(auto node, auto attr) : node{node}, attr{attr} {}
+	
+	string_view mark() const noexcept override {
+		if (attr != nullptr)
+			return attr->value();
+		return {};
+	}
+	
+	linepos line(const char* p) const noexcept override {
+		linepos l = {};
+		
+		if (node == nullptr){
+			return l;
+		} else if (p == nullptr){
+			p = node->value_p;
+		}
+		
+		const Document& doc = node->root();
+		if (doc.buffer != nullptr){
+			l = findLine(doc.buffer->begin().base(), doc.buffer->end().base(), p);
+		}
+		
+		if (doc.srcFile != nullptr){
+			l.file = doc.srcFile->c_str();
+		}
+		
+		return l;
+	}
+	
+};
+
+
+struct InterpExprDebugger : public LineDebugger {
+	const Node* node = nullptr;
+	string_view* expr_str = nullptr;
+	
+	InterpExprDebugger(auto node, auto expr_str) : node{node}, expr_str{expr_str} {}
+	
+	string_view mark() const noexcept override {
+		if (expr_str != nullptr)
+			return *expr_str;
+		return {};
+	}
+	
+	linepos line(const char* p) const noexcept override {
+		linepos l = {};
+		
+		if (node == nullptr){
+			return l;
+		} else if (p == nullptr){
+			p = node->value_p;
+		}
+		
+		const Document& doc = node->root();
+		if (doc.buffer != nullptr){
+			l = findLine(doc.buffer->begin().base(), doc.buffer->end().base(), p);
+		}
+		
+		if (doc.srcFile != nullptr){
+			l.file = doc.srcFile->c_str();
+		}
+		
+		return l;
+	}
+	
+};
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -25,7 +100,7 @@ bool MacroEngine::eval_attr_if(const Node& op, const Attr& attr){
 		return false;
 	}
 	
-	bool e = Expression::boolEval(expr->eval(MacroEngine::variables));
+	bool e = Expression::boolEval(expr->eval(MacroEngine::variables, AttrExprDebugger(&op, &attr)));
 	return e;
 }
 
@@ -46,7 +121,7 @@ static bool eval_attr_bool(const Node& op, const Attr& attr, bool value){
 		return false;
 	}
 	
-	Expression::Value val = expr->eval(MacroEngine::variables);
+	Expression::Value val = expr->eval(MacroEngine::variables, AttrExprDebugger(&op, &attr));
 	return Expression::boolEval(val) == value;
 }
 
@@ -72,7 +147,7 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff
 			return false;
 		}
 		
-		Expression::str(expr->eval(MacroEngine::variables), buff);
+		Expression::str(expr->eval(MacroEngine::variables, AttrExprDebugger(&op, &attr)), buff);
 		result = buff;
 		return true;
 	}
@@ -110,7 +185,7 @@ Interpolate MacroEngine::eval_attr_interp(const Node& op, const Attr& attr){
 		return Interpolate::NONE;
 	}
 		
-	Value res = expr->eval(MacroEngine::variables);
+	Value res = expr->eval(MacroEngine::variables, AttrExprDebugger(&op, &attr));
 	return Expression::boolEval(res) ? Interpolate::ALL : Interpolate::NONE;
 }
 
@@ -162,10 +237,11 @@ bool MacroEngine::eval_string(const Node& op, string_view str, string& buff){
 		
 		// Evaluate expression
 		assert(*a == '{' && *b == '}');
-		Expression::pExpr expr = parse_expr(op, string_view(a+1, b));
+		string_view expr_str = string_view(a+1, b);
+		Expression::pExpr expr = parse_expr(op, expr_str);
 		
 		if (expr != nullptr){
-			Expression::str(expr->eval(MacroEngine::variables), buff);
+			Expression::str(expr->eval(MacroEngine::variables, InterpExprDebugger(&op, &expr_str)), buff);
 		} else {
 			return false;
 		}

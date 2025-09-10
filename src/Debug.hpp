@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include "Debug-Line.hpp"
 #include "ANSI.h"
 
 
@@ -29,18 +30,6 @@
 #define ERROR(...)	HERE(::error(__VA_ARGS__))
 #define WARN(...)	HERE(::warn(__VA_ARGS__))
 #define INFO(...)	HERE(::info(__VA_ARGS__))
-
-
-// ----------------------------------- [ Structures ] --------------------------------------- //
-
-
-struct linepos {
-	const char* file = nullptr;
-	const char* beg = nullptr;		// Begining of line.
-	const char* end = nullptr;		// End of line (at next '\n' or EOF).
-	long row = -1;
-	long col = -1;
-};
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -130,31 +119,7 @@ void error_expression_parse(const html::Node& node, const Expression::ParseResul
 
 void error_newline(const html::Node& node, const char* p);
 
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-/**
- * @brief Find line containing `p` relative to beggining of the source buffer.
- *        This function is very slow (iterates over the whole buffer).
- * @note Recommended for error reporting only.
- * @param beg Beginning of the buffer containing `p`.
- * @param end End of the buffer containing `p`.
- * @param p Pointer to character between `beg` and `end` for which to find line information.
- * @return Line, row number of `p` and colum number of `p` or empty if not found.
- */
-linepos findLine(const char* beg, const char* end, const char* p) noexcept;
-
-
-/**
- * @brief Get line of source code and underline marked focus section.
- *        Usefull for printing parsing errors.
- * @param line Line position information. Use `findLine()`.
- * @param mark Substring of `line` which should be marked.
- * @param color ANSI color code for marked section.
- * @return std::string Marked view of source code ready for printing.
- */
-std::string getCodeView(const linepos& line, std::string_view mark, std::string_view color);
+void warn_expr_var_not_found(const linepos& pos, std::string_view mark, std::string_view name);
 
 
 // ------------------------------------------------------------------------------------------ //

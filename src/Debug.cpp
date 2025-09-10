@@ -26,16 +26,6 @@ using namespace MacroEngine;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-constexpr string_view trim_whitespace(string_view s){
-	const char* beg = s.begin();
-	const char* end = beg + s.length();
-	
-	while (beg != end && isspace(beg[+0])) beg++;
-	while (end != beg && isspace(end[-1])) end--;
-	
-	return string_view(beg, end);
-}
-
 constexpr string_view expand(string_view s, int padding){
 	return string_view(s.begin() - padding, s.end() + padding);
 }
@@ -60,125 +50,15 @@ static linepos findLine(const Document& doc, const char* p){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-linepos findLine(const char* beg, const char* end, const char* p) noexcept {
-	if (beg == nullptr || end == nullptr || end <= beg || p == nullptr || p < beg || p >= end){
-		return {};
-	}
-	
-	long col = 1;
-	long row = 1;
-	bool tabs = false;
-	const char* line_beg = beg;
-	
-	// Find line begining and row
-	const char* b = beg;
-	while (p > b){
-		if (*b == '\n'){
-			row++;
-			b++;
-			line_beg = b;
-			tabs = false;
-			continue;
-		} else if (*b == 0){
-			return {};
-		} else {
-			tabs |= (*b == '\t');
-		}
-		b++;
-	}
-	
-	// Find line ending
-	b = p;
-	while (*b != 0 && *b != '\n') b++;
-	const char* line_end = b;
-	
-	// Find colum
-	if (!tabs){
-		col = p - line_beg + 1;
-	} else {
-		for (b = line_beg ; b != p ; b++){
-			col++;
-			if (*b == '\t')
-				col = ((col + 2) & ~0b11L) + 1;
-		}
-	}
-	
-	return linepos {
-		.beg = line_beg,
-		.end = line_end,
-		.row = row,
-		.col = col,
-	};
-}
-
-
-string getCodeView(const linepos& line, string_view mark, string_view color){
-	string_view line_view = string_view(line.beg, line.end);
-	if (line_view.empty()){
-		return {};
-	}
-	
-	const size_t capacity = (10 + 3)*2 + (line_view.length() + color.length() + sizeof(ANSI_RESET))*2 + 1;
-	
-	// Truncate mark
-	const bool at_end = (line.end == mark.begin() && mark.length() > 0);
-	mark = string_view(max(mark.begin(), line.beg), min(mark.end(), line.end));
-	
-	// Append line number
-	string str = to_string(line.row);
-	const size_t row_str_len = str.length();
-	
-	str.reserve(capacity);
-	str.append(" | ");
-	
-	// Colorize mark
-	if (!mark.empty()){
-		str.append(line_view.begin(), mark.begin());
-		str.append(color).append(mark).append(ANSI_RESET);
-		str.append(mark.end(), line_view.end());
-	} else {
-		str.append(line_view);
-	}
-	
-	// Convert tabs
-	for (char& c : str){
-		if (c == '\t')
-			c = ' ';
-	}
-	
-	// Add mark tick and squiggly underline
-	str.push_back('\n');
-	str.append(row_str_len, ' ').append(" | ");
-	
-	if (at_end){
-		str.append(mark.begin() - line_view.begin(), ' ');
-		str.append(color);
-		str.push_back('^');
-		str.append(ANSI_RESET);
-	} else if (!mark.empty()){
-		str.append(mark.begin() - line_view.begin(), ' ');
-		str.append(color);
-		str.push_back('^');
-		str.append(mark.length() - 1, '~');
-		str.append(ANSI_RESET);
-	}
-	
-	// Assert capacity prediction
-	assert(str.size() <= capacity && str.capacity() <= capacity);
-	return str;
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
 static void print_error_pfx(const linepos& pos){
 	if (pos.row > 0 && pos.col > 0)
 		fprintf(stderr, BOLD "%s:%ld:%ld: " COLOR_ERROR "error: " RESET, pos.file, pos.row, pos.col);
 	else if (pos.row > 0)
 		fprintf(stderr, BOLD "%s:%ld: " COLOR_ERROR "error: " RESET, pos.file, pos.row);
-	else
+	else if (pos.file != nullptr)
 		fprintf(stderr, BOLD "%s: " COLOR_ERROR "error: " RESET, pos.file);
+	else
+		fprintf(stderr, COLOR_ERROR "error: " RESET);
 }
 
 static void print_warn_pfx(const linepos& pos){
@@ -186,8 +66,10 @@ static void print_warn_pfx(const linepos& pos){
 		fprintf(stderr, BOLD "%s:%ld:%ld: " COLOR_WARN "warn: " RESET, pos.file, pos.row, pos.col);
 	else if (pos.row > 0)
 		fprintf(stderr, BOLD "%s:%ld: " COLOR_WARN "warn: " RESET, pos.file, pos.row);
-	else
+	else if (pos.file != nullptr)
 		fprintf(stderr, BOLD "%s: " COLOR_WARN "warn: " RESET, pos.file);
+	else
+		fprintf(stderr, COLOR_WARN "warn: " RESET);
 }
 
 static void print_error_codeView(const linepos& line, string_view mark){
@@ -399,6 +281,13 @@ void error_newline(const Node& node, const char* p){
 	print_error_pfx(pos);
 	fprintf(stderr, "Unexpected newline.\n");
 	print_error_codeView(pos, string_view(p, 1));
+}
+
+
+void warn_expr_var_not_found(const linepos& pos, string_view mark, string_view name){
+	print_warn_pfx(pos);
+	fprintf(stderr, "Undefined variable '%s' in expression defaulted to 0.\n", string(name).c_str());
+	print_warn_codeView(pos, mark);
 }
 
 

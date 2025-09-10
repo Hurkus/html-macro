@@ -44,20 +44,22 @@ struct BinaryOp : public Expr {
 
 struct Const : public Expr {
 	Value value;
-	Value eval(const VariableMap& vars) noexcept override { return value; }
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override {
+		return value;
+	}
 };
 
 
 struct Var : public Expr {
 	std::string var;
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 
 struct Func : public Expr {
 	std::string name;
 	std::vector<pExpr> args;
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 
@@ -65,27 +67,27 @@ struct Func : public Expr {
 
 
 struct Not : public UnaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 struct Neg : public UnaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 struct Add : public BinaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 struct Sub : public BinaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 struct Mul : public BinaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 struct Div : public BinaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 
@@ -93,27 +95,27 @@ struct Div : public BinaryOp {
 
 
 struct Eq : public BinaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 struct Neq : public BinaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 struct Lt : public BinaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 struct Lte : public BinaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 struct Gt : public BinaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 struct Gte : public BinaryOp {
-	Value eval(const VariableMap& vars) noexcept override;
+	Value eval(const VariableMap& vars, const LineDebugger&) noexcept override;
 };
 
 
