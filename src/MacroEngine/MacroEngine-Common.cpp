@@ -26,7 +26,7 @@ bool MacroEngine::eval_attr_if(const Node& op, const Attr& attr){
 		return false;
 	}
 	
-	bool e = Expression::boolEval(expr->eval(MacroEngine::variables, dbg));
+	bool e = Expression::toBool(expr->eval(MacroEngine::variables, dbg));
 	return e;
 }
 
@@ -47,7 +47,7 @@ static bool eval_attr_bool(const Node& op, const Attr& attr, bool value){
 	}
 	
 	Expression::Value val = expr->eval(MacroEngine::variables, NodeDebugger(op));
-	return Expression::boolEval(val) == value;
+	return Expression::toBool(val) == value;
 }
 
 bool MacroEngine::eval_attr_true(const Node& op, const Attr& attr){
@@ -73,7 +73,7 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff
 			return false;
 		}
 		
-		Expression::str(expr->eval(MacroEngine::variables, dbg), buff);
+		Expression::toStr(expr->eval(MacroEngine::variables, dbg), buff);
 		result = buff;
 	}
 	
@@ -109,7 +109,7 @@ Interpolate MacroEngine::eval_attr_interp(const Node& op, const Attr& attr){
 	}
 		
 	Value res = expr->eval(MacroEngine::variables, NodeDebugger(op));
-	return Expression::boolEval(res) ? Interpolate::ALL : Interpolate::NONE;
+	return Expression::toBool(res) ? Interpolate::ALL : Interpolate::NONE;
 }
 
 
@@ -154,7 +154,7 @@ bool MacroEngine::eval_string(const Node& op, string_view str, string& buff){
 		Expression::pExpr expr = Expression::parse(string_view(a+1, b), dbg);
 		
 		if (expr != nullptr){
-			Expression::str(expr->eval(MacroEngine::variables, dbg), buff);
+			Expression::toStr(expr->eval(MacroEngine::variables, dbg), buff);
 		} else {
 			return false;
 		}

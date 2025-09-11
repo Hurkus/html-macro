@@ -440,14 +440,15 @@ static const char* parse_identifier(const char* s, const char* end, string_view&
 }
 
 
-static const char* parse_funcArgs(const char* s, const char* end, Func& out){
+static const char* parse_func(const char* s, const char* end, string_view name, unique_ptr<Expr>& out){
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(*s == '(');
 	
-	vector<unique_ptr<Expr>>& args = out.args;
-	const char* beg = s;
-	s++;
+	out = make_unique<Func>();
+	Func& f = static_cast<Func&>(*out);
+	f.name = name;
 	
+	const char* beg = s++;
 	while (true){
 		s = parse_whiteSpace(s, end);
 		
@@ -456,23 +457,20 @@ static const char* parse_funcArgs(const char* s, const char* end, Func& out){
 		} else if (*s == ')'){
 			return s + 1;
 		} else if (*s == ','){
-			if (args.empty())
+			if (f.args.empty()){
 				throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
-			goto ws;
-		} else {
-			if (!args.empty())
-				throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
-			goto no_ws;
+			}
+			
+			s = parse_whiteSpace(s+1, end);
+			if (s == end){
+				goto unclosed;
+			}
+			
+		} else if (!f.args.empty()){
+			throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
 		}
 		
-		ws:
-		s = parse_whiteSpace(s, end);
-		if (s == end){
-			goto unclosed;
-		}
-		
-		no_ws:
-		s = parse_binaryExpressionChain(s, end, args.emplace_back());
+		s = parse_binaryExpressionChain(s, end, f.args.emplace_back());
 	}
 	
 	throw Error(Status::ERROR, string_view(beg, s));
@@ -490,10 +488,7 @@ static const char* parse_varOrFunc(const char* s, const char* end, unique_ptr<Ex
 	// Check if function
 	s = parse_whiteSpace(s, end);
 	if (s != end && *s == '('){
-		out = make_unique<Func>();
-		Func& func = static_cast<Func&>(*out);
-		func.name = id;
-		s = parse_funcArgs(s, end, func);
+		return parse_func(s, end, id, out);
 	}
 	
 	// Is variable

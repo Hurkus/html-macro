@@ -107,7 +107,7 @@ static void _setEnv(const Expression::VariableMap& vars, const vector<string_vie
 		}
 		
 		buff.clear();
-		Expression::str(keyval->value, buff);
+		Expression::toStr(keyval->value, buff);
 		setenv(keyval->key, buff.c_str(), 1);
 	}
 	

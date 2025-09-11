@@ -8,7 +8,7 @@ using namespace std;
 using namespace Expression;
 
 
-// ---------------------------------- [ Definitions ] --------------------------------------- //
+// ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
 #define IS_TYPE(e, t)	(std::is_same_v<std::decay_t<decltype(e)>, t>)
@@ -16,15 +16,14 @@ using namespace Expression;
 #define IS_NUM(e)		(IS_TYPE(e, long) || IS_TYPE(e, double))
 
 
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
 inline Value _eval(const VariableMap& vars, const pExpr& e, const Debugger& dbg){
-	assert(e != nullptr);
-	if (e == nullptr)
-		return Value(0);
-	else
+	if (e != nullptr){
 		return e->eval(vars, dbg);
+	} else {
+		HERE(dbg.warn(dbg.mark(), "Internal error; faulty expression tree defaulted to 0.\n"));
+		assert(e != nullptr);
+		return Value(0);
+	}
 }
 
 
@@ -173,89 +172,7 @@ Value Expression::Gte::eval(const VariableMap& vars, const Debugger& dbg) noexce
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static Value _f_int(const VariableMap& vars, const vector<pExpr>& args, const Debugger& dbg) noexcept {
-	if (args.size() < 1){
-		return Value(0);
-	}
-	
-	auto cast = [](const auto& v) -> long {
-		if constexpr (IS_STR(v))
-			return atol(v.c_str());
-		else
-			return long(v);
-	};
-	
-	return visit(cast, _eval(vars, args[0], dbg));
-}
-
-
-static Value _f_float(const VariableMap& vars, const vector<pExpr>& args, const Debugger& dbg){
-	if (args.size() < 1){
-		return Value(0.0);
-	}
-	
-	auto cast = [](const auto& v) -> double {
-		if constexpr (IS_STR(v))
-			return atof(v.c_str());
-		else
-			return double(v);
-	};
-	
-	return visit(cast, _eval(vars, args[0], dbg));
-}
-
-
-static Value _f_str(const VariableMap& vars, const vector<pExpr>& args, const Debugger& dbg){
-	if (args.size() < 1){
-		return Value(in_place_type<string>);
-	}
-	
-	auto cast = [&](auto&& v) -> string {
-		if constexpr (IS_STR(v))
-			return move(v);
-		else
-			return to_string(v);
-	};
-	
-	return visit(cast, _eval(vars, args[0], dbg));
-}
-
-
-static Value _f_len(const VariableMap& vars, const vector<pExpr>& args, const Debugger& dbg){
-	if (args.size() < 1){
-		return Value(0);
-	}
-	
-	auto cast = [](auto&& v) -> Value {
-		if constexpr (IS_STR(v))
-			return long(v.length());
-		else
-			return abs(v);
-	};
-	
-	return visit(cast, _eval(vars, args[0], dbg));
-}
-
-
-Value Expression::Func::eval(const VariableMap& vars, const Debugger& dbg) noexcept {
-	if (name == "int")
-		return _f_int(vars, args, dbg);
-	else if (name == "float")
-		return _f_float(vars, args, dbg);
-	else if (name == "str")
-		return _f_str(vars, args, dbg);
-	else if (name == "len" || name == "abs")
-		return _f_len(vars, args, dbg);
-	else
-		HERE(dbg.warn(name, "Undefined function " ANSI_PURPLE "'%.*s()'" ANSI_RESET " defaulted to 0.\n", name.length(), name.data()));
-	return 0;
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-bool Expression::boolEval(const Value& val){
+bool Expression::toBool(const Value& val){
 	auto f = [](const auto& val) -> bool {
 		if constexpr IS_STR(val)
 			return bool(val.length() != 0);
@@ -266,7 +183,28 @@ bool Expression::boolEval(const Value& val){
 }
 
 
-void Expression::str(const Value& val, string& buff){
+string Expression::toStr(const Value& val){
+	auto f = [&](const auto& val){
+		if constexpr IS_STR(val)
+			return val;
+		else
+			return to_string(val);
+	};
+	return visit(f, val);
+}
+
+string Expression::toStr(Value&& val){
+	auto f = [&](const auto& val){
+		if constexpr IS_STR(val)
+			return move(val);
+		else
+			return to_string(val);
+	};
+	return visit(f, val);
+}
+
+
+void Expression::toStr(const Value& val, string& buff){
 	auto f = [&](const auto& val){
 		if constexpr IS_STR(val)
 			buff.append(val);
@@ -276,8 +214,7 @@ void Expression::str(const Value& val, string& buff){
 	visit(f, val);
 }
 
-
-void Expression::str(Value&& val, string& buff){
+void Expression::toStr(Value&& val, string& buff){
 	auto f = [&](const auto& val){
 		if constexpr IS_STR(val){
 			if (buff.empty())

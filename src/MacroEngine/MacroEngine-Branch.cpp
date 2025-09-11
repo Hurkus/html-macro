@@ -239,7 +239,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	long i = 0;
 	
 	assert(expr_cond != nullptr);
-	while (Expression::boolEval(expr_cond->eval(variables, dbg)) == cond_expected){
+	while (Expression::toBool(expr_cond->eval(variables, dbg)) == cond_expected){
 		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		
@@ -317,7 +317,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	const auto _interp_2 = MacroEngine::currentInterpolation;
 	long i = 0;
 	
-	while (Expression::boolEval(expr_cond->eval(variables, dbg)) == cond_expected){
+	while (Expression::toBool(expr_cond->eval(variables, dbg)) == cond_expected){
 		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		i++;

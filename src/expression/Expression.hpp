@@ -37,9 +37,12 @@ struct Expr {
 pExpr parse(std::string_view str, const Debugger&) noexcept;
 
 
-bool boolEval(const Value& val);
-void str(const Value& val, std::string& buff);
-void str(Value&& val, std::string& buff);
+bool toBool(const Value& val);
+
+std::string toStr(const Value& val);
+std::string toStr(Value&& val);
+void toStr(const Value& val, std::string& buff);
+void toStr(Value&& val, std::string& buff);
 
 
 std::string serialize(const pExpr& e);

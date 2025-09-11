@@ -39,6 +39,8 @@ void Debugger::error(string_view mark, const char* fmt, ...) const {
 	}
 	
 	linepos lp = findLine(buffer.begin(), buffer.end(), mark.begin());
+	lp.file = file;
+	
 	print(lp);
 	fprintf(stderr, ANSI_RED "error: " ANSI_RESET);
 	E_PRINTF(fmt);

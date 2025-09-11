@@ -30,9 +30,10 @@ constexpr array testFiles = {
 	tuple("test/test-1.in.html", "test/test-1.out.html"),	// Basic parsing
 	tuple("test/test-2.in.html", "test/test-2.out.html"),	// Parsing <style> and <script>
 	tuple("test/test-3.in.html", "test/test-3.out.html"),	// Basic macro
-	tuple("test/test-4.in.html", "test/test-4.out.html"),	// Testing basic expressions
-	tuple("test/test-5.in.html", "test/test-5.out.html"),	// Testing macros and includes
-	tuple("test/test-6.in.html", "test/test-6.out.html"),	// Testing shell
+	tuple("test/test-4.in.html", "test/test-4.out.html"),	// Basic expressions
+	tuple("test/test-5.in.html", "test/test-5.out.html"),	// Macros and includes
+	tuple("test/test-6.in.html", "test/test-6.out.html"),	// Shell
+	tuple("test/test-7.in.html", "test/test-7.out.html"),	// Expression functions
 };
 
 
