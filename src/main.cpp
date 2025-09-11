@@ -46,7 +46,7 @@ static bool run(const char* file){
 	
 	// Open output file
 	ofstream outf;
-	if (opt.outFilePath != nullptr){
+	if (opt.outFilePath != nullptr && !opt.out_void){
 		outf = ofstream(opt.outFilePath);
 		if (!outf.is_open()){
 			ERROR("Failed to open output file '%s'.", opt.outFilePath);
@@ -65,13 +65,13 @@ static bool run(const char* file){
 	MacroEngine::exec(*m, doc);
 	
 	// Select output stream and write
-	ostream& out = (outf.is_open()) ? outf : cout;
-	if (!write(out, doc)){
+	if (!opt.out_void){
+		ostream& out = (outf.is_open()) ? outf : cout;
+		bool e = write(out, doc);
 		out.flush();
-		return false;
+		return e;
 	}
 	
-	out.flush();
 	return true;
 }
 

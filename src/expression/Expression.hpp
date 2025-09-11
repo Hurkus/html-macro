@@ -5,7 +5,7 @@
 #include <variant>
 
 #include "str_map.hpp"
-#include "Debug-Line.hpp"
+#include "Debugger.hpp"
 
 
 namespace Expression {
@@ -25,43 +25,22 @@ using VariableMap = str_map<Value>;
 // ----------------------------------- [ Structures ] --------------------------------------- //
 
 
-enum class ParseStatus {
-	OK,
-	UNEXPECTED_SYMBOL,
-	UNCLOSED_STRING,
-	UNCLOSED_EXPRESSION,
-	INVALID_EXPRESSION,
-	INVALID_BINARY_EXPRESSION,
-	INVALID_INT,
-	INVALID_FLOAT,
-	INVALID_IDENTIFIER,
-	INVALID_UNARY_OP,
-	INVALID_BINARY_OP,
-	ERROR
-};
-
-struct ParseResult {
-	ParseStatus status;
-	pExpr expr;
-	std::string_view errMark;
-};
-
-
 struct Expr {
 	virtual ~Expr(){}
-	virtual Value eval(const VariableMap& vars, const LineDebugger&) noexcept = 0;
+	virtual Value eval(const VariableMap& vars, const Debugger&) noexcept = 0;
 };
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+pExpr parse(std::string_view str, const Debugger&) noexcept;
+
+
 bool boolEval(const Value& val);
 void str(const Value& val, std::string& buff);
 void str(Value&& val, std::string& buff);
 
-ParseResult parse(std::string_view str) noexcept;
-pExpr try_parse(std::string_view str) noexcept;
 
 std::string serialize(const pExpr& e);
 

@@ -168,7 +168,6 @@ bool eval_attr_false(const html::Node& op, const html::Attr& attr);
 bool eval_attr_value(const html::Node& op, const html::Attr& attr, std::string& result_buff, std::string_view& result);
 Interpolate eval_attr_interp(const html::Node& op, const html::Attr& attr);
 
-Expression::pExpr parse_expr(const html::Node& op, std::string_view str);
 bool eval_string(const html::Node& op, std::string_view str, std::string& buff);
 
 

@@ -1,47 +1,10 @@
 #include "MacroEngine.hpp"
 #include "Debug.hpp"
+#include "Debugger.hpp"
 
 using namespace std;
 using namespace html;
-
-
-// ----------------------------------- [ Structures ] --------------------------------------- //
-
-
-struct AttrExprDebugger : public LineDebugger {
-	const Node* node = nullptr;
-	const Attr* attr = nullptr;
-	
-	AttrExprDebugger(auto node, auto attr) : node{node}, attr{attr} {}
-	
-	string_view mark() const noexcept override {
-		if (attr != nullptr)
-			return attr->value();
-		return {};
-	}
-	
-	linepos line(const char* p) const noexcept override {
-		linepos l = {};
-		
-		if (node == nullptr){
-			return l;
-		} else if (p == nullptr){
-			p = node->value_p;
-		}
-		
-		const Document& doc = node->root();
-		if (doc.buffer != nullptr){
-			l = findLine(doc.buffer->begin().base(), doc.buffer->end().base(), p);
-		}
-		
-		if (doc.srcFile != nullptr){
-			l.file = doc.srcFile->c_str();
-		}
-		
-		return l;
-	}
-	
-};
+using namespace Expression;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -60,15 +23,19 @@ void MacroEngine::set(const Node& op){
 		
 		// Expression
 		if (attr->options % NodeOptions::SINGLE_QUOTE){
-			Expression::pExpr expr = parse_expr(op, value);
-			if (expr == nullptr)
+			const NodeDebugger dbg = NodeDebugger(op);
+			
+			pExpr expr = Expression::parse(value, dbg);
+			if (expr == nullptr){
 				return;
-			MacroEngine::variables.insert(name, expr->eval(MacroEngine::variables, AttrExprDebugger(&op, attr)));
+			}
+			
+			MacroEngine::variables.insert(name, expr->eval(MacroEngine::variables, dbg));
 		}
 		
 		// Interpolate
 		else if (attr->options % NodeOptions::INTERPOLATE){
-			Expression::Value val;
+			Value val;
 			string& s = val.emplace<string>();
 			
 			if (!eval_string(op, attr->value(), s)){
@@ -218,8 +185,8 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 		continue;
 	}
 	
-	
 	// Parse expressions
+	const NodeDebugger dbg = NodeDebugger(op);
 	Expression::pExpr expr_setup = nullptr;
 	Expression::pExpr expr_cond = nullptr;
 	Expression::pExpr expr_inc = nullptr;
@@ -229,7 +196,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 			HERE(warn_attr_double_quote(op, *attr_setup));
 		}
 		
-		expr_setup = parse_expr(op, attr_setup->value());
+		expr_setup = Expression::parse(attr_setup->value(), dbg);
 		if (expr_setup == nullptr){
 			return 0;
 		}
@@ -240,7 +207,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 			HERE(warn_attr_double_quote(op, *attr_cond));
 		}
 		
-		expr_cond = parse_expr(op, attr_cond->value());
+		expr_cond = Expression::parse(attr_cond->value(), dbg);
 		if (expr_cond == nullptr){
 			return 0;
 		}
@@ -255,22 +222,16 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 			HERE(warn_attr_double_quote(op, *attr_inc));
 		}
 		
-		expr_inc = parse_expr(op, attr_inc->value());
+		expr_inc = Expression::parse(attr_inc->value(), dbg);
 		if (expr_inc == nullptr){
-			HERE(error_expression_parse(op, *attr_cond));
 			return 0;
 		}
 		
 	}
 	
-	// Setup debuggers
-	const AttrExprDebugger dbg_setup = AttrExprDebugger(&op, attr_setup);
-	const AttrExprDebugger dbg_cond = AttrExprDebugger(&op, attr_cond);
-	const AttrExprDebugger dbg_inc = AttrExprDebugger(&op, attr_inc);
-	
 	// Run setup
 	if (expr_setup != nullptr){
-		variables.insert(attr_setup->name(), expr_setup->eval(variables, dbg_setup));
+		variables.insert(attr_setup->name(), expr_setup->eval(variables, dbg));
 	}
 	
 	// Run loop
@@ -278,13 +239,13 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	long i = 0;
 	
 	assert(expr_cond != nullptr);
-	while (Expression::boolEval(expr_cond->eval(variables, dbg_cond)) == cond_expected){
+	while (Expression::boolEval(expr_cond->eval(variables, dbg)) == cond_expected){
 		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		
 		// Increment
 		if (expr_inc != nullptr){
-			variables.insert(attr_inc->name(), expr_inc->eval(variables, dbg_inc));
+			variables.insert(attr_inc->name(), expr_inc->eval(variables, dbg));
 		}
 		
 		i++;
@@ -303,6 +264,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	bool cond_expected = true;
 	const Attr* attr_cond = nullptr;
 	
+	// Parse attributes
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
@@ -331,8 +293,8 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 		continue;
 	}
 	
-	
 	// Parse expressions
+	const NodeDebugger dbg = NodeDebugger(op);
 	Expression::pExpr expr_cond = nullptr;
 	
 	if (attr_cond != nullptr){
@@ -340,7 +302,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 			HERE(warn_attr_double_quote(op, *attr_cond));
 		}
 		
-		expr_cond = parse_expr(op, attr_cond->value());
+		expr_cond = Expression::parse(attr_cond->value(), dbg);
 		if (expr_cond == nullptr){
 			return 0;
 		}
@@ -350,20 +312,16 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 		return 0;
 	}
 	
-	// Setup debuggers
-	const AttrExprDebugger dbg_cond = AttrExprDebugger(&op, attr_cond);
-	
 	// Run
+	assert(expr_cond != nullptr);
 	const auto _interp_2 = MacroEngine::currentInterpolation;
 	long i = 0;
 	
-	assert(expr_cond != nullptr);
-	while (Expression::boolEval(expr_cond->eval(variables, dbg_cond)) == cond_expected){
+	while (Expression::boolEval(expr_cond->eval(variables, dbg)) == cond_expected){
 		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		i++;
 	}
-	
 	
 	// Restore state
 	MacroEngine::currentInterpolation = _interp;

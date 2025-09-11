@@ -2,6 +2,7 @@
 #include <unordered_map>
 
 #include "Debug.hpp"
+#include "DebugSource.hpp"
 
 using namespace std;
 using namespace html;
@@ -79,8 +80,9 @@ static void err(const Document& doc, const ParseResult& res){
 			ERROR("%s", msg);
 			break;
 		default:
-			linepos pos =  findLine(doc, res.pos.begin());
-			ERROR(pos, "%s", msg);
+			linepos pos = findLine(doc, res.pos.begin());
+			HERE(print(pos));
+			::error("%s", msg);
 			printf("%s\n", getCodeView(pos, res.pos, ANSI_RED).c_str());
 			break;
 	}

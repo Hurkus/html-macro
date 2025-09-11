@@ -19,8 +19,21 @@ using namespace Expression;
 // ----------------------------------- [ Structures ] --------------------------------------- //
 
 
-struct ParsingError {
-	ParseStatus status;
+enum class Status {
+	UNEXPECTED_SYMBOL,
+	UNCLOSED_STRING,			// Missing quote "
+	UNCLOSED_EXPRESSION,		// Missing bracket )
+	INVALID_BINARY_EXPRESSION,	// Missing second operand in binary epxression.
+	INVALID_UNARY_EXPRESSION,	// Missing operand in unary expression.
+	INVALID_INT,
+	INVALID_FLOAT,
+	MEMORY,
+	ERROR,
+};
+
+
+struct Error {
+	Status status;
 	std::string_view mark;
 };
 
@@ -102,7 +115,7 @@ static const char* parse_num(const char* s, const char* end, unique_ptr<Expr>& o
 			goto next;
 		} else if (*s == '.'){
 			if (dot)
-				throw ParsingError(ParseStatus::INVALID_FLOAT, string_view(beg, s+1));
+				throw Error(Status::INVALID_FLOAT, string_view(beg, s+1));
 			dot = true;
 		} else {
 			break;
@@ -120,7 +133,7 @@ static const char* parse_num(const char* s, const char* end, unique_ptr<Expr>& o
 		from_chars_result res = from_chars(beg, s, n);
 		
 		if (res.ec != errc()){
-			throw ParsingError(ParseStatus::INVALID_FLOAT, string_view(beg, s));
+			throw Error(Status::INVALID_FLOAT, string_view(beg, s));
 		}
 		
 	} else {
@@ -128,7 +141,7 @@ static const char* parse_num(const char* s, const char* end, unique_ptr<Expr>& o
 		from_chars_result res = from_chars(beg, s, n);
 		
 		if (res.ec != errc()){
-			throw ParsingError(ParseStatus::INVALID_INT, string_view(beg, s));
+			throw Error(Status::INVALID_INT, string_view(beg, s));
 		}
 		
 	}
@@ -149,7 +162,7 @@ static const char* parse_str(const char* s, const char* end, unique_ptr<Expr>& o
 		s++;
 		
 		if (s == end){
-			throw ParsingError(ParseStatus::UNCLOSED_STRING, string_view(beg, s));
+			throw Error(Status::UNCLOSED_STRING, string_view(beg, s));
 		} else if (*s == '\\'){
 			escape = !escape;
 		} else if (*s == quot){
@@ -175,16 +188,14 @@ static const char* parse_str(const char* s, const char* end, unique_ptr<Expr>& o
 
 static const char* parse_unaryExpression(const char* s, const char* end, unique_ptr<Expr>& out){
 	assert(s != nullptr && end != nullptr && s != end);
-	const char* beg = s;
+	assert(isUnaryOp(*s));
 	
+	const char* beg = s;
 	const char op = *s;
-	if (!isUnaryOp(op)){
-		throw ParsingError(ParseStatus::INVALID_UNARY_OP, string_view(beg, s+1));
-	}
 	
 	s = parse_whiteSpace(s + 1, end);
 	if (s == end){
-		throw ParsingError(ParseStatus::INVALID_UNARY_OP, string_view(beg, s+1));
+		throw Error(Status::INVALID_UNARY_EXPRESSION, string_view(beg, s+1));
 	}
 	
 	unique_ptr<Expr> subexpr;
@@ -271,7 +282,7 @@ static unique_ptr<BinaryOp> _binop(pExpr&& a, pExpr&& b, int op){
 		
 		default:
 			assert(false);
-			throw ParsingError(ParseStatus::ERROR);
+			throw Error(Status::ERROR);
 	}
 }
 
@@ -333,6 +344,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, u
 	unique_ptr<Expr> first;
 	s = parse_singleExpression(s, end, first);
 	s = parse_whiteSpace(s, end);
+	assert(first != nullptr);
 	
 	// No binary operation
 	if (s == end){ no_bin:
@@ -347,11 +359,12 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, u
 	
 	s = parse_whiteSpace(s, end);
 	if (s == end){
-		throw ParsingError(ParseStatus::INVALID_BINARY_EXPRESSION, string_view(beg, s));
+		throw Error(Status::INVALID_BINARY_EXPRESSION, string_view(beg, s));
 	}
 	
 	unique_ptr<Expr> second;
 	s = parse_singleExpression(s, end, second);
+	assert(second != nullptr);
 	
 	// Lookahead for more operations
 	s = parse_whiteSpace(s, end);
@@ -381,7 +394,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, u
 	while (true){
 		s = parse_whiteSpace(s, end);
 		if (s == end){
-			throw ParsingError(ParseStatus::INVALID_BINARY_EXPRESSION, string_view(mark, s));
+			throw Error(Status::INVALID_BINARY_EXPRESSION, string_view(mark, s));
 		}
 		
 		unique_ptr<Expr>& arg = args.emplace_back();
@@ -415,22 +428,14 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, u
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static const char* parse_identifier(const char* s, const char* end, string& out){
+static const char* parse_identifier(const char* s, const char* end, string_view& out){
 	assert(s != nullptr && end != nullptr && s != end);
-	const char* beg = s;
+	assert(isFirstIdentifier(*s));
 	
-	// First always alpha
-	if (isFirstIdentifier(*s)){
-		s++;
-	} else {
-		throw ParsingError(ParseStatus::INVALID_IDENTIFIER, string_view(beg, s+1));
-	}
+	const char* beg = s++;
+	while (s != end && isIdentifier(*s)) s++;
 	
-	while (s != end && isIdentifier(*s)){
-		s++;
-	}
-	
-	out.assign(beg, s);
+	out = string_view(beg, s);
 	return s;
 }
 
@@ -447,16 +452,16 @@ static const char* parse_funcArgs(const char* s, const char* end, Func& out){
 		s = parse_whiteSpace(s, end);
 		
 		if (s == end){ unclosed:
-			throw ParsingError(ParseStatus::UNCLOSED_EXPRESSION, string_view(beg, s));
+			throw Error(Status::UNCLOSED_EXPRESSION, string_view(beg, s));
 		} else if (*s == ')'){
 			return s + 1;
 		} else if (*s == ','){
 			if (args.empty())
-				throw ParsingError(ParseStatus::UNEXPECTED_SYMBOL, string_view(s, 1));
+				throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
 			goto ws;
 		} else {
 			if (!args.empty())
-				throw ParsingError(ParseStatus::UNEXPECTED_SYMBOL, string_view(s, 1));
+				throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
 			goto no_ws;
 		}
 		
@@ -470,28 +475,33 @@ static const char* parse_funcArgs(const char* s, const char* end, Func& out){
 		s = parse_binaryExpressionChain(s, end, args.emplace_back());
 	}
 	
-	throw ParsingError(ParseStatus::ERROR, string_view(beg, s));
+	throw Error(Status::ERROR, string_view(beg, s));
 }
 
 
 static const char* parse_varOrFunc(const char* s, const char* end, unique_ptr<Expr>& out){
 	assert(s != nullptr && end != nullptr && s != end);
+	assert(isFirstIdentifier(*s));
 	
-	unique_ptr<Var> id = make_unique<Var>();
-	s = parse_identifier(s, end, id->var);
+	string_view id;
+	s = parse_identifier(s, end, id);
+	assert(!id.empty());
 	
 	// Check if function
 	s = parse_whiteSpace(s, end);
 	if (s != end && *s == '('){
 		out = make_unique<Func>();
 		Func& func = static_cast<Func&>(*out);
-		func.name = move(id->var);
+		func.name = id;
 		s = parse_funcArgs(s, end, func);
-		return s;
 	}
 	
 	// Is variable
-	out = move(id);
+	else {
+		out = make_unique<Var>();
+		static_cast<Var*>(out.get())->name = id;
+	}
+	
 	return s;
 }
 
@@ -507,7 +517,7 @@ static const char* parse_singleExpression(const char* s, const char* end, unique
 		return parse_num(s, end, out);
 	} else if (isQuot(*s)){
 		return parse_str(s, end, out);
-	} else if (isalpha(*s)){
+	} else if (isFirstIdentifier(*s)){
 		return parse_varOrFunc(s, end, out);
 	} else if (isUnaryOp(*s)){
 		return parse_unaryExpression(s, end, out);
@@ -518,65 +528,89 @@ static const char* parse_singleExpression(const char* s, const char* end, unique
 		
 		s = parse_whiteSpace(s + 1, end);
 		s = parse_binaryExpressionChain(s, end, out);
-		if (out == nullptr){
-			throw ParsingError(ParseStatus::INVALID_EXPRESSION, string_view(beg, s));
-		}
+		assert(out != nullptr);
 		
 		s = parse_whiteSpace(s + 1, end);
 		if (s == end || *s != ')'){
-			throw ParsingError(ParseStatus::UNCLOSED_EXPRESSION, string_view(beg, s));
+			throw Error(Status::UNCLOSED_EXPRESSION, string_view(beg, s));
 		}
 		
 		return s;
 	}
 	
-	throw ParsingError(ParseStatus::UNEXPECTED_SYMBOL, string_view(s, 1));
+	throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-ParseResult Expression::parse(string_view str) noexcept {
-	if (str.empty()){
-		return ParseResult {
-			.status = ParseStatus::INVALID_EXPRESSION, 
-			.expr = nullptr,
-			.errMark = str
-		};
+static void report(const Error& err, const Debugger& dbg){
+	#define P(s) ANSI_PURPLE s ANSI_RESET
+	const string_view& m = err.mark;
+	size_t ml = m.length();
+	const char* ms = m.data();
+	
+	switch (err.status){
+		case Status::UNEXPECTED_SYMBOL:
+			HERE(dbg.error(m, "Unexpected symbol " P("'%.*s'") " in expression.\n", ml, ms));
+			break;
+		case Status::UNCLOSED_STRING:
+			HERE(dbg.error(m, "Unterminated string literal in expression.\n"));
+			break;
+		case Status::UNCLOSED_EXPRESSION:
+			HERE(dbg.error(m, "Missing closing bracket " P("'('") " in expression.\n"));
+			break;
+		case Status::INVALID_BINARY_EXPRESSION:
+			HERE(dbg.error(m, "Missing second operand in binary epxression.\n"));
+			break;
+		case Status::INVALID_INT:
+			HERE(dbg.error(m, "Failed to parse integer.\n"));
+			break;
+		case Status::INVALID_FLOAT:
+			HERE(dbg.error(m, "Failed to parse float.\n"));
+			break;
+		case Status::INVALID_UNARY_EXPRESSION:
+			HERE(dbg.error(m, "Missing operand in unary expression.\n"));
+			break;
+		case Status::MEMORY:
+			HERE(dbg.error(m, "Ran out of memory when parsing expression.\n"));
+			break;
+		case Status::ERROR:
+			HERE(dbg.error(m, "Failed to parse expression.\n"));
+			break;
 	}
 	
-	ParseResult res;
+}
+
+
+pExpr Expression::parse(string_view str, const Debugger& dbg) noexcept {
+	if (str.empty()){
+		return nullptr;
+	}
+	
 	try {
+		pExpr expr;
 		const char* s = str.begin();
 		const char* end = str.end();
 		
 		s = parse_whiteSpace(s, end);
-		s = parse_binaryExpressionChain(s, end, res.expr);
+		s = parse_binaryExpressionChain(s, end, expr);
 		s = parse_whiteSpace(s, end);
 		
-		if (s == end){
-			res.status = ParseStatus::OK;
-		} else {
-			throw ParsingError(ParseStatus::UNEXPECTED_SYMBOL, string_view(s, 1));
+		if (s != end){
+			throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
 		}
 		
-	} catch (const ParsingError& e){
-		res.status = e.status;
-		res.errMark = e.mark;
-	} catch (...){
-		res.status = ParseStatus::ERROR;
+		return expr;
+	} catch (const Error& e){
+		report(e, dbg);
+	} catch (const bad_alloc&){
+		report(Error(Status::MEMORY, str), dbg);
+	}catch (...){
+		report(Error(Status::ERROR, str), dbg);
 	}
 	
-	assert(res.status != ParseStatus::OK || res.expr != nullptr);
-	return res;
-}
-
-
-pExpr Expression::try_parse(string_view str) noexcept {
-	ParseResult res = Expression::parse(str);
-	if (res.status == ParseStatus::OK)
-		return move(res.expr);
 	return nullptr;
 }
 
@@ -604,7 +638,7 @@ static void _serialize(const Expr* expr, string& buff){
 	if (const Const* e = dynamic_cast<const Const*>(expr)){
 		visit(_valstr, e->value);
 	} else if (const Var* e = dynamic_cast<const Var*>(expr)){
-		buff.append(e->var);
+		buff.append(e->name);
 	} else if (const Not* e = dynamic_cast<const Not*>(expr)){
 		buff.append("!(");
 		_serialize(e->e.get(), buff);

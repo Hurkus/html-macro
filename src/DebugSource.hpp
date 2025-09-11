@@ -12,15 +12,11 @@ struct linepos {
 	long col = -1;
 };
 
-// Functor for passing debug information to functions
-class LineDebugger {
-	public:
-	virtual linepos line(const char* p) const noexcept { return {}; }
-	virtual std::string_view mark() const noexcept { return {}; }
-};
-
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void print(const linepos& lp);
 
 
 /**

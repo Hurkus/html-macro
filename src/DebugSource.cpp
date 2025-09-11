@@ -1,9 +1,24 @@
-#include "Debug-Line.hpp"
+#include "DebugSource.hpp"
 #include <cassert>
 #include <string>
 #include "ANSI.h"
 
 using namespace std;
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void print(const linepos& pos){
+	if (pos.file != nullptr){
+		if (pos.row > 0 && pos.col > 0)
+			fprintf(stderr, ANSI_BOLD "%s:%ld:%ld: " ANSI_RESET, pos.file, pos.row, pos.col);
+		else if (pos.row > 0)
+			fprintf(stderr, ANSI_BOLD "%s:%ld: " ANSI_RESET, pos.file, pos.row);
+		else
+			fprintf(stderr, ANSI_BOLD "%s: " ANSI_RESET, pos.file);
+	}
+}
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //

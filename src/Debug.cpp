@@ -1,7 +1,7 @@
 #include "Debug.hpp"
+#include "DebugSource.hpp"
 #include "Macro.hpp"
 #include "Expression.hpp"
-#include "Debug.hpp"
 
 using namespace std;
 using namespace html;
@@ -201,25 +201,6 @@ void warn_file_include(const Node& node, const Attr& attr, const char* fileName)
 	print_warn_pfx(pos);
 	fprintf(stderr, "Failed to include file " PURPLE "'%s'" RESET ".\n", fileName);
 	print_warn_codeView(pos, inclusiveValue(attr));
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-void error_expression_parse(const Node& node, const Attr& attr){
-	linepos pos = findLine(node.root(), attr.value_p);
-	print_error_pfx(pos);
-	fprintf(stderr, "Failed to parse expression.\n");
-	print_error_codeView(pos, inclusiveValue(attr));
-}
-
-
-void error_expression_parse(const Node& node, const Expression::ParseResult& err){
-	linepos pos = findLine(node.root(), err.errMark.begin());
-	print_error_pfx(pos);
-	fprintf(stderr, "Failed to parse expression.\n");
-	print_error_codeView(pos, err.errMark);
 }
 
 
