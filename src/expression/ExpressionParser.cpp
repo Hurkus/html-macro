@@ -141,7 +141,7 @@ static const char* parse_num(const char* s, const char* end, Allocator& alc, Ope
 		}
 		
 	} else {
-		Double* c = (Double*&)out = alc.alloc<Double>();
+		Long* c = (Long*&)out = alc.alloc<Long>();
 		c->type = Operation::Type::LONG;
 		from_chars_result res = from_chars(beg, s, c->n);
 		
@@ -586,12 +586,10 @@ static const char* parse_singleExpression(const char* s, const char* end, Alloca
 static void report(const Error& err, const Debugger& dbg){
 	#define P(s) ANSI_PURPLE s ANSI_RESET
 	const string_view& m = err.mark;
-	size_t ml = m.length();
-	const char* ms = m.data();
 	
 	switch (err.status){
 		case Status::UNEXPECTED_SYMBOL:
-			HERE(dbg.error(m, "Unexpected symbol " P("`%.*s`") " in expression.\n", ml, ms));
+			HERE(dbg.error(m, "Unexpected symbol " P("`%.*s`") " in expression.\n", int(m.length()), m.data()));
 			break;
 		case Status::UNCLOSED_STRING:
 			HERE(dbg.error(m, "Unterminated string literal in expression.\n"));
@@ -612,7 +610,7 @@ static void report(const Error& err, const Debugger& dbg){
 			HERE(dbg.error(m, "Missing operand in unary expression.\n"));
 			break;
 		case Status::FUNC_ARG_OVERFLOW:
-			HERE(dbg.error(m, "Too many arguments in function. Maximum allowed is %ld.\n", Function::MAX_ARGS));
+			HERE(dbg.error(m, "Too many arguments in function. Maximum allowed is %d.\n", Function::MAX_ARGS));
 			break;
 		case Status::MEMORY:
 			HERE(dbg.error(m, "Ran out of memory when parsing expression.\n"));

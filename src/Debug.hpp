@@ -78,9 +78,9 @@ void error_duplicate_attr(const html::Node& node, const html::Attr& attr_1, cons
 void warn_attr_double_quote(const html::Node& node, const html::Attr& attr);
 
 void error_macro_not_found(const html::Node& node, const html::Attr& attr);
-void error_macro_not_found(const html::Node& node, const html::Attr& attr, const char* name);
+void error_macro_not_found(const html::Node& node, const html::Attr& attr, std::string_view name);
 void error_file_not_found(const html::Node& node, const html::Attr& attr);
-void error_file_not_found(const html::Node& node, const html::Attr& attr, const char* name);
+void error_file_not_found(const html::Node& node, const html::Attr& attr, std::string_view name);
 void warn_file_include(const html::Node& node, const html::Attr& attr, const char* filePath);
 
 void warn_unknown_macro_tag(const html::Node& node);
@@ -88,6 +88,7 @@ void warn_unknown_macro_attribute(const html::Node& node, const html::Attr& attr
 void warn_shell_exit(const html::Node& node, int status);
 
 void error_newline(const html::Node& node, const char* p);
+void warn_child_ignored(const html::Node& node);
 
 
 // ------------------------------------------------------------------------------------------ //

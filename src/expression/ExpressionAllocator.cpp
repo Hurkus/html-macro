@@ -23,7 +23,7 @@ Expression::Allocator::~Allocator(){
 
 
 void* Expression::Allocator::alloc(size_t size){
-	// Convert to unit, roudn up
+	// Convert to unit, round up
 	size = (size + UNIT - 1) / UNIT;
 	
 	if (size > PAGE_SIZE){

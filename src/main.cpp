@@ -1,13 +1,10 @@
 #include <iostream>
 #include <fstream>
-#include <string_view>
-#include <array>
-#include <algorithm>
 
 #include "cli.hpp"
 #include "MacroEngine.hpp"
 #include "Paths.hpp"
-
+#include "Write.hpp"
 #include "Debug.hpp"
 
 using namespace std;
@@ -31,13 +28,6 @@ void help(){
 	info("  " Y("--include <path>") ", " Y("-i <path>") " .. Add folder to list of path searches when including files with relative paths.");
 	info("");
 }
-
-
-// ----------------------------------- [ Prototypes ] --------------------------------------- //
-
-
-void f();
-bool write(ostream& out, const Document& doc);
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //

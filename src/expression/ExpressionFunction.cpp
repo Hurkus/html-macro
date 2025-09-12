@@ -93,10 +93,10 @@ static Value f_str(const Function& f, const VariableMap& vars, const Debugger& d
 
 static Value f_len(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
-		HERE(dbg.warn(f.name, "Missing argument in function " P("%.*s(e)") ".\n", f.name.length(), f.name.data()));
+		HERE(dbg.warn(f.name, "Missing argument in function " P("%.*s(e)") ".\n", int(f.name.length()), f.name.data()));
 		return Value(0);
 	} else if (f.argc > 1){
-		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " P("%.*s(e)") ".\n", f.argc, f.name.length(), f.name.data()));
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " P("%.*s(e)") ".\n", f.argc, int(f.name.length()), f.name.data()));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 	}
@@ -393,11 +393,11 @@ Value eval(const Function& f, const VariableMap& vars, const Debugger& dbg){
 				break;
 		}
 	} catch (...) {
-		HERE(dbg.warn(name, "Failed to evaluate function " ANSI_PURPLE "'%.*s()'" ANSI_RESET " due to internal exception.\n", name.length(), name.data()));
+		HERE(dbg.warn(name, "Failed to evaluate function " ANSI_PURPLE "'%.*s()'" ANSI_RESET " due to internal exception.\n", int(name.length()), name.data()));
 		return 0;
 	}
 	
-	HERE(dbg.warn(name, "Undefined function " ANSI_PURPLE "'%.*s()'" ANSI_RESET " defaulted to 0.\n", name.length(), name.data()));
+	HERE(dbg.warn(name, "Undefined function " ANSI_PURPLE "'%.*s()'" ANSI_RESET " defaulted to 0.\n", int(name.length()), name.data()));
 	return 0;
 }
 

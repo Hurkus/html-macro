@@ -68,7 +68,7 @@ static Value eval(const Variable& var, const VariableMap& vars, const Debugger& 
 		return *val;
 	} else {
 		string_view name = var.name;
-		HERE(dbg.warn(name, "Undefined variable " ANSI_PURPLE "'%.*s'" ANSI_RESET " defaulted to 0.\n", name.length(), name.data()));
+		HERE(dbg.warn(name, "Undefined variable " ANSI_PURPLE "'%.*s'" ANSI_RESET " defaulted to 0.\n", int(name.length()), name.data()));
 		return Value(0);
 	}
 }

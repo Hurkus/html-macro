@@ -101,38 +101,45 @@ void MacroEngine::tag(const Node& op, Node& dst){
 
 
 void MacroEngine::setAttr(const Node& op, Node& dst){
-	// Check conditional
-	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		if (attr->name() == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
-		}
-	}
+	string newValue_buff;
+	string_view newValue;
 	
-	string buff;
-	string_view buff_view;
+	if (op.child != nullptr){
+		HERE(warn_child_ignored(op));
+	}
 	
 	// Copy or set attributes
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
+		
+		// Check conditional
 		if (name == "IF"){
-			continue;
+			if (!eval_attr_if(op, *attr))
+				return;
 		}
 		
 		// Evaluate value
-		buff.clear();
-		if (!eval_attr_value(op, *attr, buff, buff_view)){
+		newValue_buff.clear();
+		if (!eval_attr_value(op, *attr, newValue_buff, newValue)){
 			continue;
 		}
 		
-		// Create attribute
-		Attr& a = dst.appendAttribute();
-		a.name(name);
+		// Find existing attribute
+		Attr* a;
+		for (a = dst.attribute ; a != nullptr ; a = a->next){
+			if (a->name() == name)
+				goto found;
+		}
 		
-		if (!buff.empty()){
-			a.value(html::newStr(buff), buff.length());
+		// Create attribute
+		a = &dst.appendAttribute();
+		a->name(name);
+		
+		found:
+		if (newValue_buff.empty()){
+			a->value(newValue);
 		} else {
-			a.value(buff_view);
+			a->value(html::newStr(newValue), newValue.length());
 		}
 		
 	}
@@ -141,21 +148,19 @@ void MacroEngine::setAttr(const Node& op, Node& dst){
 
 
 void MacroEngine::getAttr(const Node& op, Node& dst){
-	// Check conditional
-	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		if (attr->name() == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
-		}
-	}
-	
 	string attrName_buff;
 	string_view attrName;
 	
+	if (op.child != nullptr){
+		HERE(warn_child_ignored(op));
+	}
+	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view varName = attr->name();
+		
 		if (varName == "IF"){
-			continue;
+			if (!eval_attr_if(op, *attr))
+				return;
 		}
 		
 		// Evaluate attribute name
@@ -178,18 +183,17 @@ void MacroEngine::getAttr(const Node& op, Node& dst){
 
 
 void MacroEngine::delAttr(const Node& op, Node& dst){
-	// Check conditional
+	if (op.child != nullptr){
+		HERE(warn_child_ignored(op));
+	}
+	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		if (attr->name() == "IF"){
 			if (!eval_attr_if(op, *attr))
 				return;
-		}
-	}
-	
-	// Delete attributes
-	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		if (attr->name() != "IF")
+		} else {
 			dst.removeAttr(attr->name());
+		}
 	}
 	
 }
@@ -198,6 +202,10 @@ void MacroEngine::delAttr(const Node& op, Node& dst){
 void MacroEngine::setTag(const Node& op, Node& dst){
 	const Attr* attr_nameName = nullptr;
 	const Attr* attr_valName = nullptr;
+	
+	if (op.child != nullptr){
+		HERE(warn_child_ignored(op));
+	}
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
@@ -252,18 +260,15 @@ void MacroEngine::setTag(const Node& op, Node& dst){
 
 
 void MacroEngine::getTag(const Node& op, Node& dst){
-	// Check conditional
-	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		if (attr->name() == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
-		}
+	if (op.child != nullptr){
+		HERE(warn_child_ignored(op));
 	}
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view varName = attr->name();
 		if (varName == "IF"){
-			continue;
+			if (!eval_attr_if(op, *attr))
+				return;
 		}
 		
 		if (attr->value_len > 0){

@@ -1,6 +1,6 @@
+#include "Write.hpp"
 #include "html.hpp"
 #include <vector>
-#include <ostream>
 
 using namespace std;
 using namespace html;
@@ -78,7 +78,7 @@ static void writeAttributes(ostream& out, const Node& node, vector<const Attr*>&
 // --------------------------------- [ Main Function ] -------------------------------------- //
 
 
-bool write(ostream& out, const Document& doc){
+bool write(ostream& out, const Document& doc, WriteOptions options){
 	vector<const Node*> node_stack = {};
 	vector<const Attr*> attr_stack = {};
 	node_stack.reserve(128);

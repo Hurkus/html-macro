@@ -94,7 +94,11 @@ string getCodeView(const linepos& line, string_view mark, string_view color){
 	
 	// Truncate mark
 	const bool at_end = (linev.end() == mark.begin() && mark.length() > 0);
-	mark = string_view(max(mark.begin(), linev.begin()), min(mark.end(), linev.end()));
+	{
+		const char* a = max(mark.begin(), linev.begin());
+		const char* b = min(mark.end(), linev.end());
+		mark = string_view(a, max(a, b));
+	}
 	
 	// Append line number
 	string str = to_string(line.row);
