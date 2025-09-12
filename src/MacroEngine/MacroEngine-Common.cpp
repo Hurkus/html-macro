@@ -4,7 +4,6 @@
 using namespace std;
 using namespace html;
 using namespace MacroEngine;
-using namespace Expression;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -21,12 +20,12 @@ bool MacroEngine::eval_attr_if(const Node& op, const Attr& attr){
 		HERE(warn_attr_double_quote(op, attr));
 	}
 	
-	pExpr expr = Expression::parse(expr_str, dbg);
+	Expression expr = Expression::parse(expr_str, dbg);
 	if (expr == nullptr){
 		return false;
 	}
 	
-	bool e = Expression::toBool(expr->eval(MacroEngine::variables, dbg));
+	bool e = toBool(expr.eval(MacroEngine::variables, dbg));
 	return e;
 }
 
@@ -41,13 +40,13 @@ static bool eval_attr_bool(const Node& op, const Attr& attr, bool value){
 		HERE(warn_attr_double_quote(op, attr));
 	}
 	
-	pExpr expr = Expression::parse(expr_str, NodeDebugger(op));
+	Expression expr = Expression::parse(expr_str, NodeDebugger(op));
 	if (expr == nullptr){
 		return false;
 	}
 	
-	Expression::Value val = expr->eval(MacroEngine::variables, NodeDebugger(op));
-	return Expression::toBool(val) == value;
+	Value val = expr.eval(MacroEngine::variables, NodeDebugger(op));
+	return toBool(val) == value;
 }
 
 bool MacroEngine::eval_attr_true(const Node& op, const Attr& attr){
@@ -68,12 +67,12 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff
 	else if (attr.options % NodeOptions::SINGLE_QUOTE){
 		const NodeDebugger dbg = NodeDebugger(op);
 		
-		pExpr expr = Expression::parse(attr.value(), dbg);
+		Expression expr = Expression::parse(attr.value(), dbg);
 		if (expr == nullptr){
 			return false;
 		}
 		
-		Expression::toStr(expr->eval(MacroEngine::variables, dbg), buff);
+		toStr(expr.eval(MacroEngine::variables, dbg), buff);
 		result = buff;
 	}
 	
@@ -103,13 +102,13 @@ Interpolate MacroEngine::eval_attr_interp(const Node& op, const Attr& attr){
 		return Interpolate::NONE;
 	}
 	
-	pExpr expr = Expression::parse(expr_str, NodeDebugger(op));
+	Expression expr = Expression::parse(expr_str, NodeDebugger(op));
 	if (expr == nullptr){
 		return Interpolate::NONE;
 	}
 		
-	Value res = expr->eval(MacroEngine::variables, NodeDebugger(op));
-	return Expression::toBool(res) ? Interpolate::ALL : Interpolate::NONE;
+	Value res = expr.eval(MacroEngine::variables, NodeDebugger(op));
+	return toBool(res) ? Interpolate::ALL : Interpolate::NONE;
 }
 
 
@@ -151,10 +150,10 @@ bool MacroEngine::eval_string(const Node& op, string_view str, string& buff){
 		
 		// Evaluate expression
 		assert(*a == '{' && *b == '}');
-		Expression::pExpr expr = Expression::parse(string_view(a+1, b), dbg);
+		Expression expr = Expression::parse(string_view(a+1, b), dbg);
 		
 		if (expr != nullptr){
-			Expression::toStr(expr->eval(MacroEngine::variables, dbg), buff);
+			toStr(expr.eval(MacroEngine::variables, dbg), buff);
 		} else {
 			return false;
 		}

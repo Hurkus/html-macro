@@ -1,12 +1,16 @@
-#include "Expression-impl.hpp"
+#include "Expression.hpp"
+#include "ExpressionOperation.hpp"
+#include "ExpressionAllocator.hpp"
 #include <cassert>
+#include <vector>
 #include <charconv>
 #include <type_traits>
 
 #include "Debug.hpp"
 
 using namespace std;
-using namespace Expression;
+using Operation = Expression::Operation;
+using Allocator = Expression::Allocator;
 
 
 // ---------------------------------- [ Definitions ] --------------------------------------- //
@@ -27,6 +31,7 @@ enum class Status {
 	INVALID_UNARY_EXPRESSION,	// Missing operand in unary expression.
 	INVALID_INT,
 	INVALID_FLOAT,
+	FUNC_ARG_OVERFLOW,			// Too many function arguments.
 	MEMORY,
 	ERROR,
 };
@@ -94,13 +99,14 @@ constexpr const char* parse_whiteSpace(const char* s, const char* end) noexcept 
 // ----------------------------------- [ Prototypes ] --------------------------------------- //
 
 
-static const char* parse_singleExpression(const char* s, const char* end, unique_ptr<Expr>& out);
+static const char* parse_singleExpression(const char* s, const char* end, Allocator& alc, Operation*& out);
+static const char* parse_binaryExpressionChain(const char* s, const char* end, Allocator& alc, Operation*& out);
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static const char* parse_num(const char* s, const char* end, unique_ptr<Expr>& out){
+static const char* parse_num(const char* s, const char* end, Allocator& alc, Operation*& out){
 	assert(s != nullptr && end != nullptr && s != end);
 	const char* beg = s;
 	
@@ -125,20 +131,19 @@ static const char* parse_num(const char* s, const char* end, unique_ptr<Expr>& o
 		s++;
 	}
 	
-	out = make_unique<Const>();
-	Const& expr_const = static_cast<Const&>(*out);
-	
 	if (dot){
-		double& n = expr_const.value.emplace<double>();
-		from_chars_result res = from_chars(beg, s, n);
+		Double* c = (Double*&)out = alc.alloc<Double>();
+		c->type = Operation::Type::DOUBLE;
+		from_chars_result res = from_chars(beg, s, c->n);
 		
 		if (res.ec != errc()){
 			throw Error(Status::INVALID_FLOAT, string_view(beg, s));
 		}
 		
 	} else {
-		long& n = expr_const.value.emplace<long>();
-		from_chars_result res = from_chars(beg, s, n);
+		Double* c = (Double*&)out = alc.alloc<Double>();
+		c->type = Operation::Type::LONG;
+		from_chars_result res = from_chars(beg, s, c->n);
 		
 		if (res.ec != errc()){
 			throw Error(Status::INVALID_INT, string_view(beg, s));
@@ -150,7 +155,7 @@ static const char* parse_num(const char* s, const char* end, unique_ptr<Expr>& o
 }
 
 
-static const char* parse_str(const char* s, const char* end, unique_ptr<Expr>& out){
+static const char* parse_str(const char* s, const char* end, Allocator& alc, Operation*& out){
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(isQuot(*s));
 	
@@ -176,9 +181,10 @@ static const char* parse_str(const char* s, const char* end, unique_ptr<Expr>& o
 	}
 	
 	assert(isQuot(*beg) && *beg == *s);
-	out = make_unique<Const>();
-	Const& expr_const = static_cast<Const&>(*out);
-	expr_const.value.emplace<string>(beg + 1, s);
+	String* c = (String*&)out = alc.alloc<String>();
+	c->type = Operation::Type::STRING;
+	c->s = string_view(beg + 1, s);
+	
 	return s + 1;
 }
 
@@ -186,7 +192,7 @@ static const char* parse_str(const char* s, const char* end, unique_ptr<Expr>& o
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static const char* parse_unaryExpression(const char* s, const char* end, unique_ptr<Expr>& out){
+static const char* parse_unaryExpression(const char* s, const char* end, Allocator& alc, Operation*& out){
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(isUnaryOp(*s));
 	
@@ -198,25 +204,27 @@ static const char* parse_unaryExpression(const char* s, const char* end, unique_
 		throw Error(Status::INVALID_UNARY_EXPRESSION, string_view(beg, s+1));
 	}
 	
-	unique_ptr<Expr> subexpr;
-	s = parse_singleExpression(s, end, subexpr);
+	Operation* subexpr = nullptr;
+	s = parse_singleExpression(s, end, alc, subexpr);
 	
+	UnaryOperation* unop = alc.alloc<UnaryOperation>();
 	switch (op){
 		case '-':
-			out = unop<Neg>(move(subexpr));
+			unop->type = Operation::Type::NEG;
+			unop->arg = subexpr;
 			break;
 		case '!':
-			out = unop<Not>(move(subexpr));
+			unop->type = Operation::Type::NOT;
+			unop->arg = subexpr;
 			break;
 		case '+':
-			out = move(subexpr);
 			break;
 		default:
-			out = move(subexpr);
 			assert(false);
 			break;
 	}
 	
+	out = unop;
 	return s;
 }
 
@@ -255,42 +263,54 @@ static int try_parse_binaryOp(const char*& s, const char* end) noexcept {
 }
 
 
-static unique_ptr<BinaryOp> _binop(pExpr&& a, pExpr&& b, int op){
-	assert(a != nullptr && b != nullptr);
+static Operation::Type _binop(int op){
 	switch (op){
 		case '+':
-			return binop<Add>(move(a), move(b));
+			return Operation::Type::ADD;
 		case '-':
-			return binop<Sub>(move(a), move(b));
+			return Operation::Type::SUB;
 		case '*':
-			return binop<Mul>(move(a), move(b));
+			return Operation::Type::MUL;
 		case '/':
-			return binop<Div>(move(a), move(b));
-		
-		case '==':
-			return binop<Eq>(move(a), move(b));
-		case '!=':
-			return binop<Neq>(move(a), move(b));
-		case '>=':
-			return binop<Gte>(move(a), move(b));
-		case '<=':
-			return binop<Lte>(move(a), move(b));
-		case '>':
-			return binop<Gt>(move(a), move(b));
-		case '<':
-			return binop<Lt>(move(a), move(b));
+			return Operation::Type::DIV;
+		case '%':
+			return Operation::Type::MOD;
+		case '^':
+			return Operation::Type::XOR;
 		
 		default:
-			assert(false);
-			throw Error(Status::ERROR);
+		case '==':
+			return Operation::Type::EQ;
+		case '!=':
+			return Operation::Type::NEQ;
+		case '<':
+			return Operation::Type::LT;
+		case '<=':
+			return Operation::Type::LTE;
+		case '>':
+			return Operation::Type::GT;
+		case '>=':
+			return Operation::Type::GTE;
 	}
 }
 
 
-void makeBinopTree(vector<unique_ptr<Expr>>& args, vector<int>& ops){
+static BinaryOperation* _binop(Allocator& alc, Operation* a, Operation* b, int op){
+	assert(a != nullptr && b != nullptr);
+	BinaryOperation* binop = alc.alloc<BinaryOperation>();
+	binop->type = _binop(op);
+	binop->arg_1 = a;
+	binop->arg_2 = b;
+	return binop;
+}
+
+
+Operation* makeBinopTree(Allocator& alc, vector<Operation*>& args, vector<int>& ops){
 	assert(args.size() == ops.size()+1);
-	if (args.size() <= 1){
-		return;
+	if (args.size() == 0){
+		return nullptr;
+	} else if (args.size() == 1){
+		goto ret;
 	}
 	
 	// Merge multiplications
@@ -298,9 +318,7 @@ void makeBinopTree(vector<unique_ptr<Expr>>& args, vector<int>& ops){
 		assert(size_t(i+1) < args.size());
 		
 		if (ops[i] == '*' || ops[i] == '/' || ops[i] == '%'){
-			unique_ptr<Expr> e = _binop(move(args[i]), move(args[i+1]), ops[i]);
-			args[i] = move(e);
-			
+			args[i] = _binop(alc, args[i], args[i+1], ops[i]);
 			ops.erase(ops.begin() + i);
 			args.erase(args.begin() + i + 1);
 			i--;
@@ -313,9 +331,7 @@ void makeBinopTree(vector<unique_ptr<Expr>>& args, vector<int>& ops){
 		assert(size_t(i+1) < args.size());
 		
 		if (ops[i] == '+' || ops[i] == '-'){
-			unique_ptr<Expr> e = _binop(move(args[i]), move(args[i+1]), ops[i]);
-			args[i] = move(e);
-			
+			args[i] = _binop(alc, args[i], args[i+1], ops[i]);
 			ops.erase(ops.begin() + i);
 			args.erase(args.begin() + i + 1);
 			i--;
@@ -327,34 +343,37 @@ void makeBinopTree(vector<unique_ptr<Expr>>& args, vector<int>& ops){
 	for (long i = 0 ; i < long(ops.size()) ; i++){
 		assert(size_t(i+1) < args.size());
 		// `args[0]` is cummulative expression
-		unique_ptr<Expr> e = _binop(move(args[0]), move(args[i+1]), ops[i]);
-		args[0] = move(e);
+		args[0] = _binop(alc, args[0], args[i+1], ops[i]);
 	}
 	
+	ret:
+	Operation* e = args[0];
 	ops.clear();
-	args.resize(1);
+	args.clear();
+	return e;
 }
 
 
-static const char* parse_binaryExpressionChain(const char* s, const char* end, unique_ptr<Expr>& out){
+static const char* parse_binaryExpressionChain(const char* s, const char* end, Allocator& alc, Operation*& out){
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(!isSpace(*s));
 	const char* beg = s;
 	
-	unique_ptr<Expr> first;
-	s = parse_singleExpression(s, end, first);
+	Operation* first = nullptr;
+	s = parse_singleExpression(s, end, alc, first);
 	s = parse_whiteSpace(s, end);
 	assert(first != nullptr);
 	
 	// No binary operation
-	if (s == end){ no_bin:
-		out = move(first);
+	if (s == end){
+		out = first;
 		return s;
 	}
 	
 	int binop = try_parse_binaryOp(s, end);
 	if (binop == 0){
-		goto no_bin;
+		out = first;
+		return s;
 	}
 	
 	s = parse_whiteSpace(s, end);
@@ -362,14 +381,14 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, u
 		throw Error(Status::INVALID_BINARY_EXPRESSION, string_view(beg, s));
 	}
 	
-	unique_ptr<Expr> second;
-	s = parse_singleExpression(s, end, second);
+	Operation* second = nullptr;
+	s = parse_singleExpression(s, end, alc, second);
 	assert(second != nullptr);
 	
 	// Lookahead for more operations
 	s = parse_whiteSpace(s, end);
 	if (s == end){ one_bin:
-		out = _binop(move(first), move(second), binop);
+		out = _binop(alc, first, second, binop);
 		return s;
 	}
 	
@@ -381,7 +400,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, u
 	}
 	
 	// Chain binops
-	vector<unique_ptr<Expr>> args;
+	vector<Operation*> args;
 	vector<int> ops;
 	args.reserve(8);
 	args.emplace_back(move(first));
@@ -397,8 +416,10 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, u
 			throw Error(Status::INVALID_BINARY_EXPRESSION, string_view(mark, s));
 		}
 		
-		unique_ptr<Expr>& arg = args.emplace_back();
-		s = parse_singleExpression(s, end, arg);
+		Operation* arg = nullptr;
+		s = parse_singleExpression(s, end, alc, arg);
+		assert(arg != nullptr);
+		args.emplace_back(arg);
 		
 		// Look ahead for more binops
 		s = parse_whiteSpace(s, end);
@@ -418,9 +439,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, u
 	
 	// Build expression tree
 	assert(args.size() == ops.size()+1);
-	makeBinopTree(args, ops);
-	assert(args.size() == 1);
-	out = move(args[0]);
+	out = makeBinopTree(alc, args, ops);
 	return s;
 }
 
@@ -440,14 +459,14 @@ static const char* parse_identifier(const char* s, const char* end, string_view&
 }
 
 
-static const char* parse_func(const char* s, const char* end, string_view name, unique_ptr<Expr>& out){
+static const char* parse_func(const char* s, const char* end, Allocator& alc, string_view name, Operation*& out){
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(*s == '(');
 	
-	out = make_unique<Func>();
-	Func& f = static_cast<Func&>(*out);
-	f.name = name;
+	Function::Arg argv[Function::MAX_ARGS];
+	int argc = 0;
 	
+	// Parse arguments
 	const char* beg = s++;
 	while (true){
 		s = parse_whiteSpace(s, end);
@@ -455,9 +474,9 @@ static const char* parse_func(const char* s, const char* end, string_view name, 
 		if (s == end){ unclosed:
 			throw Error(Status::UNCLOSED_EXPRESSION, string_view(beg, s));
 		} else if (*s == ')'){
-			return s + 1;
+			break;
 		} else if (*s == ','){
-			if (f.args.empty()){
+			if (argc == 0){
 				throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
 			}
 			
@@ -466,18 +485,40 @@ static const char* parse_func(const char* s, const char* end, string_view name, 
 				goto unclosed;
 			}
 			
-		} else if (!f.args.empty()){
+		} else if (argc > 0){
 			throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
 		}
 		
-		s = parse_binaryExpressionChain(s, end, f.args.emplace_back());
+		Operation* arg = nullptr;
+		const char* arg_beg = s;
+		s = parse_binaryExpressionChain(s, end, alc, arg);
+		assert(arg != nullptr);
+		
+		if (argc >= Function::MAX_ARGS){
+			throw Error(Status::FUNC_ARG_OVERFLOW, string_view(arg_beg, s));
+		} else {
+			argv[argc++] = Function::Arg {
+				.mark = string_view(arg_beg, s),
+				.expr = arg
+			};
+		}
+		
 	}
 	
-	throw Error(Status::ERROR, string_view(beg, s));
+	// Create function
+	Function* f = static_cast<Function*>(alc.alloc(sizeof(Function) + sizeof(*Function::argv)*argc));
+	f->type = Operation::Type::FUNC;
+	f->name = name;
+	f->argc = argc;
+	copy(argv, argv + argc, f->argv);
+	
+	assert(*s == ')');
+	out = f;
+	return s + 1;
 }
 
 
-static const char* parse_varOrFunc(const char* s, const char* end, unique_ptr<Expr>& out){
+static const char* parse_varOrFunc(const char* s, const char* end, Allocator& alc, Operation*& out){
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(isFirstIdentifier(*s));
 	
@@ -488,13 +529,15 @@ static const char* parse_varOrFunc(const char* s, const char* end, unique_ptr<Ex
 	// Check if function
 	s = parse_whiteSpace(s, end);
 	if (s != end && *s == '('){
-		return parse_func(s, end, id, out);
+		return parse_func(s, end, alc, id, out);
 	}
 	
 	// Is variable
 	else {
-		out = make_unique<Var>();
-		static_cast<Var*>(out.get())->name = id;
+		Variable* var = alc.alloc<Variable>();
+		var->type = Operation::Type::VAR;
+		var->name = id;
+		out = var;
 	}
 	
 	return s;
@@ -504,25 +547,25 @@ static const char* parse_varOrFunc(const char* s, const char* end, unique_ptr<Ex
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static const char* parse_singleExpression(const char* s, const char* end, unique_ptr<Expr>& out){
+static const char* parse_singleExpression(const char* s, const char* end, Allocator& alc, Operation*& out){
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(!isSpace(*s));
 	
 	if (isDigit(*s)){
-		return parse_num(s, end, out);
+		return parse_num(s, end, alc, out);
 	} else if (isQuot(*s)){
-		return parse_str(s, end, out);
+		return parse_str(s, end, alc, out);
 	} else if (isFirstIdentifier(*s)){
-		return parse_varOrFunc(s, end, out);
+		return parse_varOrFunc(s, end, alc, out);
 	} else if (isUnaryOp(*s)){
-		return parse_unaryExpression(s, end, out);
+		return parse_unaryExpression(s, end, alc, out);
 	}
 	
 	else if (*s == '('){
 		const char* beg = s;
 		
 		s = parse_whiteSpace(s + 1, end);
-		s = parse_binaryExpressionChain(s, end, out);
+		s = parse_binaryExpressionChain(s, end, alc, out);
 		assert(out != nullptr);
 		
 		s = parse_whiteSpace(s + 1, end);
@@ -548,13 +591,13 @@ static void report(const Error& err, const Debugger& dbg){
 	
 	switch (err.status){
 		case Status::UNEXPECTED_SYMBOL:
-			HERE(dbg.error(m, "Unexpected symbol " P("'%.*s'") " in expression.\n", ml, ms));
+			HERE(dbg.error(m, "Unexpected symbol " P("`%.*s`") " in expression.\n", ml, ms));
 			break;
 		case Status::UNCLOSED_STRING:
 			HERE(dbg.error(m, "Unterminated string literal in expression.\n"));
 			break;
 		case Status::UNCLOSED_EXPRESSION:
-			HERE(dbg.error(m, "Missing closing bracket " P("'('") " in expression.\n"));
+			HERE(dbg.error(m, "Missing closing bracket " P("`(`") " in expression.\n"));
 			break;
 		case Status::INVALID_BINARY_EXPRESSION:
 			HERE(dbg.error(m, "Missing second operand in binary epxression.\n"));
@@ -568,6 +611,9 @@ static void report(const Error& err, const Debugger& dbg){
 		case Status::INVALID_UNARY_EXPRESSION:
 			HERE(dbg.error(m, "Missing operand in unary expression.\n"));
 			break;
+		case Status::FUNC_ARG_OVERFLOW:
+			HERE(dbg.error(m, "Too many arguments in function. Maximum allowed is %ld.\n", Function::MAX_ARGS));
+			break;
 		case Status::MEMORY:
 			HERE(dbg.error(m, "Ran out of memory when parsing expression.\n"));
 			break;
@@ -579,19 +625,22 @@ static void report(const Error& err, const Debugger& dbg){
 }
 
 
-pExpr Expression::parse(string_view str, const Debugger& dbg) noexcept {
+Expression Expression::parse(string_view str, const Debugger& dbg) noexcept {
 	if (str.empty()){
-		return nullptr;
+		return {};
 	}
 	
 	try {
-		pExpr expr;
+		Expression expr;
+		expr.alloc = new Expression::Allocator();
+		
 		const char* s = str.begin();
 		const char* end = str.end();
 		
 		s = parse_whiteSpace(s, end);
-		s = parse_binaryExpressionChain(s, end, expr);
+		s = parse_binaryExpressionChain(s, end, *expr.alloc, expr.op);
 		s = parse_whiteSpace(s, end);
+		assert(expr.op != nullptr);
 		
 		if (s != end){
 			throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
@@ -606,83 +655,8 @@ pExpr Expression::parse(string_view str, const Debugger& dbg) noexcept {
 		report(Error(Status::ERROR, str), dbg);
 	}
 	
-	return nullptr;
+	return {};
 }
 
 
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-#ifdef DEBUG
-
-
-static void _serialize(const Expr* expr, string& buff){
-	auto _valstr = [&](const auto& v){
-		if constexpr (IS_STR(v))
-			buff.append(v);
-		else
-			buff.append(to_string(v));
-	};
-
-	auto __binstr = [&](const BinaryOp* b, const char* op){
-		buff.push_back('(');
-		_serialize(b->a.get(), buff);
-		buff.append(op);
-		_serialize(b->b.get(), buff);
-		buff.push_back(')');
-	};
-	
-	if (const Const* e = dynamic_cast<const Const*>(expr)){
-		visit(_valstr, e->value);
-	} else if (const Var* e = dynamic_cast<const Var*>(expr)){
-		buff.append(e->name);
-	} else if (const Not* e = dynamic_cast<const Not*>(expr)){
-		buff.append("!(");
-		_serialize(e->e.get(), buff);
-		buff.push_back(')');
-	} else if (const Neg* e = dynamic_cast<const Neg*>(expr)){
-		buff.append("-(");
-		_serialize(e->e.get(), buff);
-		buff.push_back(')');
-	} else if (const Add* e = dynamic_cast<const Add*>(expr)){
-		__binstr(e, "+");
-	} else if (const Sub* e = dynamic_cast<const Sub*>(expr)){
-		__binstr(e, "-");
-	} else if (const Mul* e = dynamic_cast<const Mul*>(expr)){
-		__binstr(e, "*");
-	} else if (const Div* e = dynamic_cast<const Div*>(expr)){
-		__binstr(e, "/");
-	} else if (const Eq* e = dynamic_cast<const Eq*>(expr)){
-		__binstr(e, "==");
-	} else if (const Neq* e = dynamic_cast<const Neq*>(expr)){
-		__binstr(e, "!=");
-	} else if (const Lt* e = dynamic_cast<const Lt*>(expr)){
-		__binstr(e, "<");
-	} else if (const Lte* e = dynamic_cast<const Lte*>(expr)){
-		__binstr(e, "<=");
-	} else if (const Gt* e = dynamic_cast<const Gt*>(expr)){
-		__binstr(e, ">");
-	} else if (const Gte* e = dynamic_cast<const Gte*>(expr)){
-		__binstr(e, ">=");
-	} else if (const Func* e = dynamic_cast<const Func*>(expr)){
-		buff.append(e->name).push_back('(');
-		
-		for (size_t i = 0 ; i < e->args.size() ; i++){
-			if (i > 0) buff.push_back(',');
-			_serialize(e->args[i].get(), buff);
-		}
-		
-		buff.push_back(')');
-	} else {
-		buff.append("(null)");
-	}
-}
-
-
-string Expression::serialize(const pExpr& expr){
-	string s;
-	_serialize(expr.get(), s);
-	return s;
-}
-
-
-#endif
 // ------------------------------------------------------------------------------------------ //

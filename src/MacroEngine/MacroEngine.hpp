@@ -24,7 +24,7 @@ enum class Interpolate {
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 
-extern Expression::VariableMap variables;
+extern VariableMap variables;
 
 extern Branch currentBranch_block;
 extern Branch currentBranch_inline;

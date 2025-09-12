@@ -4,7 +4,6 @@
 
 using namespace std;
 using namespace html;
-using namespace Expression;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -25,12 +24,12 @@ void MacroEngine::set(const Node& op){
 		if (attr->options % NodeOptions::SINGLE_QUOTE){
 			const NodeDebugger dbg = NodeDebugger(op);
 			
-			pExpr expr = Expression::parse(value, dbg);
+			Expression expr = Expression::parse(value, dbg);
 			if (expr == nullptr){
 				return;
 			}
 			
-			MacroEngine::variables.insert(name, expr->eval(MacroEngine::variables, dbg));
+			MacroEngine::variables.insert(name, expr.eval(MacroEngine::variables, dbg));
 		}
 		
 		// Interpolate
@@ -187,9 +186,9 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	
 	// Parse expressions
 	const NodeDebugger dbg = NodeDebugger(op);
-	Expression::pExpr expr_setup = nullptr;
-	Expression::pExpr expr_cond = nullptr;
-	Expression::pExpr expr_inc = nullptr;
+	Expression expr_setup = {};
+	Expression expr_cond = {};
+	Expression expr_inc = {};
 	
 	if (attr_setup != nullptr){
 		if (attr_setup->options % NodeOptions::SINGLE_QUOTE == false){
@@ -231,7 +230,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	
 	// Run setup
 	if (expr_setup != nullptr){
-		variables.insert(attr_setup->name(), expr_setup->eval(variables, dbg));
+		variables.insert(attr_setup->name(), expr_setup.eval(variables, dbg));
 	}
 	
 	// Run loop
@@ -239,13 +238,13 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	long i = 0;
 	
 	assert(expr_cond != nullptr);
-	while (Expression::toBool(expr_cond->eval(variables, dbg)) == cond_expected){
+	while (toBool(expr_cond.eval(variables, dbg)) == cond_expected){
 		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		
 		// Increment
 		if (expr_inc != nullptr){
-			variables.insert(attr_inc->name(), expr_inc->eval(variables, dbg));
+			variables.insert(attr_inc->name(), expr_inc.eval(variables, dbg));
 		}
 		
 		i++;
@@ -295,7 +294,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	
 	// Parse expressions
 	const NodeDebugger dbg = NodeDebugger(op);
-	Expression::pExpr expr_cond = nullptr;
+	Expression expr_cond = {};
 	
 	if (attr_cond != nullptr){
 		if (attr_cond->options % NodeOptions::SINGLE_QUOTE == false){
@@ -317,7 +316,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	const auto _interp_2 = MacroEngine::currentInterpolation;
 	long i = 0;
 	
-	while (Expression::toBool(expr_cond->eval(variables, dbg)) == cond_expected){
+	while (toBool(expr_cond.eval(variables, dbg)) == cond_expected){
 		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		i++;

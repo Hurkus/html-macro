@@ -1,40 +1,15 @@
 #pragma once
-#include <memory>
-#include <string>
-#include <vector>
+#include <string_view>
 #include <variant>
 
 #include "str_map.hpp"
 #include "Debugger.hpp"
 
 
-namespace Expression {
-// ----------------------------------- [ Structures ] --------------------------------------- //
-
-
-using StrValue = std::string;
-using NumValue = std::variant<long,double>;
 using Value = std::variant<long,double,std::string>;
-
-struct Expr;
-using pExpr = std::unique_ptr<Expr>;
-
 using VariableMap = str_map<Value>;
 
 
-// ----------------------------------- [ Structures ] --------------------------------------- //
-
-
-struct Expr {
-	virtual ~Expr(){}
-	virtual Value eval(const VariableMap& vars, const Debugger&) noexcept = 0;
-};
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-pExpr parse(std::string_view str, const Debugger&) noexcept;
 
 
 bool toBool(const Value& val);
@@ -45,8 +20,56 @@ void toStr(const Value& val, std::string& buff);
 void toStr(Value&& val, std::string& buff);
 
 
-std::string serialize(const pExpr& e);
 
 
+class Expression {
+// ----------------------------------- [ Structures ] --------------------------------------- //
+public:
+	struct Allocator;
+	struct Operation;
+	
+// ------------------------------------[ Properties ] --------------------------------------- //
+private:
+	Allocator* alloc = nullptr;
+	Operation* op = nullptr;
+	
+// ---------------------------------- [ Constructors ] -------------------------------------- //
+public:
+	Expression() = default;
+	
+	Expression(Expression&& o) : alloc{o.alloc}, op{o.op} {
+		o.alloc = nullptr;
+		o.op = nullptr;
+	}
+	
+	Expression& operator=(Expression&& o){
+		std::swap(this->alloc, o.alloc);
+		std::swap(this->op, o.op);
+		return *this;
+	}
+	
+public:
+	~Expression();
+	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+public:
+	Value eval(const VariableMap& vars, const Debugger&) const noexcept;
+	
+public:
+	static Expression parse(std::string_view str, const Debugger&) noexcept;
+	std::string serialize() const; 
+	
+// ----------------------------------- [ Operators ] ---------------------------------------- //
+public:
+	bool operator==(nullptr_t){
+		return op == nullptr;
+	}
+	
+	bool operator!=(nullptr_t){
+		return op != nullptr;
+	}
+	
 // ------------------------------------------------------------------------------------------ //
-}
+};
+
+

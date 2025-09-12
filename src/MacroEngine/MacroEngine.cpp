@@ -11,7 +11,7 @@ using namespace MacroEngine;
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 
-Expression::VariableMap MacroEngine::variables;
+VariableMap MacroEngine::variables;
 
 Branch MacroEngine::currentBranch_block = Branch::NONE;
 Branch MacroEngine::currentBranch_inline = Branch::NONE;

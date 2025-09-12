@@ -30,7 +30,7 @@ struct str_chunks {
 
 struct ShellCmd {
 	string_view cmd;
-	const Expression::VariableMap* vars = nullptr;
+	const VariableMap* vars = nullptr;
 	const vector<string_view>* env = nullptr;
 	str_chunks* capture = nullptr;
 };
@@ -97,7 +97,7 @@ static string_view trim_whitespace(string_view s){
 
 
 // Called from child process
-static void _setEnv(const Expression::VariableMap& vars, const vector<string_view>& env){
+static void _setEnv(const VariableMap& vars, const vector<string_view>& env){
 	string buff = {};
 	
 	for (string_view name : env){
@@ -107,7 +107,7 @@ static void _setEnv(const Expression::VariableMap& vars, const vector<string_vie
 		}
 		
 		buff.clear();
-		Expression::toStr(keyval->value, buff);
+		toStr(keyval->value, buff);
 		setenv(keyval->key, buff.c_str(), 1);
 	}
 	
