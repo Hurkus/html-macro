@@ -16,7 +16,7 @@ using namespace MacroEngine;
 
 
 #define Y(s)		ANSI_YELLOW s ANSI_RESET
-#define VERSION 	"Alpha v0.1.0"
+#define VERSION 	"Version 0.9.0"
 
 
 void help(){
