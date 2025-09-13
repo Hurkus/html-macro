@@ -1,0 +1,34 @@
+<title>Test 8 -- Inline ifs</title>
+
+<SET lang="en-us" suffix='true'/>
+<CALL NAME="m"/>
+<SET lang="en-gb"/>
+<CALL NAME="m"/>
+<SET lang="en-au"/>
+<CALL NAME="m"/>
+
+<MACRO NAME="m">
+	<p lang='lang'>
+		<span>select</span>
+		<span IF='lang == "en-us"'>color</span>
+		<span></span>
+		<span ELIF='lang == "en-gb"'>colour</span>
+		<span></span>
+		<span ELSE>colour</span>
+		
+		<IF lang="en-au" TRUE='suffix'>
+			<span>mate.</span>
+			<SET-TAG NAME="aus"/>
+		</IF>
+		<ELIF lang="en-us" suffix>
+			<span>now!</span>
+		</ELIF>
+		<ELSE>
+			<span>now.</span>
+			<SET-TAG brit/>
+		</ELSE>
+	</p>
+</MACRO>
+
+<IF undefd-var=""></IF>
+<ELSE><ERROR>Var should not be defined.</ERROR></ELSE>

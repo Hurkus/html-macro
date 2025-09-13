@@ -11,11 +11,9 @@ using namespace MacroEngine;
 // ---------------------------------- [ Definitions ] --------------------------------------- //
 
 
-#define COLOR_ERROR	ANSI_RED
-#define COLOR_WARN	ANSI_YELLOW
-
-#define RESET		ANSI_RESET
-#define BOLD 		ANSI_BOLD
+#define BOLD(s) 	ANSI_BOLD s ANSI_RESET
+#define RED(s)		ANSI_RED s ANSI_RESET
+#define YELLOW(s)	ANSI_YELLOW s ANSI_RESET
 #define PURPLE(s)	ANSI_PURPLE s ANSI_RESET
 
 
@@ -58,53 +56,53 @@ static linepos findLine(const Document& doc, const char* p){
 
 static void print_error_pfx(const linepos& pos){
 	if (pos.row > 0 && pos.col > 0)
-		fprintf(stderr, BOLD "%s:%ld:%ld: " COLOR_ERROR "error: " RESET, pos.file, pos.row, pos.col);
+		fprintf(stderr, BOLD("%s:%ld:%ld: ") RED("error: "), pos.file, pos.row, pos.col);
 	else if (pos.row > 0)
-		fprintf(stderr, BOLD "%s:%ld: " COLOR_ERROR "error: " RESET, pos.file, pos.row);
+		fprintf(stderr, BOLD("%s:%ld: ") RED("error: "), pos.file, pos.row);
 	else if (pos.file != nullptr)
-		fprintf(stderr, BOLD "%s: " COLOR_ERROR "error: " RESET, pos.file);
+		fprintf(stderr, BOLD("%s: ") RED("error: "), pos.file);
 	else
-		fprintf(stderr, COLOR_ERROR "error: " RESET);
+		fprintf(stderr, RED("error: "));
 }
 
 static void print_warn_pfx(const linepos& pos){
 	if (pos.row > 0 && pos.col > 0)
-		fprintf(stderr, BOLD "%s:%ld:%ld: " COLOR_WARN "warn: " RESET, pos.file, pos.row, pos.col);
+		fprintf(stderr, BOLD("%s:%ld:%ld: ") YELLOW("warn: "), pos.file, pos.row, pos.col);
 	else if (pos.row > 0)
-		fprintf(stderr, BOLD "%s:%ld: " COLOR_WARN "warn: " RESET, pos.file, pos.row);
+		fprintf(stderr, BOLD("%s:%ld: ") YELLOW("warn: "), pos.file, pos.row);
 	else if (pos.file != nullptr)
-		fprintf(stderr, BOLD "%s: " COLOR_WARN "warn: " RESET, pos.file);
+		fprintf(stderr, BOLD("%s: ") YELLOW("warn: "), pos.file);
 	else
-		fprintf(stderr, COLOR_WARN "warn: " RESET);
+		fprintf(stderr, YELLOW("warn: "));
 }
 
 static void print_error_codeView(const linepos& line, string_view mark){
-	fprintf(stderr, "%s\n", getCodeView(line, mark, COLOR_ERROR).c_str());
+	fprintf(stderr, "%s\n", getCodeView(line, mark, ANSI_RED).c_str());
 }
 
 static void print_warn_codeView(const linepos& line, string_view mark){
-	fprintf(stderr, "%s\n", getCodeView(line, mark, COLOR_WARN).c_str());
+	fprintf(stderr, "%s\n", getCodeView(line, mark, ANSI_YELLOW).c_str());
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void error(const Node& node, const char* msg){
+void error(const Node& node, string_view msg){
 	print_error_pfx(findLine(node.root(), node.value_p));
-	fprintf(stderr, "%s\n", msg);
+	fprintf(stderr, "%.*s\n", int(msg.length()), msg.data());
 }
 
 
-void warn(const Node& node, const char* msg){
+void warn(const Node& node, string_view msg){
 	print_warn_pfx(findLine(node.root(), node.value_p));
-	fprintf(stderr, "%s\n", msg);
+	fprintf(stderr, "%.*s\n", int(msg.length()), msg.data());
 }
 
 
-void info(const Node& node, const char* msg){
+void info(const Node& node, string_view msg){
 	print(findLine(node.root(), node.value_p));
-	fprintf(stderr, "%s\n", msg);
+	fprintf(stderr, "%.*s\n", int(msg.length()), msg.data());
 }
 
 
@@ -213,6 +211,14 @@ void warn_file_include(const Node& node, const Attr& attr, const char* fileName)
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+void error_unsupported_type(const Node& node){
+	linepos pos = findLine(node.root(), node.value_p);
+	print_error_pfx(pos);
+	fprintf(stderr, "Unsupported tag type.\n");
+	print_error_codeView(pos, node.value_p);
+}
+
+
 void warn_unknown_macro_tag(const Node& node){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_error_pfx(pos);
@@ -263,6 +269,42 @@ void warn_shell_exit(const Node& node, int i){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+void error_missing_preceeding_if_node(const Node& node){
+	linepos pos = findLine(node.root(), node.value_p);
+	print_error_pfx(pos);
+	fprintf(stderr, "Missing preceeding " PURPLE("<IF>") " macro.\n");
+	print_error_codeView(pos, node.value_p);
+}
+
+
+void error_missing_preceeding_if_attr(const Node& node, const Attr& attr){
+	linepos pos = findLine(node.root(), attr.name_p);
+	print_error_pfx(pos);
+	fprintf(stderr, "Missing preceeding " PURPLE("`IF`") " attribute in a sibling node.\n");
+	print_error_codeView(pos, attr.name());
+}
+
+
+void error_undefined_variable(const html::Node& node, const string_view name){
+	const Document& doc = node.root();
+	linepos pos = findLine(doc, name.data());
+	
+	if (!pos.line.empty()){
+		print_error_pfx(pos);
+		fprintf(stderr, "Undefined variable " PURPLE("`%.*s`") ".\n", int(name.length()), name.data());
+		print_error_codeView(pos, name);
+	} else {
+		pos = findLine(doc, node.value_p);
+		print_error_pfx(pos);
+		fprintf(stderr, "Undefined variable " PURPLE("`%.*s`") ".\n", int(name.length()), name.data());
+	}
+	
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 void error_newline(const Node& node, const char* p){
 	linepos pos = findLine(node.root(), p);
 	print_error_pfx(pos);
@@ -271,12 +313,22 @@ void error_newline(const Node& node, const char* p){
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void warn_text_missing(const Node& node){
+	linepos pos = findLine(node.root(), node.value_p);
+	print_warn_pfx(pos);
+	fprintf(stderr, "Macro " PURPLE("`%.*s`") " requires text content.\n", int(node.value_len), node.value_p);
+}
+
+
 void warn_child_ignored(const Node& node){
 	const Document& doc = node.root();
 	
 	linepos pos = findLine(doc, node.value_p);
 	print_warn_pfx(pos);
-	fprintf(stderr, "Content of node " PURPLE("`%.*s`") " ignored.\n", int(node.value_len), node.value_p);
+	fprintf(stderr, "Content of macro " PURPLE("`%.*s`") " ignored.\n", int(node.value_len), node.value_p);
 	
 	if (node.child != nullptr){
 		string_view mark = trimWhitespace(node.child->value());

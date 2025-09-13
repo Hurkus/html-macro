@@ -1,5 +1,6 @@
 #include "MacroEngine.hpp"
 #include "Debug.hpp"
+#include "DebugSource.hpp"
 
 using namespace std;
 using namespace html;
@@ -9,7 +10,7 @@ using namespace MacroEngine;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static string_view trim_whitespace(string_view s){
+static string_view trimWhitespace(string_view s){
 	const char* beg = s.begin();
 	const char* end = beg + s.length();
 	
@@ -23,80 +24,83 @@ static string_view trim_whitespace(string_view s){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-struct LogInfo {
-	string msg = {};
-};
-
-
-static bool eval(const Node& op, LogInfo& out){
-	Interpolate interp = MacroEngine::currentInterpolation;
-	
+static const Node* eval(const Node& op){
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		string_view name = attr->name();
 		
-		if (name == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return false;
-		} else if (name == "INTERPOLATE"){
-			interp = eval_attr_interp(op, *attr);
-		} else {
-			HERE(warn_ignored_attribute(op, *attr));
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return nullptr;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
 		}
 		
+		HERE(warn_ignored_attribute(op, *attr));
 	}
 	
 	const Node* txt = op.child;
-	if (txt != nullptr && txt->type != NodeType::TEXT){
-		error(*txt, "Expected plain text node.");
-		return false;
+	if (txt == nullptr || txt->type != NodeType::TEXT){
+		HERE(warn_text_missing(op));
+		return nullptr;
 	}
 	
-	string_view msg = trim_whitespace(txt->value());
-	
-	// Interpolate
-	if (interp % Interpolate::CONTENT){
-		eval_string(op, msg, out.msg);
-	} else {
-		out.msg = msg;
-	}
-	
-	return true;
+	return txt;
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::info(const Node& op){
-	LogInfo info = {};
-	if (!eval(op, info)){
+void MacroEngine::error(const Node& op){
+	const Node* txt = eval(op);
+	if (txt == nullptr){
 		return;
 	}
 	
-	string msg = string(info.msg);
-	::info(op, msg.c_str());
+	string_view msg = trimWhitespace(txt->value());
+	if (txt->options % NodeOptions::INTERPOLATE){
+		string buff;
+		if (eval_string(op, msg, buff))
+			::error(op, buff);
+	} else {
+		::error(op, msg);
+	}
+	
 }
 
 
 void MacroEngine::warn(const Node& op){
-	LogInfo info = {};
-	if (!eval(op, info)){
+	const Node* txt = eval(op);
+	if (txt == nullptr){
 		return;
 	}
 	
-	string msg = string(info.msg);
-	::warn(op, msg.c_str());
+	string_view msg = trimWhitespace(txt->value());
+	if (txt->options % NodeOptions::INTERPOLATE){
+		string buff;
+		if (eval_string(op, msg, buff))
+			::warn(op, buff);
+	} else {
+		::warn(op, msg);
+	}
+	
 }
 
 
-void MacroEngine::error(const Node& op){
-	LogInfo info = {};
-	if (!eval(op, info)){
+void MacroEngine::info(const Node& op){
+	const Node* txt = eval(op);
+	if (txt == nullptr){
 		return;
 	}
 	
-	string msg = string(info.msg);
-	::error(op, msg.c_str());
+	string_view msg = trimWhitespace(txt->value());
+	if (txt->options % NodeOptions::INTERPOLATE){
+		string buff;
+		if (eval_string(op, msg, buff))
+			::info(op, buff);
+	} else {
+		::info(op, msg);
+	}
+	
 }
 
 

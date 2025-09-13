@@ -34,6 +34,7 @@ constexpr array testFiles = {
 	tuple("test/test-5.in.html", "test/test-5.out.html"),	// Macros and includes
 	tuple("test/test-6.in.html", "test/test-6.out.html"),	// Shell
 	tuple("test/test-7.in.html", "test/test-7.out.html"),	// Expression functions
+	tuple("test/test-8.in.html", "test/test-8.out.html"),	// Inline ifs
 };
 
 

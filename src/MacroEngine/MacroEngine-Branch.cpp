@@ -9,15 +9,32 @@ using namespace html;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+#define IS_TYPE(e, t)	(std::is_same_v<std::decay_t<decltype(e)>, t>)
+#define IS_STR(e)		(IS_TYPE(e, string))
+
+constexpr bool isUpper(char c){
+	return 'A' <= c && c <= 'Z';
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 void MacroEngine::set(const Node& op){
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		string_view value = attr->value();
 		
 		if (name.empty()){
+			assert(!name.empty());
 			continue;
-		} else if (name == "IF" && !eval_attr_if(op, *attr)){
-			return;
+		}
+		
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
 		}
 		
 		// Expression
@@ -56,6 +73,74 @@ void MacroEngine::set(const Node& op){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+static MacroEngine::Branch attr_equals_variable(const Node& op, const Attr& attr){
+	string_view var_name = attr.name();
+	const Value* var = MacroEngine::variables.get(var_name);
+	
+	if (attr.value_p == nullptr){
+		if (var != nullptr && toBool(*var))
+			return MacroEngine::Branch::PASSED;
+		else
+			return MacroEngine::Branch::FAILED;
+	}
+	
+	// Evaluate expression
+	else if (attr.options % NodeOptions::SINGLE_QUOTE){
+		const NodeDebugger dbg = NodeDebugger(op);
+		
+		Expression expr = Expression::parse(attr.value(), dbg);
+		if (expr == nullptr){
+			return MacroEngine::Branch::NONE;
+		}
+		
+		Value val = expr.eval(MacroEngine::variables, dbg);
+		if (var == nullptr)
+			return toBool(val) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
+		else
+			return (*var == val) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
+	}
+	
+	// Interpolate
+	else if (attr.options % NodeOptions::INTERPOLATE){
+		string buff;
+		if (!MacroEngine::eval_string(op, attr.value(), buff)){
+			return MacroEngine::Branch::NONE;
+		}
+		
+		if (var == nullptr){
+			return buff.empty() ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
+		}
+		
+		auto cmp = [&](const auto& val){
+			if constexpr IS_STR(val)
+				return (val == buff) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
+			else
+				return (to_string(val) == buff) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
+		};
+		
+		return visit(cmp, *var);
+	}
+	
+	// Plain text
+	else {
+		string_view buff = attr.value();
+		if (var == nullptr){
+			return buff.empty() ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
+		}
+		
+		auto cmp = [&](const auto& val){
+			if constexpr IS_STR(val)
+				return (val == buff) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
+			else
+				return (to_string(val) == buff) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
+		};
+		
+		return visit(cmp, *var);
+	}
+	
+}
+
+
 void MacroEngine::branch_if(const Node& op, Node& dst){
 	auto _interp = MacroEngine::currentInterpolation;
 	
@@ -63,16 +148,33 @@ void MacroEngine::branch_if(const Node& op, Node& dst){
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
-		if (name == "TRUE"){
+		if (name.empty()){
+			continue;
+		} else if (!isUpper(name[0])){
+			goto cmp_var;
+		}
+		
+		else if (name == "TRUE"){
 			if (!eval_attr_true(op, *attr))
 				goto fail;
+			continue;
 		} else if (name == "FALSE"){
 			if (!eval_attr_false(op, *attr))
 				goto fail;
+			continue;
 		} else if (name == "INTERPOLATE"){
 			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
-		} else {
-			HERE(warn_ignored_attribute(op, *attr));
+			continue;
+		}
+		
+		// Compare attribute to variable
+		cmp_var:
+		switch (attr_equals_variable(op, *attr)){
+			case Branch::NONE:
+			case Branch::FAILED:
+				goto fail;
+			case Branch::PASSED:
+				continue;
 		}
 		
 	}
@@ -80,22 +182,22 @@ void MacroEngine::branch_if(const Node& op, Node& dst){
 	// pass:
 	runChildren(op, dst);
 	MacroEngine::currentInterpolation = _interp;
-	MacroEngine::currentBranch_block = Branch::END;
+	MacroEngine::currentBranch_block = Branch::PASSED;
 	return;
 	
 	fail:
 	MacroEngine::currentInterpolation = _interp;
-	MacroEngine::currentBranch_block = Branch::ELSE;
+	MacroEngine::currentBranch_block = Branch::FAILED;
 }
 
 
 void MacroEngine::branch_elif(const Node& op, Node& dst){
 	switch (MacroEngine::currentBranch_block){
 		case Branch::NONE:
-			HERE(::error(op, "Missing preceding " ANSI_PURPLE "<IF>" ANSI_RESET " tag."));
-		case Branch::END:
+			HERE(error_missing_preceeding_if_node(op));
+		case Branch::PASSED:
 			return;
-		case Branch::ELSE:
+		case Branch::FAILED:
 			branch_if(op, dst);
 	}
 }
@@ -104,11 +206,11 @@ void MacroEngine::branch_elif(const Node& op, Node& dst){
 void MacroEngine::branch_else(const Node& op, Node& dst){
 	switch (MacroEngine::currentBranch_block){
 		case Branch::NONE:
-			HERE(::error(op, "Missing preceding " ANSI_PURPLE "<IF>" ANSI_RESET " tag."));
-		case Branch::END:
+			HERE(error_missing_preceeding_if_node(op));
+		case Branch::PASSED:
 			MacroEngine::currentBranch_block = Branch::NONE;
 			return;
-		case Branch::ELSE:
+		case Branch::FAILED:
 			break;
 	}
 	
@@ -124,7 +226,6 @@ void MacroEngine::branch_else(const Node& op, Node& dst){
 	
 	// Run
 	runChildren(op, dst);
-	
 	MacroEngine::currentInterpolation = _interp;
 	MacroEngine::currentBranch_block = Branch::NONE;
 }
@@ -144,16 +245,21 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
-		if (name == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return 0;
-		} else if (name == "INTERPOLATE"){
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return 0;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
+		}
+		
+		if (name == "INTERPOLATE"){
 			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
+			continue;
 		}
 		
 		// Second argument: condition
 		else if (name == "TRUE" || name == "FALSE"){
-			cond_expected = (name[0] == 'T');
+			cond_expected = (name[0] != 'F');
 			
 			if (attr_cond != nullptr){
 				HERE(error_duplicate_attr(op, *attr_cond, *attr));
@@ -267,11 +373,16 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
-		if (name == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return 0;
-		} else if (name == "INTERPOLATE"){
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return 0;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
+		}
+		
+		if (name == "INTERPOLATE"){
 			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
+			continue;
 		}
 		
 		else if (name == "TRUE" || name == "FALSE"){

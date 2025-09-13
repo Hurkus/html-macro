@@ -64,9 +64,9 @@ namespace html {
 };
 
 
-void error(const html::Node& node, const char* msg);
-void warn(const html::Node& node, const char* msg);
-void info(const html::Node& node, const char* msg);
+void error(const html::Node& node, std::string_view msg);
+void warn(const html::Node& node, std::string_view msg);
+void info(const html::Node& node, std::string_view msg);
 
 void error_missing_attr(const html::Node& node, const char* name);
 void error_missing_attr_value(const html::Node& node, const html::Attr& attr);
@@ -83,11 +83,18 @@ void error_file_not_found(const html::Node& node, const html::Attr& attr);
 void error_file_not_found(const html::Node& node, const html::Attr& attr, std::string_view name);
 void warn_file_include(const html::Node& node, const html::Attr& attr, const char* filePath);
 
+void error_unsupported_type(const html::Node& node);
 void warn_unknown_macro_tag(const html::Node& node);
 void warn_unknown_macro_attribute(const html::Node& node, const html::Attr& attr);
 void warn_shell_exit(const html::Node& node, int status);
 
+void error_missing_preceeding_if_node(const html::Node& node);
+void error_missing_preceeding_if_attr(const html::Node& node, const html::Attr& attr);
+void error_undefined_variable(const html::Node& node, const std::string_view name);
+
 void error_newline(const html::Node& node, const char* p);
+
+void warn_text_missing(const html::Node& node);
 void warn_child_ignored(const html::Node& node);
 
 

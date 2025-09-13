@@ -43,7 +43,7 @@ static bool run(const char* file){
 	if (opt.outFilePath != nullptr && !opt.out_void){
 		outf = ofstream(opt.outFilePath);
 		if (!outf.is_open()){
-			ERROR("Failed to open output file '%s'.", opt.outFilePath);
+			ERROR("Failed to open output file `%s`.", opt.outFilePath);
 			return false;
 		}
 	}
@@ -77,7 +77,7 @@ int main(int argc, char const* const* argv){
 	#ifdef DEBUG
 		const char* _argv[] = {
 			argv[0],
-			"test/test-7.in.html"
+			"test/test-8.in.html"
 		};
 		if (argc < 2){
 			argv = _argv;
@@ -100,7 +100,7 @@ int main(int argc, char const* const* argv){
 		ERROR("No input files.");
 		return 1;
 	} else if (opt.files.size() > 1){
-		ERROR("Too many input files: '%s'", opt.files[1]);
+		ERROR("Too many input files: `%s`", opt.files[1]);
 		return 1;
 	}
 	

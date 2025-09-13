@@ -9,8 +9,8 @@ namespace MacroEngine {
 
 enum class Branch {
 	NONE,
-	ELSE,
-	END
+	PASSED,
+	FAILED
 };
 
 enum class Interpolate {
@@ -162,7 +162,7 @@ void error(const html::Node& op);
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool eval_attr_if(const html::Node& op, const html::Attr& attr);
+Branch check_attr_if(const html::Node& op, const html::Attr& attr);
 bool eval_attr_true(const html::Node& op, const html::Attr& attr);
 bool eval_attr_false(const html::Node& op, const html::Attr& attr);
 bool eval_attr_value(const html::Node& op, const html::Attr& attr, std::string& result_buff, std::string_view& result);

@@ -61,11 +61,11 @@ public:
 	
 // ----------------------------------- [ Operators ] ---------------------------------------- //
 public:
-	bool operator==(nullptr_t){
+	bool operator==(nullptr_t) const {
 		return op == nullptr;
 	}
 	
-	bool operator!=(nullptr_t){
+	bool operator!=(nullptr_t) const {
 		return op != nullptr;
 	}
 	

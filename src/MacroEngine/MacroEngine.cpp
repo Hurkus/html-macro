@@ -53,14 +53,13 @@ void MacroEngine::run(const Node& op, Node& dst){
 			return;
 		
 		default:
-			::error(op, "Unsupported tag type.");
+			HERE(error_unsupported_type(op));
 			return;
 	}
 	
 	string_view name = op.name();
 	if (name.empty()){
 		assert(!name.empty());
-		::warn(op, "Missing tag name.");
 		return;
 	}
 	
@@ -91,6 +90,8 @@ void MacroEngine::run(const Node& op, Node& dst){
 		case 4: {
 			if (name == "CALL")
 				call(op, dst);
+			else if (name == "ELIF")
+				branch_elif(op, dst);
 			else if (name == "ELSE")
 				branch_else(op, dst);
 			else if (name == "INFO")
@@ -115,8 +116,6 @@ void MacroEngine::run(const Node& op, Node& dst){
 		case 7: {
 			if (name == "INCLUDE")
 				include(op, dst);
-			else if (name == "ELSE-IF")
-				branch_elif(op, dst);
 			else if (name == "GET-TAG")
 				getTag(op, dst);
 			else if (name == "SET-TAG")

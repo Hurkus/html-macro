@@ -217,10 +217,24 @@ static void _extractVars(string_view csv, vector<string_view>& vars){
 
 
 void MacroEngine::shell(const Node& op, Node& dst){
+	// Verify command text exists
+	Node* content = op.child;
+	if (content == nullptr){
+		HERE(warn_text_missing(op));
+		return;
+	} else if (content->type != NodeType::TEXT){
+		HERE(warn_text_missing(op));
+		return;
+	}
+	
+	string_view cmdtxt = trim_whitespace(content->value());
+	if (cmdtxt.empty()){
+		HERE(warn_text_missing(op));
+		return;
+	}
+	
 	enum class Capture {
-		VOID,
-		TEXT,
-		VAR
+		VOID, TEXT, VAR
 	} capture = Capture::TEXT;
 	
 	vector<string_view> vars = {};
@@ -229,11 +243,9 @@ void MacroEngine::shell(const Node& op, Node& dst){
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
-		if (name == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
-		} else if (name == "VARS"){
+		if (name == "VARS"){
 			_extractVars(attr->value(), vars);
+			continue;
 		} else if (name == "STDOUT"){
 			string_view val = attr->value();
 			
@@ -246,34 +258,29 @@ void MacroEngine::shell(const Node& op, Node& dst){
 				captureVar = val;
 			}
 			
-		} else {
-			HERE(warn_ignored_attribute(op, *attr));
+			continue;
 		}
 		
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
+		}
+		
+		HERE(warn_ignored_attribute(op, *attr));
 	}
 	
-	
-	int status;
+	// Run command
 	str_chunks result;
-	
 	ShellCmd cmd = {
+		.cmd = cmdtxt,
 		.vars = &MacroEngine::variables,
 		.env = &vars,
 		.capture = (capture != Capture::VOID) ? &result : nullptr
 	};
 	
-	// Read command from child node.
-	Node* content = op.child;
-	if (content == nullptr){
-		::warn(op, "Unused shell command node.");
-		return;
-	} else if (content->type != NodeType::TEXT){
-		::error(op, "Plaintext expected for shell command.");
-		return;
-	}
-	
-	cmd.cmd = content->value();
-	status = _shell(cmd);
+	int status = _shell(cmd);
 	if (status != 0){
 		HERE(warn_shell_exit(op, status));
 		return;

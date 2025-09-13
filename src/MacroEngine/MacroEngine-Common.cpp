@@ -9,24 +9,76 @@ using namespace MacroEngine;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngine::eval_attr_if(const Node& op, const Attr& attr){
-	string_view expr_str = attr.value();
-	const NodeDebugger dbg = NodeDebugger(op);
+Branch MacroEngine::check_attr_if(const Node& op, const Attr& attr){
+	string_view name = attr.name();
 	
+	switch(name.length()){
+		case 2:
+			if (name == "IF")
+				goto _if;
+			else
+				return Branch::NONE;
+		case 4:
+			if (name == "ELIF")
+				goto _elif;
+			else if (name == "ELSE")
+				goto _else;
+			else
+				return Branch::NONE;
+		default:
+			return Branch::NONE;
+	} assert(false);
+	
+	// -------------------------------- //
+	_else:
+	if (attr.value_len > 0){
+		HERE(warn_ignored_attr_value(op, attr));
+	}
+	
+	switch (MacroEngine::currentBranch_inline){
+		case Branch::FAILED:
+			MacroEngine::currentBranch_inline = Branch::NONE;
+			return Branch::PASSED;
+		case Branch::PASSED:
+			return Branch::FAILED;
+		case Branch::NONE:
+			HERE(error_missing_preceeding_if_attr(op, attr));
+			return Branch::FAILED;
+	} assert(false);
+	
+	// -------------------------------- //
+	_elif:
+	switch (MacroEngine::currentBranch_inline){
+		case Branch::FAILED:
+			goto _if;
+		case Branch::PASSED:
+			return Branch::FAILED;
+		case Branch::NONE:
+			HERE(error_missing_preceeding_if_attr(op, attr));
+			return Branch::FAILED;
+	} assert(false);
+	
+	// -------------------------------- //
+	
+	_if:
+	string_view expr_str = attr.value();
+	
+	// Check and warn
 	if (expr_str.empty()){
 		HERE(warn_missing_attr_value(op, attr));
-		return false;
+		return MacroEngine::currentBranch_inline = Branch::FAILED;
 	} else if (!(attr.options % NodeOptions::SINGLE_QUOTE)){
 		HERE(warn_attr_double_quote(op, attr));
 	}
 	
-	Expression expr = Expression::parse(expr_str, dbg);
+	const NodeDebugger dbg = NodeDebugger(op);
+	const Expression expr = Expression::parse(expr_str, dbg);
 	if (expr == nullptr){
-		return false;
+		return MacroEngine::currentBranch_inline = Branch::FAILED;
 	}
 	
-	bool e = toBool(expr.eval(MacroEngine::variables, dbg));
-	return e;
+	const bool b = toBool(expr.eval(MacroEngine::variables, dbg));
+	return MacroEngine::currentBranch_inline = b ? Branch::PASSED : Branch::FAILED;
 }
 
 

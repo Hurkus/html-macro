@@ -55,14 +55,20 @@ void MacroEngine::tag(const Node& op, Node& dst){
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
+		// Check regular attribute
 		if (name.length() < 1 || !isupper(name[0])){
 			attribute(op, *attr, *child);
-		} else if (name == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
-		} else if (name == "INTERPOLATE"){
-			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
-		} else if (name == "CALL" || name == "CALL-BEFORE"){
+			continue;
+		}
+		
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
+		}
+		
+		if (name == "CALL" || name == "CALL-BEFORE"){
 			attr_call_before = attr;
 		} else if (name == "CALL-AFTER"){
 			attr_call_after = attr;
@@ -112,10 +118,11 @@ void MacroEngine::setAttr(const Node& op, Node& dst){
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
-		// Check conditional
-		if (name == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
 		}
 		
 		// Evaluate value
@@ -158,9 +165,11 @@ void MacroEngine::getAttr(const Node& op, Node& dst){
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view varName = attr->name();
 		
-		if (varName == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
 		}
 		
 		// Evaluate attribute name
@@ -188,20 +197,25 @@ void MacroEngine::delAttr(const Node& op, Node& dst){
 	}
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		if (attr->name() == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
-		} else {
-			dst.removeAttr(attr->name());
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
 		}
+		
+		if (attr->value_len > 0){
+			HERE(warn_ignored_attr_value(op, *attr));
+		}
+		
+		dst.removeAttr(attr->name());
 	}
 	
 }
 
 
 void MacroEngine::setTag(const Node& op, Node& dst){
-	const Attr* attr_nameName = nullptr;
-	const Attr* attr_valName = nullptr;
+	const Attr* attr_name = nullptr;
 	
 	if (op.child != nullptr){
 		HERE(warn_child_ignored(op));
@@ -210,50 +224,51 @@ void MacroEngine::setTag(const Node& op, Node& dst){
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
-		if (name == "IF"){
-			if (!eval_attr_if(op, *attr))
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
+		}
+		
+		// New tag name retrieved from attribute value
+		if (name == "NAME"){
+			if (attr->value_len <= 0){
+				HERE(error_missing_attr_value(op, *attr));
 				return;
-		} else if (name == "NAME"){
-			if (attr_nameName != nullptr){
-				HERE(error_duplicate_attr(op, *attr_nameName, *attr));
-				return;
-			} else if (attr_valName != nullptr){
-				HERE(error_duplicate_attr(op, *attr_valName, *attr));
-				return;
-			}  else {
-				attr_valName = attr;
 			}
+		}
+		
+		// New tag name retrieved from attribute name
+		if (attr_name != nullptr){
+			HERE(error_duplicate_attr(op, *attr_name, *attr));
+			return;
 		} else {
-			if (attr_nameName != nullptr){
-				HERE(error_duplicate_attr(op, *attr_nameName, *attr));
-				return;
-			} else if (attr_valName != nullptr){
-				HERE(error_duplicate_attr(op, *attr_valName, *attr));
-				return;
-			}  else {
-				attr_nameName = attr;
-			}
+			attr_name = attr;
 		}
 		
 	}
 	
 	// Set simple name
-	if (attr_nameName != nullptr){
-		dst.name(attr_nameName->name());
-		return;
-	} else if (attr_valName == nullptr){
+	if (attr_name == nullptr){
 		HERE(error_missing_attr(op, "NAME"));
 		return;
 	}
 	
+	// New tag name retrieved from attribute name
+	else if (attr_name->value_len <= 0){
+		dst.name(attr_name->name());
+		return;
+	}
+	
+	// New tag name retrieved from attribute value
 	string newName_buff;
 	string_view newName;
-	if (!eval_attr_value(op, *attr_valName, newName_buff, newName)){
-		return;
-	} else if (!newName_buff.empty()){
-		dst.name(html::newStr(newName), newName.length());
-	} else {
-		dst.name(newName);
+	if (eval_attr_value(op, *attr_name, newName_buff, newName)){
+		if (newName_buff.empty())
+			dst.name(newName);
+		else
+			dst.name(html::newStr(newName), newName.length());
 	}
 	
 }
@@ -266,25 +281,28 @@ void MacroEngine::getTag(const Node& op, Node& dst){
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view varName = attr->name();
-		if (varName == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
+		
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
 		}
 		
 		if (attr->value_len > 0){
 			HERE(warn_ignored_attr_value(op, *attr));
 		}
 		
-		MacroEngine::variables[varName] = Value(in_place_type<string>, dst.name());
+		MacroEngine::variables.insert(varName, in_place_type<string>, dst.name());
 	}
 	
 }
 
 
-void MacroEngine::delTag(const Node& op, Node& dst){
-	::error(op, "Not yet implemented.");
-	assert(false);
-}
+// void MacroEngine::delTag(const Node& op, Node& dst){
+// 	::error(op, "Not yet implemented.");
+// 	assert(false);
+// }
 
 
 // ------------------------------------------------------------------------------------------ //

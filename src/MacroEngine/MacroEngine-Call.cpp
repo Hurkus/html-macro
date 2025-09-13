@@ -23,13 +23,17 @@ void MacroEngine::call(const Node& op, Node& dst){
 			} else {
 				attr_name = attr;
 			}
-		} else if (name == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
-		} else {
-			HERE(warn_ignored_attribute(op, *attr));
+			continue;
 		}
 		
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
+		}
+		
+		HERE(warn_ignored_attribute(op, *attr));
 	}
 	
 	string buff;
@@ -86,45 +90,50 @@ void MacroEngine::call(const Node& op, const Attr& attr, Node& dst){
 
 
 void MacroEngine::include(const Node& op, Node& dst){
-	const Attr* attr_src = nullptr;
+	const Attr* src_attr = nullptr;
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
 		if (name == "SRC"){
-			attr_src = attr;
-		} else if (name == "IF"){
-			if (!eval_attr_if(op, *attr))
-				return;
-		} else {
-			HERE(warn_ignored_attribute(op, *attr));
+			src_attr = attr;
+			continue;
+		} 
+		
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE:
+				HERE(warn_ignored_attribute(op, *attr));
+				break;
 		}
 		
 	}
 	
-	string buff;
-	string_view path_view;
+	string src_buff;
+	string_view src;
 	
-	if (attr_src == nullptr){
+	if (src_attr == nullptr){
 		HERE(warn_missing_attr(op, "SRC"));
 		return;
-	} else if (attr_src->value().empty()){
-		HERE(warn_missing_attr_value(op, *attr_src));
+	} else if (src_attr->value().empty()){
+		HERE(warn_missing_attr_value(op, *src_attr));
 		return;
-	} else if (!eval_attr_value(op, *attr_src, buff, path_view)){
+	} else if (!eval_attr_value(op, *src_attr, src_buff, src)){
 		return;
 	}
 	
-	filepath path = MacroEngine::resolve(path_view);
+	filepath path = MacroEngine::resolve(src);
 	if (!filesystem::exists(path)){
-		HERE(error_file_not_found(op, *attr_src, path.c_str()));
+		HERE(error_file_not_found(op, *src_attr, path.c_str()));
 		return;
 	}
 	
 	// Fetch and execute macro
 	const Macro* macro = Macro::loadFile(path, false);
 	if (macro == nullptr){
-		HERE(warn_file_include(op, *attr_src, path.c_str()));
+		HERE(warn_file_include(op, *src_attr, path.c_str()));
 		return;
 	}
 	
