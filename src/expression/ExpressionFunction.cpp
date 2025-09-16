@@ -28,7 +28,32 @@ Value eval(const Operation& op, const VariableMap& vars, const Debugger& dbg);
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static Value f_int(const Function& f, const VariableMap& vars, const Debugger& dbg) noexcept {
+static Value f_defined(const Function& f, const VariableMap& vars, const Debugger& dbg){
+	if (f.argc < 1){
+		HERE(dbg.error(f.name, "Missing argument in function " P("int(e)") ".\n"));
+		return Value(0);
+	} else if (f.argc > 1){
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " P("int(e)") ".\n", f.argc));
+	}
+	
+	const Operation* arg0 = f.argv[0].expr;
+	
+	assert(arg0 != nullptr);
+	if (arg0->type != Operation::Type::VAR){
+		HERE(dbg.error(f.argv[0].mark, "Expected variable name.\n"));
+		return Value(0);
+	}
+	
+	const Variable& var = static_cast<const Variable&>(*arg0);
+	const Value* val = vars.get(var.name);
+	return Value(val != nullptr ? 1L : 0L);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static Value f_int(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
 		HERE(dbg.error(f.name, "Missing argument in function " P("int(e)") ".\n"));
 		return Value(0);
@@ -102,13 +127,125 @@ static Value f_len(const Function& f, const VariableMap& vars, const Debugger& d
 	}
 	
 	auto cast = [](auto&& v) -> Value {
-		if constexpr (IS_STR(v))
+		if constexpr IS_STR(v)
 			return long(v.length());
 		else
 			return abs(v);
 	};
 	
 	return visit(cast, eval(*f.argv[0].expr, vars, dbg));
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static bool toNum(const Value& val, long& out_i, double& out_f){
+	auto cast = [&](const auto& v) -> bool {
+		if constexpr IS_STR(v) {
+			out_i = long(v.length());
+			return true;
+		} else if IS_LONG(v) {
+			out_i = v;
+			return true;
+		} else {
+			out_f = v;
+			return false;
+		}
+	};
+	return visit(cast, val);
+}
+
+
+static Value f_min(const Function& f, const VariableMap& vars, const Debugger& dbg){
+	if (f.argc < 1){
+		HERE(dbg.warn(f.name, "Missing argument in function " P("min(a,...)") ".\n"));
+		return Value(0);
+	}
+	
+	long min_int;
+	double min_flt;
+	Value min_val = eval(*f.argv[0].expr, vars, dbg);
+	bool min_isint = toNum(min_val, min_int, min_flt);
+	
+	for (int i = 1 ; i < f.argc ; i++){
+		Value val = eval(*f.argv[i].expr, vars, dbg);
+		long val_int;
+		double val_flt;
+		
+		if (toNum(val, val_int, val_flt)){
+			if ((min_isint && val_int < min_int) || (!min_isint && val_int < min_flt)){
+				min_isint = true;
+				min_int = val_int;
+				min_val = move(val);
+			}
+		} else {
+			if ((min_isint && val_flt < min_int) || (!min_isint && val_flt < min_flt)){
+				min_isint = false;
+				min_flt = val_flt;
+				min_val = move(val);
+			}
+		}
+		
+	}
+	
+	return min_val;
+}
+
+
+static Value f_max(const Function& f, const VariableMap& vars, const Debugger& dbg){
+	if (f.argc < 1){
+		HERE(dbg.warn(f.name, "Missing argument in function " P("max(a,...)") ".\n"));
+		return Value(0);
+	}
+	
+	long max_int;
+	double max_flt;
+	Value max_val = eval(*f.argv[0].expr, vars, dbg);
+	bool max_isint = toNum(max_val, max_int, max_flt);
+	
+	for (int i = 1 ; i < f.argc ; i++){
+		Value val = eval(*f.argv[i].expr, vars, dbg);
+		long val_int;
+		double val_flt;
+		
+		if (toNum(val, val_int, val_flt)){
+			if ((max_isint && val_int < max_int) || (!max_isint && val_int < max_flt)){
+				max_isint = true;
+				max_int = val_int;
+				max_val = move(val);
+			}
+		} else {
+			if ((max_isint && val_flt < max_int) || (!max_isint && val_flt < max_flt)){
+				max_isint = false;
+				max_flt = val_flt;
+				max_val = move(val);
+			}
+		}
+		
+	}
+	
+	return max_val;
+}
+
+
+static Value f_if(const Function& f, const VariableMap& vars, const Debugger& dbg){
+	if (f.argc < 3){
+		HERE(dbg.error(f.name, "Missing arguments (%d/3) in function " P("if(cond,true_expr,false_expr)") ".\n", f.argc));
+		return Value(in_place_type<string>);
+	} else if (f.argc > 3){
+		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " P("if(cond,true_expr,false_expr)") ".\n", f.argc));
+	}
+	
+	assert(f.argv[0].expr != nullptr);
+	if (toBool(eval(*f.argv[0].expr, vars, dbg))){
+		assert(f.argv[1].expr != nullptr);
+		return eval(*f.argv[1].expr, vars, dbg);
+	} else {
+		assert(f.argv[2].expr != nullptr);
+		return eval(*f.argv[2].expr, vars, dbg);
+	}
+	
 }
 
 
@@ -204,7 +341,7 @@ static Value f_upper(const Function& f, const VariableMap& vars, const Debugger&
 
 static Value f_substr(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 3){
-		HERE(dbg.error(f.name, "Missing argument in function " P("substr(str,i,len)") ".\n"));
+		HERE(dbg.error(f.name, "Missing arguments (%d/3) in function " P("substr(str,i,len)") ".\n", f.argc));
 		return Value(in_place_type<string>);
 	} else if (f.argc > 3){
 		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " P("substr(str,i,len)") ".\n", f.argc));
@@ -365,6 +502,10 @@ Value eval(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	string_view name = f.name;
 	try {
 		switch (name.length()){
+			case 2:
+				if (name == "if")
+					return f_if(f, vars, dbg);
+				break;
 			case 3:
 				if (name == "int")
 					return f_int(f, vars, dbg);
@@ -372,6 +513,10 @@ Value eval(const Function& f, const VariableMap& vars, const Debugger& dbg){
 					return f_str(f, vars, dbg);
 				else if (name == "len" || name == "abs")
 					return f_len(f, vars, dbg);
+				else if (name == "min")
+					return f_min(f, vars, dbg);
+				else if (name == "max")
+					return f_max(f, vars, dbg);
 				break;
 			case 5:
 				if (name == "float")
@@ -390,6 +535,8 @@ Value eval(const Function& f, const VariableMap& vars, const Debugger& dbg){
 			case 7:
 				if (name == "replace")
 					return f_replace(f, vars, dbg);
+				else if (name == "defined")
+					return f_defined(f, vars, dbg);
 				break;
 		}
 	} catch (...) {

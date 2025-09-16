@@ -11,6 +11,12 @@
 <p>{replace(s + ';', '(\d+)', '#$1')}</p>
 
 
+<SET id='10'/>
+<p IF='!defined(id)'>ID is not defined.</p>
+<p ELIF='defined(id) && id > 5'>ID is greater than 5.</p>
+
+
+
 <!-- String transformation tests -->
 <p title="Hello World!" CALL="low"></p>
 <p title="Hello World!" CALL="up"></p>

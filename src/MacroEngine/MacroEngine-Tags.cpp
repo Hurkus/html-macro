@@ -43,9 +43,10 @@ void MacroEngine::attribute(const Node& op, const Attr& op_attr, Node& dst){
 
 
 void MacroEngine::tag(const Node& op, Node& dst){
-	Interpolate _interp = MacroEngine::currentInterpolation;
-	const Attr* attr_call_before = nullptr;
-	const Attr* attr_call_after = nullptr;
+	const Attr* attr_call_first = nullptr;
+	const Attr* attr_call_last = nullptr;
+	const Attr* attr_incl_first = nullptr;
+	const Attr* attr_incl_last = nullptr;
 	
 	// Create child, unlinked
 	assert(op.type == NodeType::TAG);
@@ -56,7 +57,10 @@ void MacroEngine::tag(const Node& op, Node& dst){
 		string_view name = attr->name();
 		
 		// Check regular attribute
-		if (name.length() < 1 || !isupper(name[0])){
+		if (name.empty()){
+			assert(!name.empty());
+			continue;
+		} else if (!isupper(name[0])){
 			attribute(op, *attr, *child);
 			continue;
 		}
@@ -68,15 +72,43 @@ void MacroEngine::tag(const Node& op, Node& dst){
 			case Branch::NONE: break;
 		}
 		
-		if (name == "CALL" || name == "CALL-BEFORE"){
-			attr_call_before = attr;
-		} else if (name == "CALL-AFTER"){
-			attr_call_after = attr;
-		} else {
-			HERE(warn_unknown_macro_attribute(op, *attr));
-			attribute(op, *attr, *child);
+		if (name.starts_with("CALL")){
+			if (name == "CALL" || name == "CALL-FIRST"){
+				if (attr_call_first != nullptr)
+					warn_duplicate_attr(op, *attr_call_first, *attr);
+				else
+					attr_call_first = attr;
+				continue;
+			} else if (name == "CALL-LAST"){
+				if (attr_call_last != nullptr)
+					warn_duplicate_attr(op, *attr_call_last, *attr);
+				else
+					attr_call_last = attr;
+				continue;
+			}
+			goto unknown;
 		}
 		
+		if (name.starts_with("INCLUDE")){
+			if (name == "INCLUDE" || name == "INCLUDE-FIRST"){
+				if (attr_incl_first != nullptr)
+					warn_duplicate_attr(op, *attr_incl_first, *attr);
+				else
+					attr_incl_first = attr;
+				continue;
+			} else if (name == "INCLUDE-LAST"){
+				if (attr_incl_last != nullptr)
+					warn_duplicate_attr(op, *attr_incl_last, *attr);
+				else
+					attr_incl_last = attr;
+				continue;
+			}
+			goto unknown;
+		}
+		
+		unknown:
+		HERE(warn_unknown_macro_attribute(op, *attr));
+		attribute(op, *attr, *child);
 	}
 	
 	child->type = NodeType::TAG;
@@ -84,22 +116,22 @@ void MacroEngine::tag(const Node& op, Node& dst){
 	child->name(op.name());
 	
 	// Link child to parent
-	Node* child_p = child.release();
-	dst.appendChild(child_p);
+	Node* newNode = child.release();
+	dst.appendChild(newNode);
 	
-	if (attr_call_before != nullptr){
-		call(op, *attr_call_before, *child_p);
-	}
+	if (attr_call_first != nullptr)
+		call(op, *attr_call_first, *newNode);
+	if (attr_incl_first != nullptr)
+		include(op, *attr_incl_first, *newNode);
 	
 	// Resolve children
-	runChildren(op, *child_p);
+	runChildren(op, *newNode);
 	
-	if (attr_call_after != nullptr){
-		call(op, *attr_call_after, *child_p);
-	}
+	if (attr_call_last != nullptr)
+		call(op, *attr_call_last, *newNode);
+	if (attr_incl_last != nullptr)
+		include(op, *attr_incl_last, *newNode);
 	
-	// Restore state
-	MacroEngine::currentInterpolation = _interp;
 }
 
 

@@ -70,24 +70,6 @@ constexpr bool isUnaryOp(int c){
 	return c == '+' || c == '-' || c == '!';
 }
 
-constexpr bool isArithOp(int c){
-	return c == '+' || c == '-' || c == '*' || c == '/' || c == '%';
-}
-
-constexpr bool isCompOp(int c){
-	switch (c){
-		case '==':
-		case '!=':
-		case '<=':
-		case '>=':
-		case '<':
-		case '>':
-			return true;
-		default:
-			return false;
-	}
-}
-
 
 constexpr const char* parse_whiteSpace(const char* s, const char* end) noexcept {
 	assert(s != nullptr && end != nullptr);
@@ -232,125 +214,140 @@ static const char* parse_unaryExpression(const char* s, const char* end, Allocat
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static int try_parse_binaryOp(const char*& s, const char* end) noexcept {
+static Operation::Type try_parse_binaryOp(const char*& s, const char* end) noexcept {
 	assert(s != nullptr && end != nullptr && s != end);
 	switch (*s){
 		case '+':
+			s++;
+			return Operation::Type::ADD;
 		case '-':
+			s++;
+			return Operation::Type::SUB;
 		case '*':
+			s++;
+			return Operation::Type::MUL;
 		case '/':
 			s++;
-			return s[-1];
+			return Operation::Type::DIV;
+		case '%':
+			s++;
+			return Operation::Type::MOD;
+		case '^':
+			s++;
+			return Operation::Type::XOR;
+		
+		case '|':
+			if (s+1 != end && s[1] == '&'){
+				s += 2;
+				return Operation::Type::OR;
+			}
+			return Operation::Type::ERROR;
+		
+		case '&':
+			if (s+1 != end && s[1] == '&'){
+				s += 2;
+				return Operation::Type::AND;
+			}
+			return Operation::Type::ERROR;
 		
 		case '>':
+			s++;
+			if (s != end && *s == '='){
+				s++;
+				return Operation::Type::GTE;
+			}
+			return Operation::Type::GT;
+			
 		case '<':
 			s++;
 			if (s != end && *s == '='){
 				s++;
-				return (s[-2] << 8) | s[-1];
+				return Operation::Type::LTE;
 			}
-			return s[-1];
+			return Operation::Type::LT;
 		
 		case '!':
+			if (s+1 != end && s[1] == '='){
+				s += 2;
+				return Operation::Type::NEQ;
+			}
+			return Operation::Type::ERROR;
+			
 		case '=':
 			if (s+1 != end && s[1] == '='){
 				s += 2;
-				return (s[-2] << 8) | s[-1];
+				return Operation::Type::EQ;
 			}
-			return 0;
-	}
-	return 0;
-}
-
-
-static Operation::Type _binop(int op){
-	switch (op){
-		case '+':
-			return Operation::Type::ADD;
-		case '-':
-			return Operation::Type::SUB;
-		case '*':
-			return Operation::Type::MUL;
-		case '/':
-			return Operation::Type::DIV;
-		case '%':
-			return Operation::Type::MOD;
-		case '^':
-			return Operation::Type::XOR;
+			return Operation::Type::ERROR;
 		
 		default:
-		case '==':
-			return Operation::Type::EQ;
-		case '!=':
-			return Operation::Type::NEQ;
-		case '<':
-			return Operation::Type::LT;
-		case '<=':
-			return Operation::Type::LTE;
-		case '>':
-			return Operation::Type::GT;
-		case '>=':
-			return Operation::Type::GTE;
+			return Operation::Type::ERROR;
 	}
 }
 
 
-static BinaryOperation* _binop(Allocator& alc, Operation* a, Operation* b, int op){
+inline BinaryOperation* _binop(Allocator& alc, Operation* a, Operation* b, Operation::Type type){
 	assert(a != nullptr && b != nullptr);
 	BinaryOperation* binop = alc.alloc<BinaryOperation>();
-	binop->type = _binop(op);
+	binop->type = type;
 	binop->arg_1 = a;
 	binop->arg_2 = b;
 	return binop;
 }
 
 
-Operation* makeBinopTree(Allocator& alc, vector<Operation*>& args, vector<int>& ops){
-	assert(args.size() == ops.size()+1);
+constexpr int _bindPower(Operation::Type type){
+	switch (type){
+		case Operation::Type::OR:  return 10;
+		case Operation::Type::AND: return 20;
+		case Operation::Type::EQ:  return 30;
+		case Operation::Type::NEQ: return 30;
+		case Operation::Type::LT:  return 30;
+		case Operation::Type::LTE: return 30;
+		case Operation::Type::GT:  return 30;
+		case Operation::Type::GTE: return 30;
+		case Operation::Type::ADD: return 40;
+		case Operation::Type::SUB: return 40;
+		case Operation::Type::MUL: return 50;
+		case Operation::Type::DIV: return 50;
+		case Operation::Type::MOD: return 50;
+		case Operation::Type::XOR: return 50;
+		default:
+			assert(false);
+			return 0;
+	}
+}
+
+
+Operation* prattBinopTree(Allocator& alc, vector<Operation*>& args, vector<Operation::Type>& ops){
 	if (args.size() == 0){
 		return nullptr;
-	} else if (args.size() == 1){
-		goto ret;
 	}
 	
-	// Merge multiplications
-	for (long i = 0 ; i < long(ops.size()) ; i++){
-		assert(size_t(i+1) < args.size());
+	assert(args.size() == ops.size()+1);
+	size_t i = 0;
+	
+	auto capture = [&](auto& capture, int bp) -> Operation* {
+		Operation* left = args[i];
 		
-		if (ops[i] == '*' || ops[i] == '/' || ops[i] == '%'){
-			args[i] = _binop(alc, args[i], args[i+1], ops[i]);
-			ops.erase(ops.begin() + i);
-			args.erase(args.begin() + i + 1);
-			i--;
+		while (i < ops.size()){
+			const Operation::Type op = ops[i];
+			const int bp_left = _bindPower(op);
+			const int bp_right = bp_left + 1;
+			
+			if (bp_left < bp){
+				break;
+			}
+			
+			i++;
+			Operation* right = capture(capture, bp_right);
+			left = _binop(alc, left, right, op);
 		}
 		
-	}
+		return left;
+	};
 	
-	// Merge additions
-	for (long i = 0 ; i < long(ops.size()) ; i++){
-		assert(size_t(i+1) < args.size());
-		
-		if (ops[i] == '+' || ops[i] == '-'){
-			args[i] = _binop(alc, args[i], args[i+1], ops[i]);
-			ops.erase(ops.begin() + i);
-			args.erase(args.begin() + i + 1);
-			i--;
-		}
-		
-	}
-	
-	// Merge comparisons
-	for (long i = 0 ; i < long(ops.size()) ; i++){
-		assert(size_t(i+1) < args.size());
-		// `args[0]` is cummulative expression
-		args[0] = _binop(alc, args[0], args[i+1], ops[i]);
-	}
-	
-	ret:
-	Operation* e = args[0];
-	ops.clear();
-	args.clear();
-	return e;
+	return capture(capture, 0);
 }
 
 
@@ -370,8 +367,8 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 		return s;
 	}
 	
-	int binop = try_parse_binaryOp(s, end);
-	if (binop == 0){
+	Operation::Type binop = try_parse_binaryOp(s, end);
+	if (binop == Operation::Type::ERROR){
 		out = first;
 		return s;
 	}
@@ -394,14 +391,14 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 	
 	// Check for binop chain
 	const char* mark = s;
-	int binop_2 = try_parse_binaryOp(s, end);
-	if (binop_2 == 0){
+	Operation::Type binop_2 = try_parse_binaryOp(s, end);
+	if (binop_2 == Operation::Type::ERROR){
 		goto one_bin;
 	}
 	
 	// Chain binops
 	vector<Operation*> args;
-	vector<int> ops;
+	vector<Operation::Type> ops;
 	args.reserve(8);
 	args.emplace_back(move(first));
 	args.emplace_back(move(second));
@@ -429,8 +426,8 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 		
 		// Check for next binop
 		mark = s;
-		int binop = try_parse_binaryOp(s, end);
-		if (binop == 0){
+		Operation::Type binop = try_parse_binaryOp(s, end);
+		if (binop == Operation::Type::ERROR){
 			break;
 		}
 		
@@ -439,7 +436,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 	
 	// Build expression tree
 	assert(args.size() == ops.size()+1);
-	out = makeBinopTree(alc, args, ops);
+	out = prattBinopTree(alc, args, ops);
 	return s;
 }
 

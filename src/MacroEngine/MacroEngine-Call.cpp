@@ -141,4 +141,32 @@ void MacroEngine::include(const Node& op, Node& dst){
 }
 
 
+void MacroEngine::include(const Node& op, const Attr& attr, Node& dst){
+	string src_buff;
+	string_view src;
+	
+	if (attr.value().empty()){
+		HERE(error_missing_attr_value(op, attr));
+		return;
+	} else if (!eval_attr_value(op, attr, src_buff, src)){
+		return;
+	}
+	
+	filepath path = MacroEngine::resolve(src);
+	if (!filesystem::exists(path)){
+		HERE(error_file_not_found(op, attr, path.c_str()));
+		return;
+	}
+	
+	// Fetch and execute macro
+	const Macro* macro = Macro::loadFile(path, false);
+	if (macro == nullptr){
+		HERE(warn_file_include(op, attr, path.c_str()));
+		return;
+	}
+	
+	exec(*macro, dst);
+}
+
+
 // ------------------------------------------------------------------------------------------ //

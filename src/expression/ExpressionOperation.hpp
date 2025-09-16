@@ -11,6 +11,7 @@ struct Expression::Operation {
 		LONG, DOUBLE, STRING, VAR,
 		NOT, NEG,
 		ADD, SUB, MUL, DIV, MOD, XOR,
+		AND, OR,
 		EQ, NEQ, LT, LTE, GT, GTE,
 		FUNC,
 	} type;

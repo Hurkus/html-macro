@@ -128,6 +128,14 @@ void call(const html::Node& op, const html::Attr& opAttr, html::Node& dst);
 void include(const html::Node& op, html::Node& dst);
 
 /**
+ * @brief Include all macros defined in a file. Other tags are executed as a macro immediately.
+ * @param op Calling operation node from which `opAttr` originates.
+ * @param opAttr Attribute invoking the include call.
+ * @param dst Destination parent node for any created nodes.
+ */
+void include(const html::Node& op, const html::Attr& opAttr, html::Node& dst);
+
+/**
  * @brief Execute content of operation node as a shell command and
  *         include results in the document.
  * @param op Operation node from which to extract the shell command.

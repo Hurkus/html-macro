@@ -75,6 +75,7 @@ void warn_missing_attr_value(const html::Node& node, const html::Attr& attr);
 void warn_ignored_attribute(const html::Node& node, const html::Attr& attr);
 void warn_ignored_attr_value(const html::Node& node, const html::Attr& attr);
 void error_duplicate_attr(const html::Node& node, const html::Attr& attr_1, const html::Attr& attr_2);
+void warn_duplicate_attr(const html::Node& node, const html::Attr& attr_1, const html::Attr& attr_2);
 void warn_attr_double_quote(const html::Node& node, const html::Attr& attr);
 
 void error_macro_not_found(const html::Node& node, const html::Attr& attr);

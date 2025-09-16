@@ -165,15 +165,16 @@ static Value mul(const BinaryOperation& binop, const VariableMap& vars, const De
 	auto cast = [&](auto& a, auto& b){
 		if constexpr (IS_STR(a) && IS_STR(b)){
 			// TODO
+			return move(arg_1);
 		} else if constexpr (IS_STR(a) && IS_NUM(b)) {
 			mul(a, long(b));
+			return move(arg_1);
 		} else if constexpr (IS_NUM(a) && IS_STR(b)) {
 			mul(b, long(a));
 			return move(arg_2);
 		} else {
 			return Value(a * b);
 		}
-		return move(arg_1);
 	};
 	
 	return visit(cast, arg_1, arg_2);
@@ -240,6 +241,18 @@ static Value xxor(const BinaryOperation& binop, const VariableMap& vars, const D
 	};
 	
 	return visit(cast, arg_1, arg_2);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+template<typename OP>
+static Value logical(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
+	bool arg_1 = toBool(eval(*binop.arg_1, vars, dbg));
+	bool arg_2 = toBool(eval(*binop.arg_2, vars, dbg));
+	return OP{}(arg_1, arg_2);
 }
 
 
@@ -320,6 +333,10 @@ Value eval(const Operation& op, const VariableMap& vars, const Debugger& dbg){
 			return mod(static_cast<const BinaryOperation&>(op), vars, dbg);
 		case Operation::Type::XOR:
 			return xxor(static_cast<const BinaryOperation&>(op), vars, dbg);
+		case Operation::Type::AND:
+			return logical<logical_and<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
+		case Operation::Type::OR:
+			return logical<logical_or<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
 		case Operation::Type::EQ:
 			return equals<equal_to<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
 		case Operation::Type::NEQ:

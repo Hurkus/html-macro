@@ -154,6 +154,10 @@ static void serialize(const Operation* op, string& buff){
 			return serialize(static_cast<const BinaryOperation&>(*op), buff, ">");
 		case Operation::Type::GTE:
 			return serialize(static_cast<const BinaryOperation&>(*op), buff, ">=");
+		case Operation::Type::AND:
+			return serialize(static_cast<const BinaryOperation&>(*op), buff, "&&");
+		case Operation::Type::OR:
+			return serialize(static_cast<const BinaryOperation&>(*op), buff, "||");
 		case Operation::Type::FUNC:
 			return serialize(static_cast<const Function&>(*op), buff);
 		case Operation::Type::ERROR:

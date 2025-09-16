@@ -172,6 +172,21 @@ void error_duplicate_attr(const Node& node, const Attr& attr_1, const Attr& attr
 }
 
 
+void warn_duplicate_attr(const Node& node, const Attr& attr_1, const Attr& attr_2){
+	const Document& doc = node.root();
+	linepos pos1 = findLine(doc, attr_1.name_p);
+	linepos pos2 = findLine(doc, attr_2.name_p);
+	
+	print_warn_pfx(pos1);
+	fprintf(stderr, "Duplicate attribute " PURPLE("`%.*s`") ".\n", int(attr_1.name_len), attr_1.name_p);
+	print_warn_codeView(pos1, attr_1.name());
+	
+	print_warn_pfx(pos2);
+	fprintf(stderr, "Duplicate attribute " PURPLE("`%.*s`") ".\n", int(attr_2.name_len), attr_2.name_p);
+	print_warn_codeView(pos1, attr_2.name());
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
