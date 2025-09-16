@@ -1,5 +1,6 @@
 #include "Macro.hpp"
 #include <unordered_map>
+#include <fstream>
 
 #include "Debug.hpp"
 #include "DebugSource.hpp"
@@ -164,6 +165,44 @@ const Macro* Macro::loadFile(const filepath& path, bool resolve){
 		
 		return parseFile(path.string());
 	}
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+char* Macro::loadRawFile(const filepath& path, size_t& out_len){
+	ifstream in = ifstream(path);
+	if (!in){
+		return nullptr;
+	}
+	
+	if (!in.seekg(0, ios_base::end)){
+		return nullptr;
+	}
+	
+	const streampos pos = in.tellg();
+	if (pos < 0 || !in.seekg(0, ios_base::beg)){
+		return nullptr;
+	}
+	
+	const size_t size = size_t(pos);
+	char* buff = html::newStr(size + 1);
+	size_t total = 0;
+	
+	while (total < size && in.read(buff + total, size - total)){
+		const streamsize n = in.gcount();
+		if (n <= 0){
+			html::del(buff);
+			return nullptr;
+		}
+		
+		total += size_t(n);
+	}
+	
+	buff[total] = 0;
+	out_len = total;
+	return buff;
 }
 
 

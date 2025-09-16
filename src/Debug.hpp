@@ -78,11 +78,11 @@ void error_duplicate_attr(const html::Node& node, const html::Attr& attr_1, cons
 void warn_duplicate_attr(const html::Node& node, const html::Attr& attr_1, const html::Attr& attr_2);
 void warn_attr_double_quote(const html::Node& node, const html::Attr& attr);
 
-void error_macro_not_found(const html::Node& node, const html::Attr& attr);
-void error_macro_not_found(const html::Node& node, const html::Attr& attr, std::string_view name);
-void error_file_not_found(const html::Node& node, const html::Attr& attr);
-void error_file_not_found(const html::Node& node, const html::Attr& attr, std::string_view name);
-void warn_file_include(const html::Node& node, const html::Attr& attr, const char* filePath);
+// CALL and INCLUDE
+void error_macro_not_found(const html::Node& node, std::string_view mark, std::string_view name);
+void error_file_not_found(const html::Node& node, std::string_view mark, const char* file);
+void error_invalid_include_type(const html::Node& node, std::string_view mark);
+void error_include_fail(const html::Node& node, std::string_view mark, const char* file);
 
 void error_unsupported_type(const html::Node& node);
 void warn_unknown_macro_tag(const html::Node& node);

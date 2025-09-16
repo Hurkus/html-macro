@@ -1,4 +1,5 @@
 #include "MacroEngine.hpp"
+#include "stack_vector.hpp"
 #include "Debug.hpp"
 
 using namespace std;
@@ -9,20 +10,15 @@ using namespace MacroEngine;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-// TODO: multiple NAME
 void MacroEngine::call(const Node& op, Node& dst){
-	const Attr* attr_name = nullptr;
+	bool one_name = false;
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
 		if (name == "NAME"){
-			if (attr_name != nullptr){
-				HERE(error_duplicate_attr(op, *attr_name, *attr));
-				return;
-			} else {
-				attr_name = attr;
-			}
+			one_name = true;
+			call(op, *attr, dst);
 			continue;
 		}
 		
@@ -36,49 +32,28 @@ void MacroEngine::call(const Node& op, Node& dst){
 		HERE(warn_ignored_attribute(op, *attr));
 	}
 	
-	string buff;
-	string_view macro_name;
-	
-	if (attr_name == nullptr){
+	if (!one_name){
 		HERE(warn_missing_attr(op, "NAME"));
 		return;
-	} else if (attr_name->value().empty()){
-		HERE(warn_missing_attr_value(op, *attr_name));
-		return;
-	} else if (!eval_attr_value(op, *attr_name, buff, macro_name)){
-		return;
 	}
 	
-	const Macro* macro = Macro::get(macro_name);
-	if (macro == nullptr){
-		if (buff.empty())
-			HERE(error_macro_not_found(op, *attr_name))
-		else
-			HERE(error_macro_not_found(op, *attr_name, buff.c_str()))
-		return;
-	}
-	
-	exec(*macro, dst);
 }
 
 
 void MacroEngine::call(const Node& op, const Attr& attr, Node& dst){
-	string buff;
-	string_view macro_name;
+	string macroName_buff;
+	string_view macroName;
 	
-	if (attr.value().empty()){
+	if (attr.name_len <= 0){
 		HERE(error_missing_attr_value(op, attr));
 		return;
-	} else if (!eval_attr_value(op, attr, buff, macro_name)){
+	} else if (!eval_attr_value(op, attr, macroName_buff, macroName)){
 		return;
 	}
 	
-	const Macro* macro = Macro::get(macro_name);
+	const Macro* macro = Macro::get(macroName);
 	if (macro == nullptr){
-		if (buff.empty())
-			HERE(error_macro_not_found(op, attr))
-		else
-			HERE(error_macro_not_found(op, attr, buff.c_str()))
+		HERE(error_macro_not_found(op, attr.value(), macroName));
 		return;
 	}
 	
@@ -89,14 +64,38 @@ void MacroEngine::call(const Node& op, const Attr& attr, Node& dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+enum class IncludeType {
+	AUTO, HTML, TXT, CSS, JS
+};
+
+static bool getIncludeType(const Node& op, std::string_view mark, std::string_view sfx, IncludeType& type){
+	if (sfx == "")
+		type = IncludeType::AUTO;
+	else if (sfx == "-HTML")
+		type = IncludeType::HTML;
+	else if (sfx == "-TXT")
+		type = IncludeType::TXT;
+	else if (sfx == "-CSS")
+		type = IncludeType::CSS;
+	else if (sfx == "-JS")
+		type = IncludeType::JS;
+	else {
+		HERE(error_invalid_include_type(op, mark));
+		return false;
+	}
+	return true;
+}
+
+
 void MacroEngine::include(const Node& op, Node& dst){
-	const Attr* src_attr = nullptr;
+	bool one_src = false;
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
-		if (name == "SRC"){
-			src_attr = attr;
+		if (name.starts_with("SRC")){
+			one_src = true;
+			include(op, *attr, dst);
 			continue;
 		} 
 		
@@ -111,61 +110,81 @@ void MacroEngine::include(const Node& op, Node& dst){
 		
 	}
 	
-	string src_buff;
-	string_view src;
-	
-	if (src_attr == nullptr){
+	if (!one_src){
 		HERE(warn_missing_attr(op, "SRC"));
 		return;
-	} else if (src_attr->value().empty()){
-		HERE(warn_missing_attr_value(op, *src_attr));
-		return;
-	} else if (!eval_attr_value(op, *src_attr, src_buff, src)){
-		return;
 	}
 	
-	filepath path = MacroEngine::resolve(src);
-	if (!filesystem::exists(path)){
-		HERE(error_file_not_found(op, *src_attr, path.c_str()));
-		return;
-	}
-	
-	// Fetch and execute macro
-	const Macro* macro = Macro::loadFile(path, false);
-	if (macro == nullptr){
-		HERE(warn_file_include(op, *src_attr, path.c_str()));
-		return;
-	}
-	
-	exec(*macro, dst);
 }
 
 
-void MacroEngine::include(const Node& op, const Attr& attr, Node& dst){
+bool MacroEngine::include(const Node& op, const Attr& attr, Node& dst){
+	// Evaluate source path
 	string src_buff;
 	string_view src;
 	
-	if (attr.value().empty()){
+	if (attr.value_len <= 0){
 		HERE(error_missing_attr_value(op, attr));
-		return;
+		return false;
 	} else if (!eval_attr_value(op, attr, src_buff, src)){
-		return;
+		return false;
 	}
 	
+	// Get include type
+	string_view incSuffix = attr.name();
+	if (incSuffix.starts_with("INCLUDE")){
+		incSuffix.remove_prefix(string_view("INCLUDE").length());
+	} else if (incSuffix.starts_with("SRC")){
+		incSuffix.remove_prefix(string_view("SRC").length());
+	} else {
+		HERE(error_invalid_include_type(op, incSuffix));
+		return false;
+	}
+	
+	IncludeType incType;
+	if (!getIncludeType(op, attr.name(), incSuffix, incType)){
+		return false;
+	}
+	
+	// Resolve path
 	filepath path = MacroEngine::resolve(src);
 	if (!filesystem::exists(path)){
-		HERE(error_file_not_found(op, attr, path.c_str()));
-		return;
+		HERE(error_file_not_found(op, attr.value(), path.c_str()));
+		return false;
 	}
 	
-	// Fetch and execute macro
-	const Macro* macro = Macro::loadFile(path, false);
-	if (macro == nullptr){
-		HERE(warn_file_include(op, attr, path.c_str()));
-		return;
+	// Resolve unspecified include type
+	if (incType == IncludeType::AUTO){
+		if (src.ends_with(".html"))
+			incType = IncludeType::HTML;
 	}
 	
-	exec(*macro, dst);
+	// Include HTML as macro
+	if (incType == IncludeType::HTML){
+		const Macro* macro = Macro::loadFile(path, false);
+		if (macro == nullptr){
+			HERE(error_include_fail(op, attr.value(), path.c_str()));
+			return false;
+		}
+		
+		exec(*macro, dst);
+	}
+	
+	// Raw text include
+	else {
+		size_t len;
+		char* str = Macro::loadRawFile(path, len);
+		
+		if (str == nullptr){
+			HERE(error_include_fail(op, attr.value(), path.c_str()));
+			return false;
+		}
+		
+		Node& txt = dst.appendChild(NodeType::TEXT);
+		txt.value(str, len);
+	}
+	
+	return true;
 }
 
 

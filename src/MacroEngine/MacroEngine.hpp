@@ -133,7 +133,7 @@ void include(const html::Node& op, html::Node& dst);
  * @param opAttr Attribute invoking the include call.
  * @param dst Destination parent node for any created nodes.
  */
-void include(const html::Node& op, const html::Attr& opAttr, html::Node& dst);
+bool include(const html::Node& op, const html::Attr& opAttr, html::Node& dst);
 
 /**
  * @brief Execute content of operation node as a shell command and

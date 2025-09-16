@@ -43,14 +43,11 @@ void MacroEngine::attribute(const Node& op, const Attr& op_attr, Node& dst){
 
 
 void MacroEngine::tag(const Node& op, Node& dst){
-	const Attr* attr_call_first = nullptr;
-	const Attr* attr_call_last = nullptr;
-	const Attr* attr_incl_first = nullptr;
-	const Attr* attr_incl_last = nullptr;
+	assert(op.type == NodeType::TAG);
 	
 	// Create child, unlinked
-	assert(op.type == NodeType::TAG);
 	unique_ptr child = unique_ptr<Node,Node::deleter>(html::newNode());
+	child->type = op.type;
 	
 	// Copy attributes
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
@@ -65,6 +62,16 @@ void MacroEngine::tag(const Node& op, Node& dst){
 			continue;
 		}
 		
+		if (name == "CALL"){
+			call(op, *attr, *child);
+			continue;
+		}
+		
+		else if (name.starts_with("INCLUDE")){
+			include(op, *attr, *child);
+			continue;
+		}
+		
 		// Check IF, ELIF, ELSE
 		switch (check_attr_if(op, *attr)){
 			case Branch::FAILED: return;
@@ -72,41 +79,7 @@ void MacroEngine::tag(const Node& op, Node& dst){
 			case Branch::NONE: break;
 		}
 		
-		if (name.starts_with("CALL")){
-			if (name == "CALL" || name == "CALL-FIRST"){
-				if (attr_call_first != nullptr)
-					warn_duplicate_attr(op, *attr_call_first, *attr);
-				else
-					attr_call_first = attr;
-				continue;
-			} else if (name == "CALL-LAST"){
-				if (attr_call_last != nullptr)
-					warn_duplicate_attr(op, *attr_call_last, *attr);
-				else
-					attr_call_last = attr;
-				continue;
-			}
-			goto unknown;
-		}
-		
-		if (name.starts_with("INCLUDE")){
-			if (name == "INCLUDE" || name == "INCLUDE-FIRST"){
-				if (attr_incl_first != nullptr)
-					warn_duplicate_attr(op, *attr_incl_first, *attr);
-				else
-					attr_incl_first = attr;
-				continue;
-			} else if (name == "INCLUDE-LAST"){
-				if (attr_incl_last != nullptr)
-					warn_duplicate_attr(op, *attr_incl_last, *attr);
-				else
-					attr_incl_last = attr;
-				continue;
-			}
-			goto unknown;
-		}
-		
-		unknown:
+		// Unknown attr macro
 		HERE(warn_unknown_macro_attribute(op, *attr));
 		attribute(op, *attr, *child);
 	}
@@ -119,19 +92,8 @@ void MacroEngine::tag(const Node& op, Node& dst){
 	Node* newNode = child.release();
 	dst.appendChild(newNode);
 	
-	if (attr_call_first != nullptr)
-		call(op, *attr_call_first, *newNode);
-	if (attr_incl_first != nullptr)
-		include(op, *attr_incl_first, *newNode);
-	
 	// Resolve children
 	runChildren(op, *newNode);
-	
-	if (attr_call_last != nullptr)
-		call(op, *attr_call_last, *newNode);
-	if (attr_incl_last != nullptr)
-		include(op, *attr_incl_last, *newNode);
-	
 }
 
 

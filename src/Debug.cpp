@@ -190,36 +190,35 @@ void warn_duplicate_attr(const Node& node, const Attr& attr_1, const Attr& attr_
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void error_macro_not_found(const Node& node, const Attr& attr, string_view macroName){
-	linepos pos = findLine(node.root(), attr.value_p);
+void error_macro_not_found(const Node& node, string_view mark, string_view macroName){
+	linepos pos = findLine(node.root(), mark.data());
 	print_error_pfx(pos);
 	fprintf(stderr, "Macro " PURPLE("`%.*s`") " not found.\n", int(macroName.length()), macroName.data());
-	print_error_codeView(pos, inclusiveValue(attr));
-	
-}
-
-void error_macro_not_found(const Node& node, const Attr& attr){
-	error_macro_not_found(node, attr, attr.value());
+	print_error_codeView(pos, mark);
 }
 
 
-void error_file_not_found(const Node& node, const Attr& attr, string_view fileName){
-	linepos pos = findLine(node.root(), attr.value_p);
+void error_file_not_found(const Node& node, string_view mark, const char* file){
+	linepos pos = findLine(node.root(), mark.data());
 	print_error_pfx(pos);
-	fprintf(stderr, "File " PURPLE("`%.*s`") " not found.\n", int(fileName.length()), fileName.data());
-	print_error_codeView(pos, inclusiveValue(attr));
-}
-
-void error_file_not_found(const Node& node, const Attr& attr){
-	error_file_not_found(node, attr, attr.value());
+	fprintf(stderr, "File " PURPLE("`%s`") " not found.\n", file);
+	print_error_codeView(pos, mark);
 }
 
 
-void warn_file_include(const Node& node, const Attr& attr, const char* fileName){
-	linepos pos = findLine(node.root(), attr.value_p);
-	print_warn_pfx(pos);
-	fprintf(stderr, "Failed to include file " PURPLE("`%s`") ".\n", fileName);
-	print_warn_codeView(pos, inclusiveValue(attr));
+void error_invalid_include_type(const Node& node, string_view mark){
+	linepos pos = findLine(node.root(), mark.data());
+	print_error_pfx(pos);
+	fprintf(stderr, "Invalid include type " PURPLE("`%.*s`") ".\n", int(mark.length()), mark.data());
+	print_error_codeView(pos, mark);
+}
+
+
+void error_include_fail(const Node& node, string_view mark, const char* file){
+	linepos pos = findLine(node.root(), mark.data());
+	print_error_pfx(pos);
+	fprintf(stderr, "Failed to include file " PURPLE("`%s`") ".\n", file);
+	print_error_codeView(pos, mark);
 }
 
 

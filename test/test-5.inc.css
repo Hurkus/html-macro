@@ -1,0 +1,9 @@
+
+/* comment */
+body {
+	background-color: aliceblue;
+}
+
+body > * {
+	font-size: 1em;
+}
