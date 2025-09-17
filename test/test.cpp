@@ -93,7 +93,7 @@ int exe(const char* inputfilePath, string& out_1, string& out_2){
 		close(p_stderr[0]);
 		close(p_stderr[1]);
 		
-		execl(htmlmacro_path.c_str(), htmlmacro_path.c_str(), inputfilePath, NULL);
+		execl(htmlmacro_path.c_str(), htmlmacro_path.c_str(), inputfilePath, "definedVariable=hello defined world", NULL);
 		exit(1);
 	}
 	

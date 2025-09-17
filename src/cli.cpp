@@ -20,9 +20,9 @@ Opt opt;
 
 enum class OptId {
 	HELP,
+	VOID,
 	OUTPUT,
 	INCLUDE,
-	VOID
 };
 
 struct OptInfo {
@@ -34,9 +34,9 @@ struct OptInfo {
 
 constexpr array options = {
 	OptInfo { "-h", "--help",    OptId::HELP,    false },
+	OptInfo { "-v", "--void",    OptId::VOID,    false },
 	OptInfo { "-o", "--out",     OptId::OUTPUT,  true  },
 	OptInfo { "-i", "--include", OptId::INCLUDE, true  },
-	OptInfo { "-v", "--void",    OptId::VOID,    false },
 };
 
 
@@ -67,6 +67,15 @@ static bool onOption(OptId id, const char* value){
 }
 
 static bool onFile(const char* arg){
+	// Check if variable
+	for (const char* s = arg ; *s != 0 ; s++){
+		if (*s == '='){
+			opt.defines.emplace_back(arg);
+			return true;
+		}
+	}
+	
+	// Is file
 	opt.files.emplace_back(arg);
 	return true;
 }

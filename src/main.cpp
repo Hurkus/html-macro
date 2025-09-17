@@ -16,17 +16,61 @@ using namespace MacroEngine;
 
 
 #define Y(s)		ANSI_YELLOW s ANSI_RESET
-#define VERSION 	"Version 0.9.0"
+#define P(s)		ANSI_PURPLE s ANSI_RESET
+#define VERSION 	"Version 0.10.0"
 
 
 void help(){
-	info(ANSI_BOLD "html-macro: " ANSI_RESET ANSI_YELLOW VERSION ANSI_RESET ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
-	info(ANSI_BOLD "Usage:" ANSI_RESET " %s [options] <files>", opt.program);
+	info(ANSI_BOLD "html-macro: " ANSI_RESET Y(VERSION) ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
+	info(ANSI_BOLD "Usage:" ANSI_RESET " %s [options] [<variable>=<value>] <files>", opt.program);
+	
+	info("");
+	info(ANSI_BOLD "Variables:" ANSI_RESET);
+	info("  Setting expression variables for use within macro expressions, an argument must consist of a variable name, character '=' and then the variable value.");
+	info("  For example: `%s " Y("n=10") " in.html -o out.html`", opt.program);
+	
+	info("");
 	info(ANSI_BOLD "Options:" ANSI_RESET);
 	info("  " Y("--help") ", " Y("-h") " ................... Print help.");
 	info("  " Y("--output <path>") ", " Y("-o <path>") " ... Write output to file instead of stdout.");
 	info("  " Y("--include <path>") ", " Y("-i <path>") " .. Add folder to list of path searches when including files with relative paths.");
 	info("");
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static bool setDefinedVariables(const vector<const char*>& defines){
+	for (const char* s : defines){
+		const char* name_beg = s;
+		const char* name_end = nullptr;
+		
+		while (true){
+			if (*s == 0){
+				ERROR("Defined variable " P("`%s`") " missing value. Proper format is `name=value`.", name_beg);
+				assert(*s != 0);
+				return false;
+			} else if (*s == '='){
+				name_end = s;
+				break;
+			} else if (isspace(*s)){
+				if (name_end == nullptr)
+					name_end = s;
+			} else if (name_end != nullptr){
+				ERROR("Invalid format of variable definition " P("`%s`") ". Proper format is `name=value`.", name_beg);
+				return false;
+			}
+			s++;
+		}
+		
+		assert(*s == '=');
+		s++;
+		
+		const char* val_beg = s;
+		MacroEngine::variables.insert(string_view(name_beg, name_end), in_place_type<string>, val_beg);
+	}
+	return true;
 }
 
 
@@ -51,6 +95,10 @@ static bool run(const char* file){
 	// Parse input file
 	const Macro* m = Macro::loadFile(file);
 	if (m == nullptr){
+		return false;
+	}
+	
+	if (!setDefinedVariables(opt.defines)){
 		return false;
 	}
 	
