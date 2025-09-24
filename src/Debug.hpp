@@ -43,7 +43,7 @@ static void error(const char* fmt, T... arg){
 
 template <typename ...T>
 static void warn(const char* fmt, T... arg){
-	std::fprintf(stderr, ANSI_YELLOW ANSI_BOLD "warn: " ANSI_RESET);
+	std::fprintf(stderr, ANSI_YELLOW "warn: " ANSI_RESET);
 	std::fprintf(stderr, fmt, arg...);
 	std::fprintf(stderr, "\n");
 }
