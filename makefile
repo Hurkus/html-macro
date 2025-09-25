@@ -44,13 +44,13 @@ clean:
 ################################################################
 
 
-# bin/test-$(EXE): test/test.cpp | bin/
-# 	@basename "$@"
-# 	@$(CXX) $(filter %.cpp, $^) $(CXXFLAGS) $(INCLUDES) -o "$@"
+bin/test-$(EXE): test/test.cpp | bin/
+	@basename "$@"
+	@$(CXX) $(filter %.cpp, $^) $(CXXFLAGS) $(INCLUDES) -o "$@"
 
-# .PHONY: test
-# test: bin/$(EXE) bin/test-$(EXE)
-# 	./$(EXE)/test-$(EXE)
+.PHONY: test
+test: bin/$(EXE) bin/test-$(EXE)
+	./bin/test-$(EXE)
 
 
 ################################################################
@@ -85,5 +85,3 @@ endif
 
 
 ################################################################
-
-

@@ -88,19 +88,19 @@ static void print_warn_codeView(const linepos& line, string_view mark){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void error(const Node& node, string_view msg){
+void error_node(const Node& node, string_view msg){
 	print_error_pfx(findLine(node.root(), node.value_p));
 	fprintf(stderr, "%.*s\n", int(msg.length()), msg.data());
 }
 
 
-void warn(const Node& node, string_view msg){
+void warn_node(const Node& node, string_view msg){
 	print_warn_pfx(findLine(node.root(), node.value_p));
 	fprintf(stderr, "%.*s\n", int(msg.length()), msg.data());
 }
 
 
-void info(const Node& node, string_view msg){
+void info_node(const Node& node, string_view msg){
 	print(findLine(node.root(), node.value_p));
 	fprintf(stderr, "%.*s\n", int(msg.length()), msg.data());
 }

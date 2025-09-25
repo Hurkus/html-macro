@@ -132,17 +132,17 @@ public:
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	Node& appendChild(NodeType type = NodeType::TAG);
-	void appendChild(Node* child);
+	void appendChild(Node* child) noexcept;
 	Attr& appendAttribute();
 	
 	bool removeChild(Node* child);
 	void removeChildren();
-	Node* extractChild(Node* child);
+	Node* extractChild(Node* child) noexcept;
 	
 	bool removeAttr(Attr* attr);
 	bool removeAttr(std::string_view name);
 	void removeAttributes();
-	Attr* extractAttr(Attr* child);
+	Attr* extractAttr(Attr* child) noexcept;
 	
 	void clear(){
 		removeAttributes();
@@ -287,18 +287,20 @@ public:
 	void reset(){
 		Node::clear();
 		buffer.reset();
+		srcFile.reset();
 	}
 	
 	/**
 	 * @brief Disown all child nodes without freeing memory (leak memory).
 	 * @note Really think about it before using this.
 	 */
-	void releaseNodes(){
-		this->child = nullptr;
-		this->value_p = nullptr;
-		this->value_len = 0;
-		this->next = nullptr;
-	}
+	// void releaseMemory(){
+	// 	this->child = nullptr;
+	// 	this->attribute = nullptr;
+	// 	this->value_p = nullptr;
+	// 	this->value_len = 0;
+	// 	this->next = nullptr;
+	// }
 	
 // ------------------------------------------------------------------------------------------ //
 };

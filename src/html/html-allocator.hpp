@@ -1,5 +1,4 @@
 #pragma once
-#include <cstring>
 #include <string_view>
 
 
@@ -44,20 +43,17 @@ void del(html::Attr* p);
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-inline char* newStr(size_t len){
-	return new char[len];
-}
+char* newStr(size_t len);
 
-inline char* newStr(std::string_view str){
-	char* s = newStr(str.length() + 1);
-	memcpy(s, str.begin(), str.length());
-	return s;
-}
+char* newStr(std::string_view str);
+
+void del(char* str);
 
 
-inline void del(char* str){
-	delete[] str;
-}
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+bool assertDeallocations();
 
 
 // ------------------------------------------------------------------------------------------ //

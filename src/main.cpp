@@ -15,22 +15,23 @@ using namespace MacroEngine;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+#define B(s)		ANSI_BOLD s ANSI_RESET
 #define Y(s)		ANSI_YELLOW s ANSI_RESET
 #define P(s)		ANSI_PURPLE s ANSI_RESET
 #define VERSION 	"Version 0.10.0"
 
 
 void help(){
-	info(ANSI_BOLD "html-macro: " ANSI_RESET Y(VERSION) ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
-	info(ANSI_BOLD "Usage:" ANSI_RESET " %s [options] [<variable>=<value>] <files>", opt.program);
+	info(B("html-macro: ") Y(VERSION) ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
+	info(B("Usage:") " %s [options] [<variable>=<value>] <files>", opt.program);
 	
 	info("");
-	info(ANSI_BOLD "Variables:" ANSI_RESET);
+	info(B("Variables:"));
 	info("  Setting expression variables for use within macro expressions, an argument must consist of a variable name, character '=' and then the variable value.");
 	info("  For example: `%s " Y("n=10") " in.html -o out.html`", opt.program);
 	
 	info("");
-	info(ANSI_BOLD "Options:" ANSI_RESET);
+	info(B("Options:"));
 	info("  " Y("--help") ", " Y("-h") " ................... Print help.");
 	info("  " Y("--output <path>") ", " Y("-o <path>") " ... Write output to file instead of stdout.");
 	info("  " Y("--include <path>") ", " Y("-i <path>") " .. Add folder to list of path searches when including files with relative paths.");
@@ -84,7 +85,7 @@ static bool run(const char* file){
 	
 	// Open output file
 	ofstream outf;
-	if (opt.outFilePath != nullptr && !opt.out_void){
+	if (opt.outFilePath != nullptr && !opt.outVoid){
 		outf = ofstream(opt.outFilePath);
 		if (!outf.is_open()){
 			ERROR("Failed to open output file `%s`.", opt.outFilePath);
@@ -107,14 +108,19 @@ static bool run(const char* file){
 	MacroEngine::exec(*m, doc);
 	
 	// Select output stream and write
-	if (!opt.out_void){
+	bool ret = true;
+	if (!opt.outVoid){
 		ostream& out = (outf.is_open()) ? outf : cout;
-		bool e = write(out, doc);
+		ret = write(out, doc);
 		out.flush();
-		return e;
 	}
 	
-	return true;
+	// Cleanup
+	doc.clear();
+	Macro::clearCache();
+	assert(html::assertDeallocations());
+	
+	return ret;
 }
 
 
@@ -144,11 +150,8 @@ int main(int argc, char const* const* argv){
 	if (opt.help){
 		help();
 		return 0;
-	} else if (opt.files.empty()){
+	} else if (opt.file == nullptr){
 		ERROR("No input files.");
-		return 1;
-	} else if (opt.files.size() > 1){
-		ERROR("Too many input files: `%s`", opt.files[1]);
 		return 1;
 	}
 	
@@ -158,7 +161,7 @@ int main(int argc, char const* const* argv){
 			MacroEngine::paths.pop_back();
 	}
 	
-	if (!run(opt.files[0])){
+	if (!run(opt.file)){
 		return 2;
 	}
 	

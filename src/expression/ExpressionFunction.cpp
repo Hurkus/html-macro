@@ -264,18 +264,20 @@ inline void toupper(string& s){
 	});
 }
 
-inline string substr(string&& s, size_t i, long len){
-	if (i > s.length()){
-		return string();
-	} else if (len < 0){
-		long end = long(s.length()) + len + 1;
-		if (end < long(i))
-			return s.substr(end, i - end);
-		else
-			return s.substr(i, end - i);
-	} else {
-		return s.substr(i, len);
+inline string substr(string&& s, long beg, long end){
+	beg = (beg >= 0) ? beg : (s.length() + beg);
+	end = (end >= 0) ? end : (s.length() + end + 1);
+	if (end < beg){
+		swap(beg, end);
 	}
+	
+	beg = max(0L, beg);
+	end = min(end, long(s.length()));
+	
+	if (beg >= end)
+		return string();
+	else
+		return s.substr(beg, end - beg);
 }
 
 
@@ -341,10 +343,10 @@ static Value f_upper(const Function& f, const VariableMap& vars, const Debugger&
 
 static Value f_substr(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 3){
-		HERE(dbg.error(f.name, "Missing arguments (%d/3) in function " P("substr(str,i,len)") ".\n", f.argc));
+		HERE(dbg.error(f.name, "Missing arguments (%d/3) in function " P("substr(str,beg,end)") ".\n", f.argc));
 		return Value(in_place_type<string>);
 	} else if (f.argc > 3){
-		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " P("substr(str,i,len)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " P("substr(str,beg,end)") ".\n", f.argc));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 		assert(f.argv[1].expr != nullptr);
@@ -355,31 +357,30 @@ static Value f_substr(const Function& f, const VariableMap& vars, const Debugger
 	Value arg_1 = eval(*f.argv[1].expr, vars, dbg);
 	Value arg_2 = eval(*f.argv[2].expr, vars, dbg);
 	
-	// Parse arg 1, [i]
-	size_t i = 0;
+	// Parse arg 1, [beg]
+	long beg;
 	if (long* n = get_if<long>(&arg_1)){
-		if (*n > 0)
-			i = size_t(*n);
+		beg = *n;
 	} else {
-		HERE(dbg.error(f.argv[1].mark, "Argument " P("i={%s}") " in function " P("substr(str,i,len)") " must be an integer.\n", VAL_STR(arg_1)));
+		HERE(dbg.error(f.argv[1].mark, "Argument " P("beg={%s}") " in function " P("substr(str,beg,end)") " must be an integer.\n", VAL_STR(arg_1)));
 		return arg_0;
 	}
 	
-	// Parse arg 2, [len]
-	long len;
+	// Parse arg 2, [end]
+	long end;
 	if (long* n = get_if<long>(&arg_2)){
-		len = *n;
+		end = *n;
 	} else {
-		HERE(dbg.error(f.argv[2].mark, "Argument " P("len={%s}") " in function " P("substr(str,i,len)") " must be an integer.\n", VAL_STR(arg_2)));
+		HERE(dbg.error(f.argv[2].mark, "Argument " P("end={%s}") " in function " P("substr(str,beg,end)") " must be an integer.\n", VAL_STR(arg_2)));
 		return arg_0;
 	}
 	
 	// Substring
-	auto cast = [i,len](auto&& val){
+	auto cast = [beg,end](auto&& val){
 		if constexpr IS_STR(val)
-			return substr(move(val), i, len);
+			return substr(move(val), beg, end);
 		else
-			return substr(to_string(val), i, len);
+			return substr(to_string(val), beg, end);
 	};
 	
 	return visit(cast, move(arg_0));

@@ -64,9 +64,9 @@ namespace html {
 };
 
 
-void error(const html::Node& node, std::string_view msg);
-void warn(const html::Node& node, std::string_view msg);
-void info(const html::Node& node, std::string_view msg);
+void error_node(const html::Node& node, std::string_view msg);
+void warn_node(const html::Node& node, std::string_view msg);
+void info_node(const html::Node& node, std::string_view msg);
 
 void error_missing_attr(const html::Node& node, const char* name);
 void error_missing_attr_value(const html::Node& node, const html::Attr& attr);

@@ -1,9 +1,11 @@
 #include "html-allocator.hpp"
 #include <cassert>
+#include <cstring>
 #include <memory>
 #include <vector>
 
 #include "html.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace html;
@@ -54,6 +56,7 @@ struct block_allocator {
 	unique_ptr<page> createPage();
 	void* allocate();
 	void deallocate(void*);
+	bool contains(void*) const noexcept;
 };
 
 
@@ -66,6 +69,28 @@ constexpr size_t PAGE_SIZE_INC = 0;
 
 template<class H>
 static block_allocator<H> heap;
+
+
+// ----------------------------------- [ Variables ] ---------------------------------------- //
+
+
+#ifdef DEBUG
+namespace html {
+	long nodeAllocCount = 0;
+	long nodeDeallocCount = 0;
+	long attrAllocCount = 0;
+	long attrDeallocCount = 0;
+	long strAllocCount = 0;
+	long strDeallocCount = 0;
+}
+#endif
+
+
+#ifdef DEBUG
+	#define INC(var)	(var++)
+#else
+	#define INC(var)	{}
+#endif
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -124,22 +149,27 @@ void* block_allocator<H>::allocate(){
 template<class H>
 void block_allocator<H>::deallocate(void* p){
 	assert(p != nullptr);
-	
-	// Find page which contains `p`
-	for (unique_ptr<page>& page : pages){
-		const block* beg = &page->memory[0];
-		const block* end = beg + page->size;
-		if (beg <= p && p < end)
-			goto found;
-	}
-	
-	// Not found
-	assert(false && "Allocation not found.");
-	
-	found:
+	assert(contains(p) && "Allocation not found.");
 	block* b = (block*)p;
 	b->next = emptyList;
 	emptyList = b;
+}
+
+
+template<class H>
+bool block_allocator<H>::contains(void* p) const noexcept {
+	if (p == nullptr){
+		return false;
+	}
+	
+	for (const unique_ptr<page>& page : pages){
+		const block* beg = &page->memory[0];
+		const block* end = beg + page->size;
+		if (beg <= p && p < end)
+			return true;
+	}
+	
+	return false;
 }
 
 
@@ -148,6 +178,7 @@ void block_allocator<H>::deallocate(void* p){
 
 Node* html::newNode(){
 	using H = heap_t<Node>;
+	INC(nodeAllocCount);
 	void* e = heap<H>.allocate();
 	return new (e) Node();
 }
@@ -155,8 +186,22 @@ Node* html::newNode(){
 
 Attr* html::newAttr(){
 	using H = heap_t<Attr>;
+	INC(attrAllocCount);
 	void* e = heap<H>.allocate();
 	return new (e) Attr();
+}
+
+
+char* html::newStr(size_t len){
+	INC(strAllocCount);
+	return new char[len];
+}
+
+char* html::newStr(std::string_view str){
+	char* s = newStr(str.length() + 1);
+	memcpy(s, str.begin(), str.length());
+	s[str.length()] = 0;
+	return s;
 }
 
 
@@ -165,25 +210,51 @@ Attr* html::newAttr(){
 
 void html::del(Node* p){
 	using H = heap_t<decltype(*p)>;
-	if (p != nullptr)
+	if (p != nullptr){
 		heap<H>.deallocate(p);
+		INC(nodeDeallocCount);
+	}
 }
 
 
 void html::del(Attr* p){
 	using H = heap_t<decltype(*p)>;
-	if (p != nullptr)
+	if (p != nullptr){
 		heap<H>.deallocate(p);
+		INC(attrDeallocCount);
+	}
+}
+
+
+void html::del(char* str){
+	if (str != nullptr)
+		INC(strDeallocCount);
+	delete[] str;
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-// void html::eraseMemory(){
-// 	heap<heap_t<attr>> = {};
-// 	heap<heap_t<node>> = {};
-// }
+bool html::assertDeallocations(){
+	bool pass = true;
+	
+	#ifdef DEBUG
+	pass &= (nodeAllocCount == nodeDeallocCount);
+	pass &= (attrAllocCount == attrDeallocCount);
+	pass &= (strAllocCount == strDeallocCount);
+	
+	if (!pass){
+		string msg = "HTML allocator encountered missmatching deallocation count:\n";
+		msg += "  html::Node: " + to_string(nodeDeallocCount) + "/" + to_string(nodeAllocCount) + "\n";
+		msg += "  html::Attr: " + to_string(attrDeallocCount) + "/" + to_string(attrAllocCount) + "\n";
+		msg += "  html::Str:  " + to_string(strDeallocCount) + "/" + to_string(strAllocCount);
+		ERROR(msg.c_str());
+	}
+	#endif
+	
+	return pass;
+}
 
 
 // ------------------------------------------------------------------------------------------ //

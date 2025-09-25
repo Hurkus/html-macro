@@ -9,15 +9,15 @@ using namespace html;
 
 
 inline void _free_str(Node& n){
-	if (isSet(n.options, NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME))
+	if (n.options % (NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME))
 		html::del((char*)n.value_p);
 }
 
 
 inline void _free_str(Attr& a){
-	if (isSet(a.options, NodeOptions::OWNED_VALUE))
+	if (a.options % NodeOptions::OWNED_VALUE)
 		html::del((char*)a.value_p);
-	if (isSet(a.options, NodeOptions::OWNED_NAME))
+	if (a.options % NodeOptions::OWNED_NAME)
 		html::del((char*)a.name_p);
 }
 
@@ -26,7 +26,7 @@ inline void _free_str(Attr& a){
 
 
 void Node::value(nullptr_t){
-	if (isSet(options, NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME)){
+	if (options % (NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME)){
 		html::del((char*)value_p);
 		options &= ~(NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME);
 	}
@@ -36,7 +36,7 @@ void Node::value(nullptr_t){
 
 
 void Node::value(string_view str){
-	if (isSet(options, NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME)){
+	if (options % (NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME)){
 		html::del((char*)value_p);
 		options &= ~(NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME);
 	}
@@ -46,7 +46,7 @@ void Node::value(string_view str){
 
 
 void Node::value(char* str, size_t len){
-	if (isSet(options, NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME)){
+	if (options % (NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME)){
 		html::del((char*)value_p);
 	}
 	options |= (NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME);
@@ -59,7 +59,7 @@ void Node::value(char* str, size_t len){
 
 
 Node& Node::appendChild(NodeType type){
-	assert(!isSet(this->options, NodeOptions::LIST_FORWARDS));
+	assert(!(this->options % NodeOptions::LIST_FORWARDS));
 	Node* child = html::newNode();
 	child->type = type;
 	child->parent = this;
@@ -68,9 +68,9 @@ Node& Node::appendChild(NodeType type){
 	return *child;
 }
 
-void Node::appendChild(Node* child){
+void Node::appendChild(Node* child) noexcept {
 	assert(child != nullptr);
-	assert(!isSet(this->options, NodeOptions::LIST_FORWARDS));
+	assert(!(this->options % NodeOptions::LIST_FORWARDS));
 	
 	if (child->parent != nullptr){
 		child->parent->extractChild(child);
@@ -90,7 +90,7 @@ Attr& Node::appendAttribute(){
 }
 
 
-Attr* Node::extractAttr(Attr* a){
+Attr* Node::extractAttr(Attr* a) noexcept {
 	Attr* prev = nullptr;
 	Attr* curr = this->attribute;
 	
@@ -177,7 +177,7 @@ void Node::removeAttributes(){
 }
 
 
-Node* Node::extractChild(Node* child){
+Node* Node::extractChild(Node* child) noexcept {
 	Node* prev = nullptr;
 	Node* curr = this->child;
 	
@@ -271,7 +271,7 @@ void Attr::value(nullptr_t){
 
 
 void Attr::value(string_view str){
-	if (isSet(options, NodeOptions::OWNED_VALUE)){
+	if (options % NodeOptions::OWNED_VALUE){
 		html::del((char*)value_p);
 		options &= ~NodeOptions::OWNED_VALUE;
 	}
@@ -281,7 +281,7 @@ void Attr::value(string_view str){
 
 
 void Attr::value(char* str, size_t len){
-	if (isSet(options, NodeOptions::OWNED_VALUE)){
+	if (options % NodeOptions::OWNED_VALUE){
 		html::del((char*)value_p);
 	}
 	options |= NodeOptions::OWNED_VALUE;
@@ -291,7 +291,7 @@ void Attr::value(char* str, size_t len){
 
 
 void Attr::name(nullptr_t){
-	if (isSet(options, NodeOptions::OWNED_NAME)){
+	if (options % NodeOptions::OWNED_NAME){
 		html::del((char*)name_p);
 		options &= ~NodeOptions::OWNED_NAME;
 	}
@@ -301,7 +301,7 @@ void Attr::name(nullptr_t){
 
 
 void Attr::name(string_view str){
-	if (isSet(options, NodeOptions::OWNED_NAME)){
+	if (options % NodeOptions::OWNED_NAME){
 		html::del((char*)name_p);
 		options &= ~NodeOptions::OWNED_NAME;
 	}

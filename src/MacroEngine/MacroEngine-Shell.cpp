@@ -1,4 +1,5 @@
 #include "MacroEngine.hpp"
+#include <cstring>
 #include <cstdlib>
 #include <vector>
 #include <iostream>

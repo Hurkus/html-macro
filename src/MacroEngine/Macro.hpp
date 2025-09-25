@@ -20,7 +20,6 @@ public:
 	
 public:
 	static void clearCache();
-	static void releaseCache();
 	
 // ------------------------------------------------------------------------------------------ //
 };

@@ -49,7 +49,7 @@ static bool onOption(OptId id, const char* value){
 			opt.help = true;
 			return true;
 		case OptId::VOID:
-			opt.out_void = true;
+			opt.outVoid = true;
 			return true;
 		case OptId::OUTPUT:
 			if (opt.outFilePath != nullptr){
@@ -67,6 +67,8 @@ static bool onOption(OptId id, const char* value){
 }
 
 static bool onFile(const char* arg){
+	assert(arg != nullptr);
+	
 	// Check if variable
 	for (const char* s = arg ; *s != 0 ; s++){
 		if (*s == '='){
@@ -75,8 +77,15 @@ static bool onFile(const char* arg){
 		}
 	}
 	
+	if (arg[0] == 0){
+		return true;
+	} else if (opt.file != nullptr){
+		ERROR("Too many input files: `%s`", arg);
+		return false;
+	}
+	
 	// Is file
-	opt.files.emplace_back(arg);
+	opt.file = arg;
 	return true;
 }
 

@@ -60,9 +60,9 @@ void MacroEngine::error(const Node& op){
 	if (txt->options % NodeOptions::INTERPOLATE){
 		string buff;
 		if (eval_string(op, msg, buff))
-			::error(op, buff);
+			::error_node(op, buff);
 	} else {
-		::error(op, msg);
+		::error_node(op, msg);
 	}
 	
 }
@@ -78,9 +78,9 @@ void MacroEngine::warn(const Node& op){
 	if (txt->options % NodeOptions::INTERPOLATE){
 		string buff;
 		if (eval_string(op, msg, buff))
-			::warn(op, buff);
+			::warn_node(op, buff);
 	} else {
-		::warn(op, msg);
+		::warn_node(op, msg);
 	}
 	
 }
@@ -96,9 +96,9 @@ void MacroEngine::info(const Node& op){
 	if (txt->options % NodeOptions::INTERPOLATE){
 		string buff;
 		if (eval_string(op, msg, buff))
-			::info(op, buff);
+			::info_node(op, buff);
 	} else {
-		::info(op, msg);
+		::info_node(op, msg);
 	}
 	
 }

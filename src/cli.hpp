@@ -7,12 +7,12 @@ extern struct Opt {
 	const char* program = "html-macro";
 	bool help = false;
 	
-	bool out_void = false;
+	bool outVoid = false;
 	const char* outFilePath = nullptr;
 	
 	std::vector<const char*> includes;
 	std::vector<const char*> defines;
-	std::vector<const char*> files;
+	const char* file = nullptr;
 } opt;
 
 
