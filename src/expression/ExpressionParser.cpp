@@ -4,20 +4,12 @@
 #include <cassert>
 #include <vector>
 #include <charconv>
-#include <type_traits>
 
 #include "Debug.hpp"
 
 using namespace std;
 using Operation = Expression::Operation;
 using Allocator = Expression::Allocator;
-
-
-// ---------------------------------- [ Definitions ] --------------------------------------- //
-
-
-#define IS_TYPE(e, t)	(std::is_same_v<std::decay_t<decltype(e)>, t>)
-#define IS_STR(e)		IS_TYPE(e, StrValue)
 
 
 // ----------------------------------- [ Structures ] --------------------------------------- //

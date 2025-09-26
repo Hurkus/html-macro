@@ -1,20 +1,16 @@
 #include "Expression.hpp"
 #include "ExpressionAllocator.hpp"
 #include <cmath>
+
 #include "Debug.hpp"
 
 using namespace std;
 using Operation = Expression::Operation;
+using Type = Value::Type;
 
 
-// ---------------------------------- [ Definitions ] --------------------------------------- //
+// ----------------------------------- [ Prototypes ] --------------------------------------- //
 
-
-#define IS_TYPE(e, t)	(std::is_same_v<std::decay_t<decltype(e)>, t>)
-#define IS_STR(e)		(IS_TYPE(e, string))
-#define IS_LONG(e)		(IS_TYPE(e, long))
-#define IS_DOUBLE(e)	(IS_TYPE(e, double))
-#define IS_NUM(e)		(IS_LONG(e) || IS_DOUBLE(e))
 
 Value eval(const Operation& op, const VariableMap& vars, const Debugger& dbg);
 Value eval(const Function& op, const VariableMap& vars, const Debugger& dbg);
@@ -31,31 +27,14 @@ Expression::~Expression(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static void eraseAll(string& src, string& word){
-	string buff;
-	buff.reserve(src.length());
-	
-	size_t a = 0;
-	size_t b = src.find(word, a);
-	while (b != string::npos){
-		buff.append(src, a, b - a);
-		a = b + word.length();
-		b = src.find(word, a);
-	}
-	
-	buff.append(src, a);
-	swap(src, buff);
-}
-
-static void mul(string& src, long n){
-	size_t len = src.length();
-	if (n <= 0){
-		src.clear();
-	} else {
-		src.reserve(len * n);
-		while (n-- > 1)
-			src.append(src, 0, len);
-	}
+template<typename T>
+constexpr T clamp(T x, T min, T max){
+	if (x < min)
+		return min;
+	else if (x > max)
+		return max;
+	else
+		return x;
 }
 
 
@@ -65,26 +44,32 @@ static void mul(string& src, long n){
 static Value eval(const Variable& var, const VariableMap& vars, const Debugger& dbg){
 	const Value* val = vars.get(var.name);
 	if (val != nullptr){
-		return *val;
+		return Value(*val);
 	} else {
 		string_view name = var.name;
 		HERE(dbg.warn(name, "Undefined variable " ANSI_PURPLE "'%.*s'" ANSI_RESET " defaulted to 0.\n", int(name.length()), name.data()));
-		return Value(0);
+		return Value(0L);
 	}
 }
 
 
 static Value nott(const UnaryOperation& unop, const VariableMap& vars, const Debugger& dbg){
 	assert(unop.arg != nullptr);
+	Value val = eval(*unop.arg, vars, dbg);
 	
-	auto cast = [](auto&& val){
-		if constexpr IS_STR(val)
-			return Value(val.empty() ? 1l : 0l);
-		else
-			return Value(val == 0 ? 1l : 0l);
-	};
+	switch (val.type){
+		case Type::LONG:
+			val = (val.data.l == 0) ? 1L : 0L;
+			break;
+		case Type::DOUBLE:
+			val = (val.data.d == 0) ? 1L : 0L;
+			break;
+		case Type::STRING:
+			val = (val.data_len == 0) ? 1L : 0L;
+			break;
+	}
 	
-	return visit(cast, eval(*unop.arg, vars, dbg));
+	return val;
 }
 
 
@@ -92,14 +77,18 @@ static Value neg(const UnaryOperation& unop, const VariableMap& vars, const Debu
 	assert(unop.arg != nullptr);
 	Value val = eval(*unop.arg, vars, dbg);
 	
-	if (long* n = get_if<long>(&val)){
-		return Value(-(*n));
-	} else if (double* n = get_if<double>(&val)){
-		return Value(-(*n));
-	} else {
-		return val;
+	switch (val.type){
+		case Type::LONG:
+			val = -val.data.l;
+			break;
+		case Type::DOUBLE:
+			val = -val.data.d;
+			break;
+		case Type::STRING:
+			break;
 	}
 	
+	return val;
 }
 
 
@@ -108,139 +97,204 @@ static Value neg(const UnaryOperation& unop, const VariableMap& vars, const Debu
 
 static Value add(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value arg_1 = eval(*binop.arg_1, vars, dbg);
-	Value arg_2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(*binop.arg_1, vars, dbg);
+	Value v2 = eval(*binop.arg_2, vars, dbg);
 	
-	auto cast = [&](auto& a, auto& b){
-		if constexpr (IS_STR(a) && IS_STR(b)){
-			a.append(b);
-			return move(arg_1);
-		} else if constexpr (IS_STR(a) && IS_NUM(b)) {
-			a.append(to_string(b));
-			return move(arg_1);
-		} else if constexpr (IS_NUM(a) && IS_STR(b)) {
-			b.insert(0, to_string(a));
-			return move(arg_2);
-		} else {
-			return Value(a + b);
+	if (v1.type == Type::LONG){
+		if (v2.type == Type::LONG)
+			v1.data.l += v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			v1 = v1.data.l + v2.data.d;
+		else if (v2.type == Type::STRING){
+			string s1 = to_string(v1.data.l);
+			v1 = Value(s1, v2.sv());
 		}
-	};
+	}
 	
-	return visit(cast, arg_1, arg_2);
+	else if (v1.type == Type::DOUBLE){
+		if (v2.type == Type::LONG)
+			v1.data.d += v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			v1.data.d += v2.data.d;
+		else if (v2.type == Type::STRING){
+			string s1 = to_string(v1.data.l);
+			v1 = Value(s1, v2.sv());
+		}
+	}
+	
+	else if (v1.type == Type::STRING){
+		string_view s1 = string_view(v1.data.s, v1.data_len);
+		
+		if (v2.type == Type::LONG)
+			v1 = Value(s1, to_string(v2.data.l));
+		else if (v2.type == Type::DOUBLE)
+			v1 = Value(s1, to_string(v2.data.d));
+		else if (v2.type == Type::STRING){
+			v1 = Value(s1, v2.sv());
+		}
+		
+	}
+	
+	return v1;
 }
 
 
 static Value sub(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value arg_1 = eval(*binop.arg_1, vars, dbg);
-	Value arg_2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(*binop.arg_1, vars, dbg);
+	Value v2 = eval(*binop.arg_2, vars, dbg);
 	
-	auto cast = [&](auto& a, auto& b){
-		if constexpr (IS_STR(a) && IS_STR(b)){
-			eraseAll(a, b);
-		} else if constexpr (IS_STR(a) && IS_NUM(b)) {
-			long n = long(b);
-			if (n <= 0);
-			else if (size_t(n) > a.length())
-				a.clear();
-			else
-				a.resize(a.length() - size_t(n));
-		} else if constexpr (IS_NUM(a) && IS_STR(b)) {
-			// TODO
-		} else {
-			return Value(a - b);
-		}
-		return move(arg_1);
-	};
+	if (v1.type == Type::LONG){
+		if (v2.type == Type::LONG)
+			v1.data.l -= v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			v1 = v1.data.l - v2.data.d;
+	}
 	
-	return visit(cast, arg_1, arg_2);
+	else if (v1.type == Type::DOUBLE){
+		if (v2.type == Type::LONG)
+			v1.data.d -= v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			v1.data.d -= v2.data.d;
+	}
+	
+	else if (v1.type == Type::STRING){
+		if (v2.type == Type::LONG)
+			v1.data_len = (uint32_t)clamp(long(v1.data_len) - v2.data.l, 0L, long(UINT32_MAX));
+		else if (v2.type == Type::DOUBLE)
+			v1.data_len = (uint32_t)clamp(v1.data_len - v2.data.d, 0.0, double(UINT32_MAX));
+	}
+	
+	return v1;
 }
 
 
 static Value mul(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value arg_1 = eval(*binop.arg_1, vars, dbg);
-	Value arg_2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(*binop.arg_1, vars, dbg);
+	Value v2 = eval(*binop.arg_2, vars, dbg);
 	
-	auto cast = [&](auto& a, auto& b){
-		if constexpr (IS_STR(a) && IS_STR(b)){
-			// TODO
-			return move(arg_1);
-		} else if constexpr (IS_STR(a) && IS_NUM(b)) {
-			mul(a, long(b));
-			return move(arg_1);
-		} else if constexpr (IS_NUM(a) && IS_STR(b)) {
-			mul(b, long(a));
-			return move(arg_2);
-		} else {
-			return Value(a * b);
+	auto mul = [](string_view sv, long n){
+		assert(n > 0);
+		size_t len = sv.length() * size_t(n);
+		
+		char* s = new char[len + 1];
+		for (long i = 0 ; i < n ; i++){
+			copy(sv.begin(), sv.end(), s + i * sv.length());
 		}
+		
+		s[len] = 0;
+		return Value(s, (uint32_t)min(len, size_t(UINT32_MAX)));
 	};
 	
-	return visit(cast, arg_1, arg_2);
+	if (v1.type == Type::LONG){
+		if (v2.type == Type::LONG)
+			v1.data.l *= v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			v1 = v1.data.l * v2.data.d;
+		else if (v2.type == Type::STRING){
+			if (v1.data.l <= 0)
+				v1 = Value(""sv);
+			else if (v1.data.l == 1)
+				v1 = move(v2);
+			else
+				v1 = mul(v2.sv(), v1.data.l);
+			return v1;
+		}
+	}
+	
+	else if (v1.type == Type::DOUBLE){
+		if (v2.type == Type::LONG)
+			v1.data.d *= v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			v1.data.d *= v2.data.d;
+		else if (v2.type == Type::STRING){
+			if (v1.data.l <= 0)
+				v1 = Value(""sv);
+			else if (v1.data.l == 1)
+				v1 = move(v2);
+			else
+				v1 = mul(v2.sv(), long(v1.data.d));
+			return v1;
+		}
+	}
+	
+	else if (v1.type == Type::STRING){
+		if (v2.type == Type::STRING){
+			return v1;
+		}
+		
+		long n = 0;
+		if (v2.type == Type::LONG)
+			n = v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			n = long(v2.data.d);
+		
+		v1 = mul(v1.sv(), n);
+		return v1;
+	}
+	
+	return v1;
 }
 
 
 static Value div(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value arg_1 = eval(*binop.arg_1, vars, dbg);
-	Value arg_2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(*binop.arg_1, vars, dbg);
+	Value v2 = eval(*binop.arg_2, vars, dbg);
 	
-	auto cast = [&](auto& a, auto& b){
-		if constexpr (IS_STR(a) && IS_STR(b)){
-			return move(arg_1);
-		} else if constexpr (IS_STR(a) && IS_NUM(b)) {
-			return move(arg_1);
-		} else if constexpr (IS_NUM(a) && IS_STR(b)) {
-			return move(arg_2);
-		} else {
-			return Value(a / b);
-		}
-	};
+	if (v1.type == Type::LONG){
+		if (v2.type == Type::LONG)
+			v1.data.l /= v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			v1 = v1.data.l / v2.data.d;
+	}
 	
-	return visit(cast, arg_1, arg_2);
+	else if (v1.type == Type::DOUBLE){
+		if (v2.type == Type::LONG)
+			v1.data.d -= v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			v1.data.d -= v2.data.d;
+	}
+	
+	return v1;
 }
 
 
 static Value mod(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value arg_1 = eval(*binop.arg_1, vars, dbg);
-	Value arg_2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(*binop.arg_1, vars, dbg);
+	Value v2 = eval(*binop.arg_2, vars, dbg);
 	
-	auto cast = [&](auto& a, auto& b){
-		if constexpr (IS_STR(a) && IS_STR(b)){
-			return move(arg_1);
-		} else if constexpr (IS_STR(a) && IS_NUM(b)) {
-			return move(arg_1);
-		} else if constexpr (IS_NUM(a) && IS_STR(b)) {
-			return move(arg_2);
-		} else if constexpr (IS_LONG(a) && IS_LONG(b)) {
-			return Value(a % b);
-		} else {
-			return Value(remainder(a, b));
-		}
-	};
+	if (v1.type == Type::LONG){
+		if (v2.type == Type::LONG)
+			v1.data.l %= v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			v1 = remainder(v1.data.l, v2.data.d);
+	}
 	
-	return visit(cast, arg_1, arg_2);
+	else if (v1.type == Type::DOUBLE){
+		if (v2.type == Type::LONG)
+			v1 = remainder(v1.data.d, v2.data.l);
+		else if (v2.type == Type::DOUBLE)
+			v1 = remainder(v1.data.d, v2.data.d);
+	}
+	
+	return v1;
 }
 
 
 static Value xxor(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value arg_1 = eval(*binop.arg_1, vars, dbg);
-	Value arg_2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(*binop.arg_1, vars, dbg);
+	Value v2 = eval(*binop.arg_2, vars, dbg);
 	
-	auto cast = [&](auto& a, auto& b){
-		if constexpr (IS_STR(a) && IS_STR(b)){
-		} else if constexpr (IS_STR(a) && IS_NUM(b)) {
-		} else if constexpr (IS_NUM(a) && IS_STR(b)) {
-		} else if constexpr (IS_LONG(a) && IS_LONG(b)) {
-			return Value(a ^ b);
-		}
-		return move(arg_1);;
-	};
+	if (v1.type == Type::LONG){
+		if (v2.type == Type::LONG)
+			v1.data.l ^= v2.data.l;
+	}
 	
-	return visit(cast, arg_1, arg_2);
+	return v1;
 }
 
 
@@ -250,57 +304,86 @@ static Value xxor(const BinaryOperation& binop, const VariableMap& vars, const D
 template<typename OP>
 static Value logical(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	bool arg_1 = toBool(eval(*binop.arg_1, vars, dbg));
-	bool arg_2 = toBool(eval(*binop.arg_2, vars, dbg));
-	return OP{}(arg_1, arg_2);
+	Value v1 = eval(*binop.arg_1, vars, dbg);
+	Value v2 = eval(*binop.arg_2, vars, dbg);
+	return OP{}(v1.toBool(), v2.toBool()) ? 1L : 0L;
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-template<typename OP>
-static Value equals(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static bool equals(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value arg_1 = eval(*binop.arg_1, vars, dbg);
-	Value arg_2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(*binop.arg_1, vars, dbg);
+	Value v2 = eval(*binop.arg_2, vars, dbg);
 	
-	auto cast = [](const auto& a, const auto& b) -> bool {
-		if constexpr (IS_STR(a) && IS_STR(b)){
-			return OP{}(a, b);
-		} else if constexpr (IS_STR(a) && IS_NUM(b)) {
-			return OP{}(a, to_string(b));
-		} else if constexpr (IS_NUM(a) && IS_STR(b)) {
-			return OP{}(to_string(a), b);
-		} else {
-			return OP{}(a, b);
-		}
-	};
+	if (v1.type == Type::LONG){
+		if (v2.type == Type::LONG)
+			return v1.data.l == v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			return v1.data.l == v2.data.d;
+		else if (v2.type == Type::STRING)
+			return to_string(v1.data.l) == v2.sv();
+	}
 	
-	return visit(cast, arg_1, arg_2);
+	else if (v1.type == Type::DOUBLE){
+		if (v2.type == Type::LONG)
+			return v1.data.d == v2.data.l;
+		else if (v2.type == Type::DOUBLE)
+			return v1.data.d == v2.data.d;
+		else if (v2.type == Type::STRING)
+			return to_string(v1.data.d) == v2.sv();
+	}
+	
+	else if (v1.type == Type::STRING){
+		if (v2.type == Type::LONG)
+			return v1.sv() == to_string(v2.data.l);
+		else if (v2.type == Type::DOUBLE)
+			return v1.sv() == to_string(v2.data.d);
+		else if (v2.type == Type::STRING)
+			return v1.sv() == v2.sv();
+	}
+	
+	return false;
 }
 
 
 template<typename OP>
-static Value cmp(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static bool cmp(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value arg_1 = eval(*binop.arg_1, vars, dbg);
-	Value arg_2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(*binop.arg_1, vars, dbg);
+	Value v2 = eval(*binop.arg_2, vars, dbg);
+	OP op = {};
 	
-	auto cast = [](const auto& a, const auto& b) -> bool {
-		if constexpr (IS_STR(a) && IS_STR(b)){
-			return OP{}(a.length(), b.length());
-		} else if constexpr (IS_STR(a) && IS_NUM(b)) {
-			return OP{}(a.length(), to_string(b));
-		} else if constexpr (IS_NUM(a) && IS_STR(b)) {
-			return OP{}(to_string(a), b.length());
-		} else {
-			return OP{}(a, b);
-		}
-	};
+	if (v1.type == Type::LONG){
+		if (v2.type == Type::LONG)
+			return op(v1.data.l, v2.data.l);
+		else if (v2.type == Type::DOUBLE)
+			return op(v1.data.l, v2.data.d);
+		else if (v2.type == Type::STRING)
+			return op(v1.data.l, v2.data_len);
+	}
 	
-	bool r = visit(cast, arg_1, arg_2);
-	return Value(r ? 1L : 0L);
+	else if (v1.type == Type::DOUBLE){
+		if (v2.type == Type::LONG)
+			return op(v1.data.d, v2.data.l);
+		else if (v2.type == Type::DOUBLE)
+			return op(v1.data.d, v2.data.d);
+		else if (v2.type == Type::STRING)
+			return op(v1.data.d, v2.data_len);
+	}
+	
+	else if (v1.type == Type::STRING){
+		if (v2.type == Type::LONG)
+			return op(v1.data_len, v2.data.l);
+		else if (v2.type == Type::DOUBLE)
+			return op(v1.data_len, v2.data.d);
+		else if (v2.type == Type::STRING)
+			return op(v1.data_len, v2.data_len);
+	}
+	
+	return false;
 }
 
 
@@ -314,7 +397,7 @@ Value eval(const Operation& op, const VariableMap& vars, const Debugger& dbg){
 		case Operation::Type::DOUBLE:
 			return static_cast<const Double&>(op).n;
 		case Operation::Type::STRING:
-			return Value(in_place_type<string>, static_cast<const String&>(op).s);
+			return static_cast<const String&>(op).s;
 		case Operation::Type::VAR:
 			return eval(static_cast<const Variable&>(op), vars, dbg);
 		case Operation::Type::NOT:
@@ -338,17 +421,17 @@ Value eval(const Operation& op, const VariableMap& vars, const Debugger& dbg){
 		case Operation::Type::OR:
 			return logical<logical_or<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
 		case Operation::Type::EQ:
-			return equals<equal_to<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return equals(static_cast<const BinaryOperation&>(op), vars, dbg) ? 1L : 0L;
 		case Operation::Type::NEQ:
-			return equals<not_equal_to<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return equals(static_cast<const BinaryOperation&>(op), vars, dbg) ? 0L : 1L;
 		case Operation::Type::LT:
-			return equals<less<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return cmp<less<>>(static_cast<const BinaryOperation&>(op), vars, dbg) ? 1L : 0L;
 		case Operation::Type::LTE:
-			return equals<less_equal<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return cmp<less_equal<>>(static_cast<const BinaryOperation&>(op), vars, dbg) ? 1L : 0L;
 		case Operation::Type::GT:
-			return equals<greater<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return cmp<greater<>>(static_cast<const BinaryOperation&>(op), vars, dbg) ? 1L : 0L;
 		case Operation::Type::GTE:
-			return equals<greater_equal<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return cmp<greater_equal<>>(static_cast<const BinaryOperation&>(op), vars, dbg) ? 1L : 0L;
 		case Operation::Type::FUNC:
 			return eval(static_cast<const Function&>(op), vars, dbg);
 		case Operation::Type::ERROR:
@@ -356,7 +439,7 @@ Value eval(const Operation& op, const VariableMap& vars, const Debugger& dbg){
 			assert(false);
 			break;
 	}
-	return Value(0);
+	return {};
 }
 
 
@@ -367,7 +450,7 @@ Value Expression::eval(const VariableMap& vars, const Debugger& dbg) const noexc
 	if (op == nullptr){
 		dbg.error(dbg.mark(), "Bad expression.\n");
 		assert(op != nullptr);
-		return Value(0);
+		return Value();
 	}
 	return ::eval(*op, vars, dbg);
 }

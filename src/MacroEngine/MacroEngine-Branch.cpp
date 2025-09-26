@@ -51,19 +51,17 @@ void MacroEngine::set(const Node& op){
 		
 		// Interpolate
 		else if (attr->options % NodeOptions::INTERPOLATE){
-			Value val;
-			string& s = val.emplace<string>();
-			
-			if (!eval_string(op, attr->value(), s)){
+			string buff;
+			if (!eval_string(op, attr->value(), buff)){
 				return;
 			}
 			
-			MacroEngine::variables.insert(name, move(val));
+			MacroEngine::variables.insert(name, move(buff));
 		}
 		
 		// Plain text
 		else {
-			MacroEngine::variables.insert(name, in_place_type<string>, attr->value());
+			MacroEngine::variables.insert(name, attr->value());
 		}
 		
 	}
@@ -77,11 +75,11 @@ static MacroEngine::Branch attr_equals_variable(const Node& op, const Attr& attr
 	string_view var_name = attr.name();
 	const Value* var = MacroEngine::variables.get(var_name);
 	
+	bool pass;
+	
+	// Variable exists or is empty
 	if (attr.value_p == nullptr){
-		if (var != nullptr && toBool(*var))
-			return MacroEngine::Branch::PASSED;
-		else
-			return MacroEngine::Branch::FAILED;
+		pass = (var != nullptr && var->toBool());
 	}
 	
 	// Evaluate expression
@@ -94,50 +92,37 @@ static MacroEngine::Branch attr_equals_variable(const Node& op, const Attr& attr
 		}
 		
 		Value val = expr.eval(MacroEngine::variables, dbg);
-		if (var == nullptr)
-			return toBool(val) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
-		else
-			return (*var == val) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
+		pass = (var == nullptr && !val.toBool()) || (*var == val);
 	}
 	
 	// Interpolate
 	else if (attr.options % NodeOptions::INTERPOLATE){
-		string buff;
-		if (!MacroEngine::eval_string(op, attr.value(), buff)){
-			return MacroEngine::Branch::NONE;
+		if (var != nullptr && var->type != Value::Type::STRING){
+			pass = false;
 		}
 		
-		if (var == nullptr){
-			return buff.empty() ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
+		// Compare only strings
+		else {
+			string buff;
+			if (!MacroEngine::eval_string(op, attr.value(), buff))
+				return MacroEngine::Branch::NONE;
+			pass = (var == nullptr && buff.empty()) || (var->sv() == buff);
 		}
-		
-		auto cmp = [&](const auto& val){
-			if constexpr IS_STR(val)
-				return (val == buff) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
-			else
-				return (to_string(val) == buff) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
-		};
-		
-		return visit(cmp, *var);
+	
 	}
 	
 	// Plain text
 	else {
 		string_view buff = attr.value();
-		if (var == nullptr){
-			return buff.empty() ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
-		}
-		
-		auto cmp = [&](const auto& val){
-			if constexpr IS_STR(val)
-				return (val == buff) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
-			else
-				return (to_string(val) == buff) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
-		};
-		
-		return visit(cmp, *var);
+		if (var == nullptr)
+			pass = buff.empty();
+		else if (var->type == Value::Type::STRING)
+			pass = (var->sv() == buff);
+		else
+			pass = false;
 	}
 	
+	return (pass) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
 }
 
 
@@ -344,7 +329,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	long i = 0;
 	
 	assert(expr_cond != nullptr);
-	while (toBool(expr_cond.eval(variables, dbg)) == cond_expected){
+	while (expr_cond.eval(variables, dbg).toBool() == cond_expected){
 		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		
@@ -427,7 +412,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	const auto _interp_2 = MacroEngine::currentInterpolation;
 	long i = 0;
 	
-	while (toBool(expr_cond.eval(variables, dbg)) == cond_expected){
+	while (expr_cond.eval(variables, dbg).toBool() == cond_expected){
 		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		i++;

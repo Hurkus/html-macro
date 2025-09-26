@@ -169,13 +169,13 @@ void MacroEngine::getAttr(const Node& op, Node& dst){
 		// Evaluate attribute name
 		attrName_buff.clear();
 		if (!eval_attr_value(op, *attr, attrName_buff, attrName)){
-			continue;
+			return;
 		}
 		
 		// Find attribute and copy value to variable
 		for (const Attr* a = dst.attribute ; a != nullptr ; a = a->next){
 			if (a->name() == attrName){
-				MacroEngine::variables.insert(varName, in_place_type<string>, a->value());
+				MacroEngine::variables.insert(varName, a->value());
 				break;
 			}
 		}
@@ -287,16 +287,10 @@ void MacroEngine::getTag(const Node& op, Node& dst){
 			HERE(warn_ignored_attr_value(op, *attr));
 		}
 		
-		MacroEngine::variables.insert(varName, in_place_type<string>, dst.name());
+		MacroEngine::variables.insert(varName, dst.name());
 	}
 	
 }
-
-
-// void MacroEngine::delTag(const Node& op, Node& dst){
-// 	::error(op, "Not yet implemented.");
-// 	assert(false);
-// }
 
 
 // ------------------------------------------------------------------------------------------ //

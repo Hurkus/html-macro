@@ -69,7 +69,7 @@ static bool setDefinedVariables(const vector<const char*>& defines){
 		s++;
 		
 		const char* val_beg = s;
-		MacroEngine::variables.insert(string_view(name_beg, name_end), in_place_type<string>, val_beg);
+		MacroEngine::variables.insert(string_view(name_beg, name_end), val_beg);
 	}
 	return true;
 }
@@ -85,7 +85,7 @@ static bool run(const char* file){
 	
 	// Open output file
 	ofstream outf;
-	if (opt.outFilePath != nullptr && !opt.outVoid){
+	if (opt.outFilePath != nullptr && opt.outFilePath != "-"sv){
 		outf = ofstream(opt.outFilePath);
 		if (!outf.is_open()){
 			ERROR("Failed to open output file `%s`.", opt.outFilePath);
@@ -109,7 +109,7 @@ static bool run(const char* file){
 	
 	// Select output stream and write
 	bool ret = true;
-	if (!opt.outVoid){
+	if (opt.outFilePath != nullptr){
 		ostream& out = (outf.is_open()) ? outf : cout;
 		ret = write(out, doc);
 		out.flush();
@@ -131,7 +131,7 @@ int main(int argc, char const* const* argv){
 	#ifdef DEBUG
 		const char* _argv[] = {
 			argv[0],
-			"test/test-8.in.html"
+			"test/test-6.in.html"
 		};
 		if (argc < 2){
 			argv = _argv;
@@ -150,7 +150,7 @@ int main(int argc, char const* const* argv){
 	if (opt.help){
 		help();
 		return 0;
-	} else if (opt.file == nullptr){
+	} else if (opt.inFilePath == nullptr){
 		ERROR("No input files.");
 		return 1;
 	}
@@ -161,7 +161,7 @@ int main(int argc, char const* const* argv){
 			MacroEngine::paths.pop_back();
 	}
 	
-	if (!run(opt.file)){
+	if (!run(opt.inFilePath)){
 		return 2;
 	}
 	

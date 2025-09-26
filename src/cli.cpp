@@ -9,6 +9,9 @@
 using namespace std;
 
 
+#define P(s)	ANSI_PURPLE s ANSI_RESET
+
+
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 
@@ -34,7 +37,7 @@ struct OptInfo {
 
 constexpr array options = {
 	OptInfo { "-h", "--help",    OptId::HELP,    false },
-	OptInfo { "-v", "--void",    OptId::VOID,    false },
+	OptInfo { "-x", "",          OptId::VOID,    false },
 	OptInfo { "-o", "--out",     OptId::OUTPUT,  true  },
 	OptInfo { "-i", "--include", OptId::INCLUDE, true  },
 };
@@ -48,20 +51,26 @@ static bool onOption(OptId id, const char* value){
 		case OptId::HELP:
 			opt.help = true;
 			return true;
+		
 		case OptId::VOID:
-			opt.outVoid = true;
+			opt.outFilePath = nullptr;
 			return true;
+		
 		case OptId::OUTPUT:
-			if (opt.outFilePath != nullptr){
-				ERROR("Multiple outputs not allowed.");
+			if (opt.outFilePath == nullptr)
+				return true;
+			else if (opt.outFilePath != nullptr && opt.outFilePath != "-"sv){
+				ERROR("Multiple output files are not allowed.");
 				return false;
 			} else {
 				opt.outFilePath = value;
 				return true;
 			}
+		
 		case OptId::INCLUDE:
 			opt.includes.emplace_back(value);
 			return true;
+		
 	}
 	return false;
 }
@@ -79,13 +88,13 @@ static bool onFile(const char* arg){
 	
 	if (arg[0] == 0){
 		return true;
-	} else if (opt.file != nullptr){
+	} else if (opt.inFilePath != nullptr){
 		ERROR("Too many input files: `%s`", arg);
 		return false;
 	}
 	
 	// Is file
-	opt.file = arg;
+	opt.inFilePath = arg;
 	return true;
 }
 

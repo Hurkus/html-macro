@@ -99,7 +99,8 @@ static string_view trim_whitespace(string_view s){
 
 // Called from child process
 static void _setEnv(const VariableMap& vars, const vector<string_view>& env){
-	string buff = {};
+	char buff[128];
+	int n = 0;
 	
 	for (string_view name : env){
 		const auto* keyval = vars.find(name);
@@ -107,9 +108,24 @@ static void _setEnv(const VariableMap& vars, const vector<string_view>& env){
 			continue;
 		}
 		
-		buff.clear();
-		toStr(keyval->value, buff);
-		setenv(keyval->key, buff.c_str(), 1);
+		const Value& val = keyval->value;
+		
+		switch (val.type){
+			case Value::Type::LONG:
+				n = snprintf(buff, sizeof(buff), "%ld", val.data.l);
+				goto buffenv;
+			case Value::Type::DOUBLE:
+				n = snprintf(buff, sizeof(buff), "%lf", val.data.d);
+				goto buffenv;
+			case Value::Type::STRING:
+				assert(val.data.s[val.data_len] == 0);
+				setenv(keyval->key, val.data.s, 1);
+				continue;
+		}
+		
+		buffenv:
+		if (n >= 0)
+			setenv(keyval->key, buff, 1);
 	}
 	
 }
@@ -311,20 +327,22 @@ void MacroEngine::shell(const Node& op, Node& dst){
 		} break;
 		
 		case Capture::VAR: {
-			if (result.total <= 0){
-				variables.insert(captureVar, in_place_type<string>);
-			} else {
-				string& s = variables[captureVar].emplace<string>();
-				s.resize(result.total);
-				size_t n = concat(result.chunks, s.data(), s.size());
-				s.resize(n);
-				
-				// Trim last newline
-				if (s.ends_with('\n')){
-					s.pop_back();
-				}
-				
+			const size_t len = min(result.total, size_t(UINT32_MAX));
+			if (len <= 0){
+				variables.insert(captureVar, ""sv);
+				break;
 			}
+			
+			char* s = new char[len + 1];
+			size_t n = concat(result.chunks, s, len);
+			s[n] = 0;
+			
+			// Trim last newline
+			if (n > 0 && s[n-1] == '\n'){
+				s[--n] = 0;
+			}
+			
+			variables.insert(captureVar, s, (uint32_t)min(n, size_t(UINT32_MAX)));
 		} break;
 		
 	}

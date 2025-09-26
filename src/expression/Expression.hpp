@@ -1,25 +1,10 @@
 #pragma once
-#include <string_view>
-#include <variant>
-
+#include "Value.hpp"
 #include "str_map.hpp"
 #include "Debugger.hpp"
 
 
-using Value = std::variant<long,double,std::string>;
 using VariableMap = str_map<Value>;
-
-
-
-
-bool toBool(const Value& val);
-
-std::string toStr(const Value& val);
-std::string toStr(Value&& val);
-void toStr(const Value& val, std::string& buff);
-void toStr(Value&& val, std::string& buff);
-
-
 
 
 class Expression {

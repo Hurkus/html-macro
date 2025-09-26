@@ -77,7 +77,7 @@ Branch MacroEngine::check_attr_if(const Node& op, const Attr& attr){
 		return MacroEngine::currentBranch_inline = Branch::FAILED;
 	}
 	
-	const bool b = toBool(expr.eval(MacroEngine::variables, dbg));
+	const bool b = expr.eval(MacroEngine::variables, dbg).toBool();
 	return MacroEngine::currentBranch_inline = b ? Branch::PASSED : Branch::FAILED;
 }
 
@@ -98,7 +98,7 @@ static bool eval_attr_bool(const Node& op, const Attr& attr, bool value){
 	}
 	
 	Value val = expr.eval(MacroEngine::variables, NodeDebugger(op));
-	return toBool(val) == value;
+	return val.toBool() == value;
 }
 
 bool MacroEngine::eval_attr_true(const Node& op, const Attr& attr){
@@ -124,7 +124,7 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff
 			return false;
 		}
 		
-		toStr(expr.eval(MacroEngine::variables, dbg), buff);
+		expr.eval(MacroEngine::variables, dbg).toStr(buff);
 		result = buff;
 	}
 	
@@ -160,7 +160,7 @@ Interpolate MacroEngine::eval_attr_interp(const Node& op, const Attr& attr){
 	}
 		
 	Value res = expr.eval(MacroEngine::variables, NodeDebugger(op));
-	return toBool(res) ? Interpolate::ALL : Interpolate::NONE;
+	return res.toBool() ? Interpolate::ALL : Interpolate::NONE;
 }
 
 
@@ -205,7 +205,7 @@ bool MacroEngine::eval_string(const Node& op, string_view str, string& buff){
 		Expression expr = Expression::parse(string_view(a+1, b), dbg);
 		
 		if (expr != nullptr){
-			toStr(expr.eval(MacroEngine::variables, dbg), buff);
+			expr.eval(MacroEngine::variables, dbg).toStr(buff);
 		} else {
 			return false;
 		}
