@@ -46,8 +46,7 @@ void Debugger::error(string_view mark, const char* fmt, ...) const {
 	E_PRINTF(fmt);
 	
 	if (!buffer.empty()){
-		string cv = getCodeView(lp, mark, ANSI_RED);
-		fprintf(stderr, "%s\n", cv.c_str());
+		printCodeView(lp, mark, ANSI_RED);
 	}
 	
 }
@@ -74,8 +73,7 @@ void Debugger::warn(string_view mark, const char* fmt, ...) const {
 	E_PRINTF(fmt);
 	
 	if (!buffer.empty()){
-		string cv = getCodeView(lp, mark, ANSI_YELLOW);
-		fprintf(stderr, "%s\n", cv.c_str());
+		printCodeView(lp, mark, ANSI_YELLOW);
 	}
 	
 }

@@ -1,6 +1,7 @@
 #include "test.hpp"
 #include <cassert>
 #include <vector>
+#include <fstream>
 
 extern "C" {
 	#include <poll.h>
@@ -22,6 +23,8 @@ using namespace std;
 
 constexpr const char* ENV_HTML_MACRO = "PROG";
 filepath html_macro = "./bin/html-macro";
+
+filepath TmpFile::dir;
 
 TestList* tests;
 
@@ -64,6 +67,39 @@ string slurp(const filepath& path){
 		buff.clear();
 	return buff;
 }
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+TmpFile::TmpFile(string_view name, const string_view& content){
+	if (dir.empty()){
+		dir = "/tmp/html-macro-test";
+		filesystem::create_directory(dir);
+	}
+	
+	path = dir / (string(name) + ".html");
+	ofstream out = ofstream(path);
+	out.write(content.data(), content.length());
+	out.close();
+}
+
+
+TmpFile::~TmpFile(){
+	if (!path.empty()){
+		error_code _err;
+		filesystem::remove(path, _err);
+	}
+}
+
+
+struct _TmpFile_static_t {
+	~_TmpFile_static_t(){
+		if (!TmpFile::dir.empty()){
+			filesystem::remove_all(TmpFile::dir);
+		}
+	}
+} _TmpFile_static;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -197,13 +233,13 @@ struct output_exception {
 };
 
 
-bool run(const vector<string>& args, const string& out, const string& err){
+bool run(const vector<string>& args, const string& out, const string& err, int status){
 	string out_buff;
 	string err_buff;
 	
-	const int status = exe(args, out_buff, err_buff);
-	if (status != 0)
-		throw shell_exception{status, move(err_buff)};
+	int _status = exe(args, out_buff, err_buff);
+	if (_status != status)
+		throw shell_exception{_status, move(err_buff)};
 	else if (out_buff != out)
 		throw output_exception{out, move(out_buff)};
 	else if (err_buff != err)
@@ -311,7 +347,7 @@ static bool run(){
 		}
 		catch (const shell_exception& e){
 			printf(RB("FAIL: ") "%s ~ %s:%ld\n", test->name, test->file, test->line);
-			printf(" Program exited with status (%d).\n", e.status);
+			printf("Program exited with status (%d).\n", e.status);
 			printf("%s", e.err.c_str());
 		}
 		catch (const output_exception& e){

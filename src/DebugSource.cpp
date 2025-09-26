@@ -1,4 +1,5 @@
 #include "DebugSource.hpp"
+#include "Debug.hpp"
 #include <cassert>
 #include <string>
 #include "ANSI.h"
@@ -12,11 +13,11 @@ using namespace std;
 void print(const linepos& pos){
 	if (pos.file != nullptr){
 		if (pos.row > 0 && pos.col > 0)
-			fprintf(stderr, ANSI_BOLD "%s:%ld:%ld: " ANSI_RESET, pos.file, pos.row, pos.col);
+			log(stderr, ANSI_BOLD "%s:%ld:%ld: " ANSI_RESET, pos.file, pos.row, pos.col);
 		else if (pos.row > 0)
-			fprintf(stderr, ANSI_BOLD "%s:%ld: " ANSI_RESET, pos.file, pos.row);
+			log(stderr, ANSI_BOLD "%s:%ld: " ANSI_RESET, pos.file, pos.row);
 		else
-			fprintf(stderr, ANSI_BOLD "%s: " ANSI_RESET, pos.file);
+			log(stderr, ANSI_BOLD "%s: " ANSI_RESET, pos.file);
 	}
 }
 
@@ -75,10 +76,10 @@ linepos findLine(const char* beg, const char* end, const char* p) noexcept {
 }
 
 
-string getCodeView(const linepos& line, string_view mark, string_view color){
+void printCodeView(const linepos& line, string_view mark, string_view color){
 	string_view linev = line.line;
 	if (linev.empty()){
-		return {};
+		return;
 	}
 	
 	// Clip line
@@ -90,8 +91,6 @@ string getCodeView(const linepos& line, string_view mark, string_view color){
 			linev = linev.substr(0, 100);
 	}
 	
-	const size_t capacity = (10 + 3)*2 + (linev.length() + color.length() + sizeof(ANSI_RESET))*2 + 1;
-	
 	// Truncate mark
 	const bool at_end = (linev.end() == mark.begin() && mark.length() > 0);
 	{
@@ -101,47 +100,49 @@ string getCodeView(const linepos& line, string_view mark, string_view color){
 	}
 	
 	// Append line number
-	string str = to_string(line.row);
-	const size_t row_str_len = str.length();
-	
-	str.reserve(capacity);
-	str.append(" | ");
+	fprintf(stderr, "%5ld | ", line.row);
 	
 	// Colorize mark
 	if (!mark.empty()){
-		str.append(linev.begin(), mark.begin());
-		str.append(color).append(mark).append(ANSI_RESET);
-		str.append(mark.end(), linev.end());
+		fwrite(linev.begin(), sizeof(char), mark.begin() - linev.begin(), stderr);
+		
+		if (log_stderr_isTTY){
+			fwrite(color.begin(), sizeof(char), color.length(), stderr);
+			fwrite(mark.begin(), sizeof(char), mark.length(), stderr);
+			fwrite(ANSI_RESET, sizeof(char), sizeof(ANSI_RESET) - 1, stderr);
+		} else {
+			fwrite(mark.begin(), sizeof(char), mark.length(), stderr);
+		}
+		
+		fwrite(mark.end(), sizeof(char), linev.end() - mark.end(), stderr);
 	} else {
-		str.append(linev);
+		fwrite(linev.begin(), sizeof(char), linev.length(), stderr);
 	}
 	
-	// Convert tabs
-	for (char& c : str){
-		if (c == '\t')
-			c = ' ';
-	}
+	// // Convert tabs
+	// for (char& c : str){
+	// 	if (c == '\t')
+	// 		c = ' ';
+	// }
+	
 	
 	// Add mark tick and squiggly underline
-	str.push_back('\n');
-	str.append(row_str_len, ' ').append(" | ");
-	
-	if (at_end){
-		str.append(mark.begin() - linev.begin(), ' ');
-		str.append(color);
-		str.push_back('^');
-		str.append(ANSI_RESET);
-	} else if (!mark.empty()){
-		str.append(mark.begin() - linev.begin(), ' ');
-		str.append(color);
-		str.push_back('^');
-		str.append(mark.length() - 1, '~');
-		str.append(ANSI_RESET);
+	fprintf(stderr, "\n      | %*s",  int(mark.begin() - linev.begin()), "");
+	if (log_stderr_isTTY){
+		fwrite(color.data(), sizeof(char), color.length(), stderr);
 	}
 	
-	// Assert capacity prediction
-	assert(str.size() <= capacity && str.capacity() <= capacity);
-	return str;
+	fputc('^', stderr);
+	for (int i = 0 ; i < int(mark.length()) - 1 ; i++){
+		fputc('~', stderr);
+	}
+	
+	if (log_stderr_isTTY){
+		fwrite(ANSI_RESET, sizeof(char), sizeof(ANSI_RESET) - 1, stderr);
+	}
+	
+	fputc('\n', stderr);
+	fflush(stderr);
 }
 
 

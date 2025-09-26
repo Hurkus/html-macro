@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <filesystem>
-#include <iostream>
 
 #include "ANSI.h"
 
@@ -12,8 +11,16 @@ using filepath = std::filesystem::path;
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 
-using test_func = bool(*)();
+struct TestList;
 
+extern filepath html_macro;
+extern TestList* tests;
+
+
+// ----------------------------------- [ Structures ] --------------------------------------- //
+
+
+using test_func = bool(*)();
 
 struct TestList {
 	TestList* next = nullptr;
@@ -22,10 +29,6 @@ struct TestList {
 	const char* file = nullptr;
 	long line = 0;
 };
-
-
-extern filepath html_macro;
-extern TestList* tests;
 
 
 #define REGISTER(test_name, f)          \
@@ -43,6 +46,23 @@ extern TestList* tests;
 	} _test_register_##f;               \
 
 
+// ----------------------------------- [ Structures ] --------------------------------------- //
+
+
+struct TmpFile {
+	static filepath dir;
+	filepath path;
+	
+	TmpFile(std::string_view name, const std::string_view& content);
+	TmpFile(const std::string_view& content) : TmpFile("file", content) {}
+	~TmpFile();
+	
+	operator std::string() const {
+		return path.string();
+	}
+};
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -52,8 +72,7 @@ std::string slurp(const filepath& path);
 
 int exe(const std::vector<std::string>& args, std::string& out, std::string& err);
 
-// bool run(const std::vector<std::string>& args, const std::string& in, const std::string& out, const std::string& err);
-bool run(const std::vector<std::string>& args, const std::string& out, const std::string& err);
+bool run(const std::vector<std::string>& args, const std::string& out, const std::string& err, int status = 0);
 
 
 // ------------------------------------------------------------------------------------------ //

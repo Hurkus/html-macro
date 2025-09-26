@@ -83,8 +83,8 @@ static void err(const Document& doc, const ParseResult& res){
 		default:
 			linepos pos = findLine(doc, res.pos.begin());
 			HERE(print(pos));
-			::error("%s", msg);
-			printf("%s\n", getCodeView(pos, res.pos, ANSI_RED).c_str());
+			error("%s", msg);
+			printCodeView(pos, res.pos, ANSI_RED);
 			break;
 	}
 	

@@ -44,7 +44,7 @@ clean:
 ################################################################
 
 
-bin/test-$(EXE): $(wildcard test/*.cpp) | bin/
+bin/test-$(EXE): $(wildcard test/*.cpp) $(wildcard test/*.hpp) | bin/
 	@basename "$@"
 	@$(CXX) $(filter %.cpp, $^) $(CXXFLAGS) $(INCLUDES) -g -o "$@"
 

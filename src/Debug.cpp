@@ -150,32 +150,24 @@ static linepos findLine(const Document& doc, const char* p){
 
 static void print_error_pfx(const linepos& pos){
 	if (pos.row > 0 && pos.col > 0)
-		fprintf(stderr, BOLD("%s:%ld:%ld: ") RED("error: "), pos.file, pos.row, pos.col);
+		log(stderr, BOLD("%s:%ld:%ld: ") RED("error: "), pos.file, pos.row, pos.col);
 	else if (pos.row > 0)
-		fprintf(stderr, BOLD("%s:%ld: ") RED("error: "), pos.file, pos.row);
+		log(stderr, BOLD("%s:%ld: ") RED("error: "), pos.file, pos.row);
 	else if (pos.file != nullptr)
-		fprintf(stderr, BOLD("%s: ") RED("error: "), pos.file);
+		log(stderr, BOLD("%s: ") RED("error: "), pos.file);
 	else
-		fprintf(stderr, RED("error: "));
+		log(stderr, RED("error: "));
 }
 
 static void print_warn_pfx(const linepos& pos){
 	if (pos.row > 0 && pos.col > 0)
-		fprintf(stderr, BOLD("%s:%ld:%ld: ") YELLOW("warn: "), pos.file, pos.row, pos.col);
+		log(stderr, BOLD("%s:%ld:%ld: ") YELLOW("warn: "), pos.file, pos.row, pos.col);
 	else if (pos.row > 0)
-		fprintf(stderr, BOLD("%s:%ld: ") YELLOW("warn: "), pos.file, pos.row);
+		log(stderr, BOLD("%s:%ld: ") YELLOW("warn: "), pos.file, pos.row);
 	else if (pos.file != nullptr)
-		fprintf(stderr, BOLD("%s: ") YELLOW("warn: "), pos.file);
+		log(stderr, BOLD("%s: ") YELLOW("warn: "), pos.file);
 	else
-		fprintf(stderr, YELLOW("warn: "));
-}
-
-static void print_error_codeView(const linepos& line, string_view mark){
-	fprintf(stderr, "%s\n", getCodeView(line, mark, ANSI_RED).c_str());
-}
-
-static void print_warn_codeView(const linepos& line, string_view mark){
-	fprintf(stderr, "%s\n", getCodeView(line, mark, ANSI_YELLOW).c_str());
+		log(stderr, YELLOW("warn: "));
 }
 
 
@@ -184,19 +176,19 @@ static void print_warn_codeView(const linepos& line, string_view mark){
 
 void error_node(const Node& node, string_view msg){
 	print_error_pfx(findLine(node.root(), node.value_p));
-	fprintf(stderr, "%.*s\n", int(msg.length()), msg.data());
+	log(stderr, "%.*s\n", int(msg.length()), msg.data());
 }
 
 
 void warn_node(const Node& node, string_view msg){
 	print_warn_pfx(findLine(node.root(), node.value_p));
-	fprintf(stderr, "%.*s\n", int(msg.length()), msg.data());
+	log(stderr, "%.*s\n", int(msg.length()), msg.data());
 }
 
 
 void info_node(const Node& node, string_view msg){
 	print(findLine(node.root(), node.value_p));
-	fprintf(stderr, "%.*s\n", int(msg.length()), msg.data());
+	log(stderr, "%.*s\n", int(msg.length()), msg.data());
 }
 
 
@@ -206,15 +198,15 @@ void info_node(const Node& node, string_view msg){
 void error_missing_attr(const Node& node, const char* attr_name){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_error_pfx(pos);
-	fprintf(stderr, "Tag <%.*s> missing attribute " PURPLE("`%s`") ".\n", int(node.value_len), node.value_p, attr_name);
-	print_error_codeView(pos, node.name());
+	log(stderr, "Tag <%.*s> missing attribute " PURPLE("`%s`") ".\n", int(node.value_len), node.value_p, attr_name);
+	printCodeView(pos, node.name(), ANSI_RED);
 }
 
 void warn_missing_attr(const Node& node, const char* attr_name){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_warn_pfx(pos);
-	fprintf(stderr, "Tag <%.*s> missing attribute " PURPLE("`%s`") ".\n", int(node.value_len), node.value_p, attr_name);
-	print_warn_codeView(pos, node.name());
+	log(stderr, "Tag <%.*s> missing attribute " PURPLE("`%s`") ".\n", int(node.value_len), node.value_p, attr_name);
+	printCodeView(pos, node.name(), ANSI_YELLOW);
 }
 
 
@@ -223,13 +215,13 @@ void error_missing_attr_value(const Node& node, const Attr& attr){
 	linepos pos = findLine(doc, attr.name_p);
 	
 	print_error_pfx(pos);
-	fprintf(stderr, "Attribute " PURPLE("`%.*s`") " missing value.\n", int(attr.name_len), attr.name_p);
+	log(stderr, "Attribute " PURPLE("`%.*s`") " missing value.\n", int(attr.name_len), attr.name_p);
 	
 	if (attr.value_p != nullptr){
 		pos = findLine(doc, attr.value_p);
-		print_error_codeView(pos, inclusiveValue(attr));
+		printCodeView(pos, inclusiveValue(attr), ANSI_RED);
 	} else {
-		print_error_codeView(pos, attr.name());
+		printCodeView(pos, attr.name(), ANSI_RED);
 	}
 	
 }
@@ -239,13 +231,13 @@ void warn_missing_attr_value(const Node& node, const Attr& attr){
 	linepos pos = findLine(doc, attr.name_p);
 	
 	print_warn_pfx(pos);
-	fprintf(stderr, "Attribute " PURPLE("`%.*s`") " missing value.\n", int(attr.name_len), attr.name_p);
+	log(stderr, "Attribute " PURPLE("`%.*s`") " missing value.\n", int(attr.name_len), attr.name_p);
 	
 	if (attr.value_p != nullptr){
 		pos = findLine(doc, attr.value_p);
-		print_warn_codeView(pos, inclusiveValue(attr));
+		printCodeView(pos, inclusiveValue(attr), ANSI_YELLOW);
 	} else {
-		print_warn_codeView(pos, attr.name());
+		printCodeView(pos, attr.name(), ANSI_YELLOW);
 	}
 	
 }
@@ -257,12 +249,12 @@ void error_duplicate_attr(const Node& node, const Attr& attr_1, const Attr& attr
 	linepos pos2 = findLine(doc, attr_2.name_p);
 	
 	print_error_pfx(pos1);
-	fprintf(stderr, "Duplicate attribute " PURPLE("`%.*s`") ".\n", int(attr_1.name_len), attr_1.name_p);
-	print_error_codeView(pos1, attr_1.name());
+	log(stderr, "Duplicate attribute " PURPLE("`%.*s`") ".\n", int(attr_1.name_len), attr_1.name_p);
+	printCodeView(pos1, attr_1.name(), ANSI_RED);
 	
 	print_error_pfx(pos2);
-	fprintf(stderr, "Duplicate attribute " PURPLE("`%.*s`") ".\n", int(attr_2.name_len), attr_2.name_p);
-	print_error_codeView(pos1, attr_2.name());
+	log(stderr, "Duplicate attribute " PURPLE("`%.*s`") ".\n", int(attr_2.name_len), attr_2.name_p);
+	printCodeView(pos1, attr_2.name(), ANSI_RED);
 }
 
 
@@ -272,12 +264,12 @@ void warn_duplicate_attr(const Node& node, const Attr& attr_1, const Attr& attr_
 	linepos pos2 = findLine(doc, attr_2.name_p);
 	
 	print_warn_pfx(pos1);
-	fprintf(stderr, "Duplicate attribute " PURPLE("`%.*s`") ".\n", int(attr_1.name_len), attr_1.name_p);
-	print_warn_codeView(pos1, attr_1.name());
+	log(stderr, "Duplicate attribute " PURPLE("`%.*s`") ".\n", int(attr_1.name_len), attr_1.name_p);
+	printCodeView(pos1, attr_1.name(), ANSI_YELLOW);
 	
 	print_warn_pfx(pos2);
-	fprintf(stderr, "Duplicate attribute " PURPLE("`%.*s`") ".\n", int(attr_2.name_len), attr_2.name_p);
-	print_warn_codeView(pos1, attr_2.name());
+	log(stderr, "Duplicate attribute " PURPLE("`%.*s`") ".\n", int(attr_2.name_len), attr_2.name_p);
+	printCodeView(pos1, attr_2.name(), ANSI_YELLOW);
 }
 
 
@@ -287,32 +279,32 @@ void warn_duplicate_attr(const Node& node, const Attr& attr_1, const Attr& attr_
 void error_macro_not_found(const Node& node, string_view mark, string_view macroName){
 	linepos pos = findLine(node.root(), mark.data());
 	print_error_pfx(pos);
-	fprintf(stderr, "Macro " PURPLE("`%.*s`") " not found.\n", int(macroName.length()), macroName.data());
-	print_error_codeView(pos, mark);
+	log(stderr, "Macro " PURPLE("`%.*s`") " not found.\n", int(macroName.length()), macroName.data());
+	printCodeView(pos, mark, ANSI_RED);
 }
 
 
 void error_file_not_found(const Node& node, string_view mark, const char* file){
 	linepos pos = findLine(node.root(), mark.data());
 	print_error_pfx(pos);
-	fprintf(stderr, "File " PURPLE("`%s`") " not found.\n", file);
-	print_error_codeView(pos, mark);
+	log(stderr, "File " PURPLE("`%s`") " not found.\n", file);
+	printCodeView(pos, mark, ANSI_RED);
 }
 
 
 void error_invalid_include_type(const Node& node, string_view mark){
 	linepos pos = findLine(node.root(), mark.data());
 	print_error_pfx(pos);
-	fprintf(stderr, "Invalid include type " PURPLE("`%.*s`") ".\n", int(mark.length()), mark.data());
-	print_error_codeView(pos, mark);
+	log(stderr, "Invalid include type " PURPLE("`%.*s`") ".\n", int(mark.length()), mark.data());
+	printCodeView(pos, mark, ANSI_RED);
 }
 
 
 void error_include_fail(const Node& node, string_view mark, const char* file){
 	linepos pos = findLine(node.root(), mark.data());
 	print_error_pfx(pos);
-	fprintf(stderr, "Failed to include file " PURPLE("`%s`") ".\n", file);
-	print_error_codeView(pos, mark);
+	log(stderr, "Failed to include file " PURPLE("`%s`") ".\n", file);
+	printCodeView(pos, mark, ANSI_RED);
 }
 
 
@@ -322,39 +314,39 @@ void error_include_fail(const Node& node, string_view mark, const char* file){
 void error_unsupported_type(const Node& node){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_error_pfx(pos);
-	fprintf(stderr, "Unsupported tag type.\n");
-	print_error_codeView(pos, node.value_p);
+	log(stderr, "Unsupported tag type.\n");
+	printCodeView(pos, node.value_p, ANSI_RED);
 }
 
 
 void warn_unknown_macro_tag(const Node& node){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_error_pfx(pos);
-	fprintf(stderr, "Unknown macro " PURPLE("<%.*s>") " treated as regular HTML tag.\n", int(node.value_len), node.value_p);
-	print_warn_codeView(pos, node.name());
+	log(stderr, "Unknown macro " PURPLE("<%.*s>") " treated as regular HTML tag.\n", int(node.value_len), node.value_p);
+	printCodeView(pos, node.name(), ANSI_YELLOW);
 }
 
 void warn_unknown_macro_attribute(const Node& node, const Attr& attr){
 	linepos pos = findLine(node.root(), attr.name_p);
 	print_warn_pfx(pos);
-	fprintf(stderr, "Unknown macro attribute " PURPLE("`%.*s`") " treated as regular HTML attribute.\n", int(attr.name_len), attr.name_p);
-	print_warn_codeView(pos, attr.name());
+	log(stderr, "Unknown macro attribute " PURPLE("`%.*s`") " treated as regular HTML attribute.\n", int(attr.name_len), attr.name_p);
+	printCodeView(pos, attr.name(), ANSI_YELLOW);
 }
 
 
 void warn_ignored_attribute(const Node& node, const Attr& attr){
 	linepos pos = findLine(node.root(), attr.name_p);
 	print_warn_pfx(pos);
-	fprintf(stderr, "Ignored attribute " PURPLE("`%.*s`") ".\n", int(attr.name_len), attr.name_p);
-	print_warn_codeView(pos, attr.name());
+	log(stderr, "Ignored attribute " PURPLE("`%.*s`") ".\n", int(attr.name_len), attr.name_p);
+	printCodeView(pos, attr.name(), ANSI_YELLOW);
 }
 
 void warn_ignored_attr_value(const Node& node, const Attr& attr){
 	assert(attr.value_p != nullptr);
 	linepos pos = findLine(node.root(), attr.value_p);
 	print_warn_pfx(pos);
-	fprintf(stderr, "Value of attribute " PURPLE("`%.*s`") " in ignored.\n", int(attr.name_len), attr.name_p);
-	print_warn_codeView(pos, inclusiveValue(attr));
+	log(stderr, "Value of attribute " PURPLE("`%.*s`") " in ignored.\n", int(attr.name_len), attr.name_p);
+	printCodeView(pos, inclusiveValue(attr), ANSI_YELLOW);
 }
 
 
@@ -362,15 +354,15 @@ void warn_attr_double_quote(const Node& node, const Attr& attr){
 	assert(attr.value_p != nullptr);
 	linepos pos = findLine(node.root(), attr.value_p);
 	print_warn_pfx(pos);
-	fprintf(stderr, "Attribute " PURPLE("`%.*s`") " expected single quotes. Value is always interpreted as an expression.\n", int(attr.name_len), attr.name_p);
-	print_warn_codeView(pos, inclusiveValue(attr));
+	log(stderr, "Attribute " PURPLE("`%.*s`") " expected single quotes. Value is always interpreted as an expression.\n", int(attr.name_len), attr.name_p);
+	printCodeView(pos, inclusiveValue(attr), ANSI_YELLOW);
 }
 
 
 void warn_shell_exit(const Node& node, int i){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_warn_pfx(pos);
-	fprintf(stderr, "Shell existed with status (%d).\n", i);
+	log(stderr, "Shell existed with status (%d).\n", i);
 }
 
 
@@ -380,16 +372,16 @@ void warn_shell_exit(const Node& node, int i){
 void error_missing_preceeding_if_node(const Node& node){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_error_pfx(pos);
-	fprintf(stderr, "Missing preceeding " PURPLE("<IF>") " macro.\n");
-	print_error_codeView(pos, node.value_p);
+	log(stderr, "Missing preceeding " PURPLE("<IF>") " macro.\n");
+	printCodeView(pos, node.value_p, ANSI_RED);
 }
 
 
 void error_missing_preceeding_if_attr(const Node& node, const Attr& attr){
 	linepos pos = findLine(node.root(), attr.name_p);
 	print_error_pfx(pos);
-	fprintf(stderr, "Missing preceeding " PURPLE("`IF`") " attribute in a sibling node.\n");
-	print_error_codeView(pos, attr.name());
+	log(stderr, "Missing preceeding " PURPLE("`IF`") " attribute in a sibling node.\n");
+	printCodeView(pos, attr.name(), ANSI_RED);
 }
 
 
@@ -399,12 +391,12 @@ void error_undefined_variable(const html::Node& node, const string_view name){
 	
 	if (!pos.line.empty()){
 		print_error_pfx(pos);
-		fprintf(stderr, "Undefined variable " PURPLE("`%.*s`") ".\n", int(name.length()), name.data());
-		print_error_codeView(pos, name);
+		log(stderr, "Undefined variable " PURPLE("`%.*s`") ".\n", int(name.length()), name.data());
+		printCodeView(pos, name, ANSI_RED);
 	} else {
 		pos = findLine(doc, node.value_p);
 		print_error_pfx(pos);
-		fprintf(stderr, "Undefined variable " PURPLE("`%.*s`") ".\n", int(name.length()), name.data());
+		log(stderr, "Undefined variable " PURPLE("`%.*s`") ".\n", int(name.length()), name.data());
 	}
 	
 }
@@ -416,8 +408,8 @@ void error_undefined_variable(const html::Node& node, const string_view name){
 void error_newline(const Node& node, const char* p){
 	linepos pos = findLine(node.root(), p);
 	print_error_pfx(pos);
-	fprintf(stderr, "Unexpected newline.\n");
-	print_error_codeView(pos, string_view(p, 1));
+	log(stderr, "Unexpected newline.\n");
+	printCodeView(pos, string_view(p, 1), ANSI_RED);
 }
 
 
@@ -427,7 +419,7 @@ void error_newline(const Node& node, const char* p){
 void warn_text_missing(const Node& node){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_warn_pfx(pos);
-	fprintf(stderr, "Macro " PURPLE("`%.*s`") " requires text content.\n", int(node.value_len), node.value_p);
+	log(stderr, "Macro " PURPLE("`%.*s`") " requires text content.\n", int(node.value_len), node.value_p);
 }
 
 
@@ -436,12 +428,12 @@ void warn_child_ignored(const Node& node){
 	
 	linepos pos = findLine(doc, node.value_p);
 	print_warn_pfx(pos);
-	fprintf(stderr, "Content of macro " PURPLE("`%.*s`") " ignored.\n", int(node.value_len), node.value_p);
+	log(stderr, "Content of macro " PURPLE("`%.*s`") " ignored.\n", int(node.value_len), node.value_p);
 	
 	if (node.child != nullptr){
 		string_view mark = trimWhitespace(node.child->value());
 		pos = findLine(doc, mark.begin());
-		print_warn_codeView(pos, mark);
+		printCodeView(pos, mark, ANSI_YELLOW);
 	}
 }
 

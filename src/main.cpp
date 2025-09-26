@@ -132,9 +132,12 @@ int main(int argc, char const* const* argv){
 	log_stderr_isTTY = (isatty(fileno(stderr)) == 1);
 	
 	#ifdef DEBUG
+		// log_stdout_isTTY = 0;
+		// log_stderr_isTTY = 0;
+		
 		const char* _argv[] = {
 			argv[0],
-			"test/test-6.in.html"
+			"test/test-0.html"
 		};
 		if (argc < 2){
 			argv = _argv;

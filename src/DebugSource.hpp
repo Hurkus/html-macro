@@ -32,14 +32,13 @@ linepos findLine(const char* beg, const char* end, const char* p) noexcept;
 
 
 /**
- * @brief Get line of source code and underline marked focus section.
+ * @brief Print line of source code and underline marked focus section.
  *        Usefull for printing parsing errors.
  * @param line Line position information. Use `findLine()`.
  * @param mark Substring of `line` which should be marked.
  * @param color ANSI color code for marked section.
- * @return std::string Marked view of source code ready for printing.
  */
-std::string getCodeView(const linepos& line, std::string_view mark, std::string_view color);
+void printCodeView(const linepos& line, std::string_view mark, std::string_view color);
 
 
 // ------------------------------------------------------------------------------------------ //
