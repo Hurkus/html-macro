@@ -18,7 +18,7 @@
 
 #ifdef DEBUG
 	#define HERE(...)	{\
-		std::fprintf(stderr, ANSI_BOLD "[%s:%ld]" ANSI_RESET "\n", __FILE__, size_t(__LINE__)); \
+		log(stderr, ANSI_BOLD "[%s:%ld]" ANSI_RESET "\n", __FILE__, size_t(__LINE__)); \
 		__VA_ARGS__; \
 	}
 #else
@@ -34,24 +34,33 @@
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+extern bool log_stderr_isTTY;
+extern bool log_stdout_isTTY;
+
+void log(FILE* stream, const char* fmt, ...);
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 template <typename ...T>
 static void error(const char* fmt, T... arg){
-	std::fprintf(stderr, ANSI_RED "error: " ANSI_RESET);
-	std::fprintf(stderr, fmt, arg...);
-	std::fprintf(stderr, "\n");
+	log(stderr, ANSI_RED "error: " ANSI_RESET);
+	log(stderr, fmt, arg...);
+	log(stderr, "\n");
 }
 
 template <typename ...T>
 static void warn(const char* fmt, T... arg){
-	std::fprintf(stderr, ANSI_YELLOW "warn: " ANSI_RESET);
-	std::fprintf(stderr, fmt, arg...);
-	std::fprintf(stderr, "\n");
+	log(stderr, ANSI_YELLOW "warn: " ANSI_RESET);
+	log(stderr, fmt, arg...);
+	log(stderr, "\n");
 }
 
 template <typename ...T>
 static void info(const char* fmt, T... arg){
-	std::fprintf(stderr, fmt, arg...);
-	std::fprintf(stderr, "\n");
+	log(stderr, fmt, arg...);
+	log(stderr, "\n");
 }
 
 

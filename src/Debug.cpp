@@ -1,4 +1,6 @@
 #include "Debug.hpp"
+#include <cstdarg>
+
 #include "DebugSource.hpp"
 #include "Macro.hpp"
 #include "Expression.hpp"
@@ -15,6 +17,98 @@ using namespace MacroEngine;
 #define RED(s)		ANSI_RED s ANSI_RESET
 #define YELLOW(s)	ANSI_YELLOW s ANSI_RESET
 #define PURPLE(s)	ANSI_PURPLE s ANSI_RESET
+
+
+// ----------------------------------- [ Variables ] ---------------------------------------- //
+
+
+bool log_stderr_isTTY = false;
+bool log_stdout_isTTY = false;
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+constexpr bool skipANSIColor(const char*& beg){
+	assert(*beg == '\e');
+	const char* s = beg;
+	
+	if (*(++s) != '['){
+		return false;
+	}
+	
+	s++;
+	for (int i = 0 ; i < 3 ; i++, s++){
+		if (!('0' <= *s && *s <= '9'))
+			break;
+	}
+	
+	if (*s == 'm'){
+		beg = s + 1;
+		return true;
+	}
+	
+	return false;
+}
+
+
+void log(FILE* stream, const char* fmt, ...){
+	assert(fmt != nullptr);
+	va_list args;
+	va_start(args, fmt);
+	
+	// Has colors
+	if ((stream == stdout && log_stdout_isTTY) || (stream == stderr && log_stderr_isTTY)){
+		vfprintf(stream, fmt, args);
+		va_end(args);
+		return;
+	}
+	
+	constexpr int flush = 110;	// Flush before %fmt
+	constexpr int size = 126;
+	char buff[size + 2];
+	int i = 0;
+	
+	const char* p = fmt;
+	while (*p != 0){
+		
+		if (*p == '\e'){
+			if (skipANSIColor(p))
+				continue;
+		}
+		
+		else if (*p == '%'){
+			if (i > flush){
+				goto _flush;
+			}
+			
+			// %%
+			else if (p[1] == '%'){
+				buff[i++] = *p;
+				p++;
+			}
+			
+		}
+		
+		buff[i++] = *p;
+		p++;
+		
+		// Flush
+		if (i >= size){ _flush:
+			buff[i] = 0;
+			vfprintf(stream, buff, args);
+			i = 0;
+		}
+		
+	}
+	
+	if (i > 0){
+		buff[i] = 0;
+		vfprintf(stream, buff, args);
+	}
+	
+	va_end(args);
+}
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //

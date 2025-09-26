@@ -44,9 +44,9 @@ clean:
 ################################################################
 
 
-bin/test-$(EXE): test/test.cpp | bin/
+bin/test-$(EXE): $(wildcard test/*.cpp) | bin/
 	@basename "$@"
-	@$(CXX) $(filter %.cpp, $^) $(CXXFLAGS) $(INCLUDES) -o "$@"
+	@$(CXX) $(filter %.cpp, $^) $(CXXFLAGS) $(INCLUDES) -g -o "$@"
 
 .PHONY: test
 test: bin/$(EXE) bin/test-$(EXE)

@@ -128,6 +128,9 @@ static bool run(const char* file){
 
 
 int main(int argc, char const* const* argv){
+	log_stdout_isTTY = (isatty(fileno(stdout)) == 1);
+	log_stderr_isTTY = (isatty(fileno(stderr)) == 1);
+	
 	#ifdef DEBUG
 		const char* _argv[] = {
 			argv[0],
@@ -138,7 +141,6 @@ int main(int argc, char const* const* argv){
 			argc = sizeof(_argv) / sizeof(*_argv);
 		}
 	#endif
-	
 	
 	if (argc < 2){
 		help();
