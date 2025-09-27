@@ -1,5 +1,6 @@
 #pragma once
 #include <string_view>
+#include "Debug.hpp"
 
 
 // ----------------------------------- [ Structures ] --------------------------------------- //
@@ -16,7 +17,9 @@ struct linepos {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void print(const linepos& lp);
+inline void print(const linepos& lp){
+	printErrSrc(lp.file, lp.row, lp.col);
+}
 
 
 /**
@@ -32,7 +35,7 @@ linepos findLine(const char* beg, const char* end, const char* p) noexcept;
 
 
 /**
- * @brief Print line of source code and underline marked focus section.
+ * @brief Print line of source code to stderr and underline marked focus section.
  *        Usefull for printing parsing errors.
  * @param line Line position information. Use `findLine()`.
  * @param mark Substring of `line` which should be marked.

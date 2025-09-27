@@ -249,7 +249,7 @@ bool html::assertDeallocations(){
 		msg += "  html::Node: " + to_string(nodeDeallocCount) + "/" + to_string(nodeAllocCount) + "\n";
 		msg += "  html::Attr: " + to_string(attrDeallocCount) + "/" + to_string(attrAllocCount) + "\n";
 		msg += "  html::Str:  " + to_string(strDeallocCount) + "/" + to_string(strAllocCount);
-		ERROR(msg.c_str());
+		ERROR("%s", msg.c_str());
 	}
 	#endif
 	

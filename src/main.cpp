@@ -22,20 +22,22 @@ using namespace MacroEngine;
 
 
 void help(){
-	info(B("html-macro: ") Y(VERSION) ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".");
-	info(B("Usage:") " %s [options] [<variable>=<value>] <files>", opt.program);
+	LOG_STDOUT(B("html-macro: ") Y(VERSION) ", by " ANSI_CYAN "Hurkus" ANSI_RESET ".\n");
+	LOG_STDOUT(B("Usage:") " %s [options] [<variable>=<value>] <file>\n", opt.program);
 	
-	info("");
-	info(B("Variables:"));
-	info("  Setting expression variables for use within macro expressions, an argument must consist of a variable name, character '=' and then the variable value.");
-	info("  For example: `%s " Y("n=10") " in.html -o out.html`", opt.program);
+	LOG_STDOUT("\n");
+	LOG_STDOUT(B("Variables:\n"));
+	LOG_STDOUT("  Sets expression variables for use within macro expressions\n");
+	LOG_STDOUT("  The argument must be in the form of " P("`name=value`") ".\n");
+	LOG_STDOUT("  Example: `%s " P("n=10") " in.html -o out.html`\n", opt.program);
 	
-	info("");
-	info(B("Options:"));
-	info("  " Y("--help") ", " Y("-h") " ................... Print help.");
-	info("  " Y("--output <path>") ", " Y("-o <path>") " ... Write output to file instead of stdout.");
-	info("  " Y("--include <path>") ", " Y("-i <path>") " .. Add folder to list of path searches when including files with relative paths.");
-	info("");
+	LOG_STDOUT("\n");
+	LOG_STDOUT(B("Options:\n"));
+	LOG_STDOUT("  " Y("--help") ", " Y("-h") " ................... Print help.\n");
+	LOG_STDOUT("  " Y("--include <path>") ", " Y("-i <path>") " .. Add folder to list of path searches when including files with relative paths.\n");
+	LOG_STDOUT("  " Y("--output <path>") ", " Y("-o <path>") " ... Write output to file instead of stdout.\n");
+	LOG_STDOUT("  " Y("-x") " ........................... Do not output any results; only errors.\n");
+	LOG_STDOUT("\n");
 }
 
 
@@ -128,8 +130,8 @@ static bool run(const char* file){
 
 
 int main(int argc, char const* const* argv){
-	log_stdout_isTTY = (isatty(fileno(stdout)) == 1);
-	log_stderr_isTTY = (isatty(fileno(stderr)) == 1);
+	stdout_isTTY = (isatty(fileno(stdout)) == 1);
+	stderr_isTTY = (isatty(fileno(stderr)) == 1);
 	
 	#ifdef DEBUG
 		// log_stdout_isTTY = 0;
@@ -138,6 +140,7 @@ int main(int argc, char const* const* argv){
 		const char* _argv[] = {
 			argv[0],
 			"test/test-0.html"
+			// "test/test-1.in.html"
 		};
 		if (argc < 2){
 			argv = _argv;

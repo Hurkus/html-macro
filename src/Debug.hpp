@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include "ANSI.h"
+#include "ANSI_fmt.hpp"
 
 
 // ---------------------------------- [ Definitions ] --------------------------------------- //
@@ -16,52 +17,66 @@
 // ---------------------------------- [ Definitions ] --------------------------------------- //
 
 
+extern bool stderr_isTTY;
+extern bool stdout_isTTY;
+
+// Switch between ANSI text and plain text: `stderr_isTTY`
+#define LOG_STDERR(fmt, ...) {                                  \
+	static constexpr char f_str[] = fmt;                        \
+	static constexpr fmt_ansi<f_str> f = {};                    \
+	fprintf(stderr, f(stderr_isTTY) __VA_OPT__(,) __VA_ARGS__); \
+}                                                               \
+
+// Switch between ANSI text and plain text: `stdout_isTTY`
+#define LOG_STDOUT(fmt, ...) {                                  \
+	static constexpr char f_str[] = fmt;                        \
+	static constexpr fmt_ansi<f_str> f = {};                    \
+	fprintf(stderr, f(stdout_isTTY) __VA_OPT__(,) __VA_ARGS__); \
+}                                                               \
+
+
+// ---------------------------------- [ Definitions ] --------------------------------------- //
+
+
+// Print source code location before executing argument
 #ifdef DEBUG
-	#define HERE(...)	{\
-		log(stderr, ANSI_BOLD "[%s:%ld]" ANSI_RESET "\n", __FILE__, size_t(__LINE__)); \
-		__VA_ARGS__; \
+	#define HERE(...) {                                                                      \
+		if (stderr_isTTY)                                                                    \
+			fprintf(stderr, ANSI_BOLD "[%s:%ld]" ANSI_RESET "\n", __FILE__, long(__LINE__)); \
+		__VA_ARGS__;                                                                         \
 	}
 #else
 	#define HERE(...) { __VA_ARGS__; }
 #endif
 
 
-#define ERROR(...)	HERE(::error(__VA_ARGS__))
-#define WARN(...)	HERE(::warn(__VA_ARGS__))
-#define INFO(...)	HERE(::info(__VA_ARGS__))
+#define ERROR(fmt, ...) {                    \
+	HERE();                                   \
+	LOG_STDERR(ANSI_RED "error: " ANSI_RESET); \
+	LOG_STDERR(fmt __VA_OPT__(,) __VA_ARGS__); \
+	LOG_STDERR("\n");                         \
+}                                            \
+
+#define WARN(fmt, ...) {                       \
+	HERE();                                     \
+	LOG_STDERR(ANSI_YELLOW "warn: " ANSI_RESET); \
+	LOG_STDERR(fmt __VA_OPT__(,) __VA_ARGS__);  \
+	LOG_STDERR("\n");                          \
+}       
+
+#define INFO(fmt, ...) {                       \
+	HERE();                                     \
+	LOG_STDERR(fmt __VA_OPT__(,) __VA_ARGS__);  \
+	LOG_STDERR("\n");                          \
+}                                             \
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-extern bool log_stderr_isTTY;
-extern bool log_stdout_isTTY;
-
-void log(FILE* stream, const char* fmt, ...);
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-template <typename ...T>
-static void error(const char* fmt, T... arg){
-	log(stderr, ANSI_RED "error: " ANSI_RESET);
-	log(stderr, fmt, arg...);
-	log(stderr, "\n");
-}
-
-template <typename ...T>
-static void warn(const char* fmt, T... arg){
-	log(stderr, ANSI_YELLOW "warn: " ANSI_RESET);
-	log(stderr, fmt, arg...);
-	log(stderr, "\n");
-}
-
-template <typename ...T>
-static void info(const char* fmt, T... arg){
-	log(stderr, fmt, arg...);
-	log(stderr, "\n");
-}
+void printErrSrc(const char* file, long row = 0, long col = 0) noexcept;
+void printErrTag() noexcept;
+void printWarnTag() noexcept;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //

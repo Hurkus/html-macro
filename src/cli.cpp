@@ -9,9 +9,6 @@
 using namespace std;
 
 
-#define P(s)	ANSI_PURPLE s ANSI_RESET
-
-
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 

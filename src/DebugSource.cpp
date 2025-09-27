@@ -10,21 +10,6 @@ using namespace std;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void print(const linepos& pos){
-	if (pos.file != nullptr){
-		if (pos.row > 0 && pos.col > 0)
-			log(stderr, ANSI_BOLD "%s:%ld:%ld: " ANSI_RESET, pos.file, pos.row, pos.col);
-		else if (pos.row > 0)
-			log(stderr, ANSI_BOLD "%s:%ld: " ANSI_RESET, pos.file, pos.row);
-		else
-			log(stderr, ANSI_BOLD "%s: " ANSI_RESET, pos.file);
-	}
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
 linepos findLine(const char* beg, const char* end, const char* p) noexcept {
 	if (beg == nullptr || end == nullptr || end <= beg || p == nullptr || p < beg || p >= end){
 		return {};
@@ -76,6 +61,9 @@ linepos findLine(const char* beg, const char* end, const char* p) noexcept {
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 void printCodeView(const linepos& line, string_view mark, string_view color){
 	string_view linev = line.line;
 	if (linev.empty()){
@@ -92,7 +80,6 @@ void printCodeView(const linepos& line, string_view mark, string_view color){
 	}
 	
 	// Truncate mark
-	const bool at_end = (linev.end() == mark.begin() && mark.length() > 0);
 	{
 		const char* a = max(mark.begin(), linev.begin());
 		const char* b = min(mark.end(), linev.end());
@@ -106,7 +93,7 @@ void printCodeView(const linepos& line, string_view mark, string_view color){
 	if (!mark.empty()){
 		fwrite(linev.begin(), sizeof(char), mark.begin() - linev.begin(), stderr);
 		
-		if (log_stderr_isTTY){
+		if (stderr_isTTY){
 			fwrite(color.begin(), sizeof(char), color.length(), stderr);
 			fwrite(mark.begin(), sizeof(char), mark.length(), stderr);
 			fwrite(ANSI_RESET, sizeof(char), sizeof(ANSI_RESET) - 1, stderr);
@@ -128,7 +115,7 @@ void printCodeView(const linepos& line, string_view mark, string_view color){
 	
 	// Add mark tick and squiggly underline
 	fprintf(stderr, "\n      | %*s",  int(mark.begin() - linev.begin()), "");
-	if (log_stderr_isTTY){
+	if (stderr_isTTY){
 		fwrite(color.data(), sizeof(char), color.length(), stderr);
 	}
 	
@@ -137,7 +124,7 @@ void printCodeView(const linepos& line, string_view mark, string_view color){
 		fputc('~', stderr);
 	}
 	
-	if (log_stderr_isTTY){
+	if (stderr_isTTY){
 		fwrite(ANSI_RESET, sizeof(char), sizeof(ANSI_RESET) - 1, stderr);
 	}
 	

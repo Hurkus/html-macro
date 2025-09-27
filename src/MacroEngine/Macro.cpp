@@ -83,7 +83,8 @@ static void err(const Document& doc, const ParseResult& res){
 		default:
 			linepos pos = findLine(doc, res.pos.begin());
 			HERE(print(pos));
-			error("%s", msg);
+			printErrTag();
+			LOG_STDERR("%s\n", msg);
 			printCodeView(pos, res.pos, ANSI_RED);
 			break;
 	}
