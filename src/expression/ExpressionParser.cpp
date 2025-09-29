@@ -557,12 +557,12 @@ static const char* parse_singleExpression(const char* s, const char* end, Alloca
 		s = parse_binaryExpressionChain(s, end, alc, out);
 		assert(out != nullptr);
 		
-		s = parse_whiteSpace(s + 1, end);
+		s = parse_whiteSpace(s, end);
 		if (s == end || *s != ')'){
 			throw Error(Status::UNCLOSED_EXPRESSION, string_view(beg, s));
 		}
 		
-		return s;
+		return s + 1;
 	}
 	
 	throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));

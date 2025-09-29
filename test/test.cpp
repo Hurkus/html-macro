@@ -13,6 +13,7 @@ using namespace std;
 
 
 #define R(s)	ANSI_RED s ANSI_RESET
+#define P(s)	ANSI_PURPLE s ANSI_RESET
 #define B(s)	ANSI_BOLD s ANSI_RESET
 #define RB(s)	ANSI_BOLD ANSI_RED s ANSI_RESET
 #define GB(s)	ANSI_BOLD ANSI_GREEN s ANSI_RESET
@@ -224,6 +225,7 @@ int exe(const vector<string>& args, string& out, string& err){
 
 struct shell_exception {
 	int status = 1;
+	int expected = 0;
 	std::string err;
 };
 
@@ -239,7 +241,7 @@ bool run(const vector<string>& args, const string& out, const string& err, int s
 	
 	int _status = exe(args, out_buff, err_buff);
 	if (_status != status)
-		throw shell_exception{_status, move(err_buff)};
+		throw shell_exception{_status, status, move(err_buff)};
 	else if (out_buff != out)
 		throw output_exception{out, move(out_buff)};
 	else if (err_buff != err)
@@ -347,7 +349,7 @@ static bool run(){
 		}
 		catch (const shell_exception& e){
 			printf(RB("FAIL: ") "%s ~ %s:%ld\n", test->name, test->file, test->line);
-			printf("Program exited with status (%d).\n", e.status);
+			printf("Program exited with status " P("%d") ", expected " P("%d") ".\n", e.status, e.expected);
 			printf("%s", e.err.c_str());
 		}
 		catch (const output_exception& e){

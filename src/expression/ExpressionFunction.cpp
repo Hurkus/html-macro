@@ -115,10 +115,8 @@ static Value f_str(const Function& f, const VariableMap& vars, const Debugger& d
 	
 	switch (val.type){
 		case Type::LONG:
-			val = Value(to_string(val.data.l));
-			break;
 		case Type::DOUBLE:
-			val = Value(to_string(val.data.d));
+			val = Value(val.toStr());
 			break;
 		case Type::STRING: [[unlikely]]
 			break;
@@ -229,13 +227,13 @@ static Value f_max(const Function& f, const VariableMap& vars, const Debugger& d
 		double val_flt;
 		
 		if (toNum(val, val_int, val_flt)){
-			if ((max_isint && val_int < max_int) || (!max_isint && val_int < max_flt)){
+			if ((max_isint && val_int > max_int) || (!max_isint && val_int > max_flt)){
 				max_isint = true;
 				max_int = val_int;
 				max_val = move(val);
 			}
 		} else {
-			if ((max_isint && val_flt < max_int) || (!max_isint && val_flt < max_flt)){
+			if ((max_isint && val_flt > max_int) || (!max_isint && val_flt > max_flt)){
 				max_isint = false;
 				max_flt = val_flt;
 				max_val = move(val);

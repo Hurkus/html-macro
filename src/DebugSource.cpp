@@ -89,29 +89,47 @@ void printCodeView(const linepos& line, string_view mark, string_view color){
 	// Append line number
 	fprintf(stderr, "%5ld | ", line.row);
 	
+	
+	// Print and replace tabs
+	auto notab = [](string_view s){
+		const char* beg = s.begin();
+		const char* end = s.end();
+		
+		const char* p = beg;
+		while (p != end){
+			if (*p == '\t'){
+				fwrite(beg, sizeof(char), p - beg, stderr);
+				
+				while (*p == '\t' && p != end){
+					fputc(' ', stderr);
+					p++;
+				}
+				
+				beg = p;
+				continue;
+			}
+			p++;
+		}
+		
+		fwrite(beg, sizeof(char), p - beg, stderr);
+	};
+	
 	// Colorize mark
 	if (!mark.empty()){
-		fwrite(linev.begin(), sizeof(char), mark.begin() - linev.begin(), stderr);
+		notab(string_view(linev.begin(), mark.begin()));
 		
 		if (stderr_isTTY){
 			fwrite(color.begin(), sizeof(char), color.length(), stderr);
-			fwrite(mark.begin(), sizeof(char), mark.length(), stderr);
+			notab(mark);
 			fwrite(ANSI_RESET, sizeof(char), sizeof(ANSI_RESET) - 1, stderr);
 		} else {
 			fwrite(mark.begin(), sizeof(char), mark.length(), stderr);
 		}
 		
-		fwrite(mark.end(), sizeof(char), linev.end() - mark.end(), stderr);
+		notab(string_view(mark.end(), linev.end()));
 	} else {
-		fwrite(linev.begin(), sizeof(char), linev.length(), stderr);
+		notab(linev);
 	}
-	
-	// // Convert tabs
-	// for (char& c : str){
-	// 	if (c == '\t')
-	// 		c = ' ';
-	// }
-	
 	
 	// Add mark tick and squiggly underline
 	fprintf(stderr, "\n      | %*s",  int(mark.begin() - linev.begin()), "");

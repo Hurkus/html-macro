@@ -15,7 +15,7 @@ void MacroEngine::text(const Node& src, Node& dst){
 	
 	if (src.options % NodeOptions::INTERPOLATE){
 		string buff;
-		eval_string(src, src.value(), buff);
+		eval_string_interpolate(src, src.value(), buff);
 		txt.value(html::newStr(buff), buff.length());
 	} else {
 		txt.value(src.value());

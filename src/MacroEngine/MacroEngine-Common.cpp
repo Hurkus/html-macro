@@ -130,7 +130,7 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff
 	
 	// Interpolate
 	else if (attr.options % NodeOptions::INTERPOLATE){
-		if (!eval_string(op, attr.value(), buff))
+		if (!eval_string_interpolate(op, attr.value(), buff))
 			return false;
 		result = buff;
 	}
@@ -167,18 +167,31 @@ Interpolate MacroEngine::eval_attr_interp(const Node& op, const Attr& attr){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngine::eval_string(const Node& op, string_view str, string& buff){
+bool MacroEngine::eval_string_interpolate(const Node& op, string_view str, string& buff){
 	const char* const end = str.end();
 	const char* beg = str.begin();
 	const NodeDebugger dbg = NodeDebugger(op);
 	
 	while (beg != end){
-		const char* a;
-		const char* b;
+		const char* a;	// expr begin
+		const char* b;	// expr end
 		
 		// Find starting poing {
 		a = beg;
-		while (a != end && *a != '{') a++;
+		while (a != end){
+			if (*a == '{'){
+				break;
+			}
+			
+			else if (*a == '\\'){
+				if (++a == end)
+					break;
+				buff.append(beg, a - 1);
+				beg = a;
+			}
+			
+			a++;
+		}
 		
 		// Find end point }
 		b = a;

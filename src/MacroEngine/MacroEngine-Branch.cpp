@@ -52,7 +52,7 @@ void MacroEngine::set(const Node& op){
 		// Interpolate
 		else if (attr->options % NodeOptions::INTERPOLATE){
 			string buff;
-			if (!eval_string(op, attr->value(), buff)){
+			if (!eval_string_interpolate(op, attr->value(), buff)){
 				return;
 			}
 			
@@ -104,7 +104,7 @@ static MacroEngine::Branch attr_equals_variable(const Node& op, const Attr& attr
 		// Compare only strings
 		else {
 			string buff;
-			if (!MacroEngine::eval_string(op, attr.value(), buff))
+			if (!MacroEngine::eval_string_interpolate(op, attr.value(), buff))
 				return MacroEngine::Branch::NONE;
 			pass = (var == nullptr && buff.empty()) || (var->sv() == buff);
 		}

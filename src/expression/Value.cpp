@@ -26,6 +26,24 @@ static bool try_parse(string_view s, auto& out_n) noexcept {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+inline string str(double n){
+	string s = to_string(n);
+	
+	while (s.length() > 2){
+		const char* c = &s.back();
+		if (c[0] == '0' && c[-1] != '.')
+			s.pop_back();
+		else
+			break;
+	}
+	
+	return s;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 bool Value::toBool() const noexcept {
 	switch (type){
 		case Type::LONG:
@@ -44,7 +62,7 @@ string Value::toStr() const {
 		case Type::LONG:
 			return to_string(data.l);
 		case Type::DOUBLE:
-			return to_string(data.d);
+			return str(data.d);
 		case Type::STRING:
 			return string(data.s, data_len);
 	}
@@ -58,7 +76,7 @@ string& Value::toStr(string& buff) const {
 			buff += to_string(data.l);
 			break;
 		case Type::DOUBLE:
-			buff += to_string(data.d);
+			buff += str(data.d);
 			break;
 		case Type::STRING:
 			buff.append(data.s, data_len);
