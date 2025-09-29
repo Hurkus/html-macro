@@ -1,0 +1,373 @@
+<div id="expressions">
+	<h2>1. Expressions</h2>
+	<p>
+		In certain contexts, expressions can be used to interpolate HTML text nodes,
+		or to handle flow controll when evaluating HTML tags.
+		They consist of constants, expression operators, variables and functions.
+	</p>
+	<br/>
+	<p>
+		There are only 3 data types that can be evaluated and used with expressions:
+		<ul>
+			<li><b>int</b>eger: <i>long</i>, 64 bit,</li>
+			<li><b>float</b>ing point number: <i>double</i>, 64 bit,</li>
+			<li><b>string</b>.</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		For purposes of easier explanation, 2 implicit data types are defined:
+		<ul>
+			<li><b>number</b>: <b>int</b> or <b>float</b>,</li>
+			<li>
+				<b>bool</b>ean: <b>int</b> where logical
+				<code>false</code> equals <code>0</code> and
+				<code>true</code> equals <code>1</code>.
+			</li>
+		</ul> 
+	</p>
+	
+	
+	<br/>
+	<div id="expressions-context">
+		<h3>1.1. Expression context</h3>
+		<p>
+			Expressions can be defined and evaluated within HTML attribute values or HTML text nodes.
+			HTML attribute values, quoted with single quotes (<code>&apos;&apos;</code>),
+			are directly evaluated as expressions and then converted to text before they are appended the output HTML node.
+			HTML attributes values, quoted with double quotes (<code>&quot;&quot;</code>),
+			are evaluated as strings, which are interpolated for any expressions within curly brackets <code>\{}</code>.
+			Similarly, HTML text nodes are also interpolated for expressions within curly brackets.
+		</p>
+		<br/>
+		<div class="example">
+			<h4><b>Example:</b> Attribute expressions and text interpolation.</h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						&lt;p attr="text \{1 + 2}"&gt;&lt;/p&gt;<br/>
+						&lt;p attr='2 * 2'&gt;&lt;/p&gt;<br/>
+						&lt;p&gt;There are \{9 / 2} apples.&lt;/p&gt;
+					</td>
+					<td class="code">
+						&lt;p attr="text 3"&gt;&lt;/p&gt;<br/>
+						&lt;p attr="4"&gt;&lt;/p&gt;<br/>
+						&lt;p&gt;There are 4.5 apples.&lt;/p&gt;
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	
+	
+	<br/>
+	<div id="expressions-constants">
+		<h3>1.2. Constants</h3>
+		<p>
+			There are only 3 types of constants: integers, floats and strings.
+			Strings are defined as text between two double (<code>&quot;</code>) or single (<code>&apos;</code>) quotes.
+			Booleans are integers <code>0</code> (false) and <code>1</code> (true).
+		</p>
+		<br/>
+		<style>
+			#expressions-constants table td {
+				min-width: 6em;
+			}
+		</style>
+		<p>
+			List of named constants (implemented as predefined
+			<a class="td-0" href="#expressions-variables" title="1.4 Variables">variables</a>):
+		</p>
+		<table class="list">
+			<tr>
+				<th>Name</th>
+				<th>Value</th>
+			</tr>
+			<tr>
+				<td><code>false</code></td>
+				<td><code>0</code></td>
+			</tr>
+			<tr>
+				<td><code>true</code></td>
+				<td><code>1</code></td>
+			</tr>
+			<tr>
+				<td><code>pi</code></td>
+				<td><code>3.14159...</code></td>
+			</tr>
+		</table>
+	</div>
+	
+	
+	<br/>
+	<div id="expressions-operators">
+		<h3>1.3. Operators</h3>
+		<p>
+			Expression operators consist of standard unary and binary operators:
+			<ul>
+				<li>Unary operatos:
+					<code>-</code> (arithmetic negation),
+					<code>!</code> (boolean negation)
+				</li>
+				<li>Arithmetic binary operators:
+					<code>+</code>,
+					<code>-</code>,
+					<code>*</code>,
+					<code>/</code>,
+					<code>%</code>
+				</li>
+				<li>Logical operators:
+					<code>&&</code> (and),
+					<code>||</code> (or)
+				</li>
+				<li>Comparison binary operators:
+					<code>==</code>,
+					<code>!=</code>,
+					<code>&lt;</code>,
+					<code>&lt;=</code>,
+					<code>&gt;</code>,
+					<code>&gt;=</code>
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			For some operations with operands of different types, they are coerced to other types.
+			For example, adding a number to a string results in the number being stringified and appended to the string operand.
+			Another case is coercing a string into a boolean where it evaluates to <code>true</code> when it's not empty.
+		</p>
+	</div>
+	
+	
+	<br/>
+	<div id="expressions-variables">
+		<h3>1.4. Variables</h3>
+		<p>
+			Variables are defined with <code>&lt;SET/&gt;</code> macro nodes,
+			where each attribute name and its value corresponds to a variable as such: <code>&lt;SET&nbsp;variable_name="string value"/&gt;</code> sets a variable named <code>variable_name</code> to a value of <code>string value</code>.
+			Variable types are dynamic and correspond to their most recently assigned value type.
+		</p>
+		<br/>
+		<div class="example">
+			<h4><b>Example:</b> Defining and using variables.</h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						&lt;SET s="header"/&gt;<br/>
+						&lt;p class='s'&gt;My title&lt;/p&gt;<br/>
+						<br/>
+						&lt;SET x='2' y='3'/&gt;<br/>
+						&lt;p&gt;My text number \{x * (y + 1)}&lt;/p&gt;
+					</td>
+					<td class="code">
+						<br/>
+						&lt;p class="header"&gt;My title&lt;/p&gt;<br/>
+						<br/>
+						<br/>
+						&lt;p&gt;My text number 8&lt;/p&gt;
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<!-- /variables -->
+	
+	
+	<br/>
+	<div id="expressions-functions">
+		<h3>1.5. Functions</h3>
+		<p>
+			There's a limited set of functions that can be used by naming them and then suffixing their name with brackets <code>()</code> containing their arguments.
+			Maximum number of arguments per function is currently 8.
+		</p>
+		<br/>
+		<style>
+			#expressions-functions table td {
+				min-width: 6em;
+				max-width: 30em;
+			}
+			#expressions-functions table td:nth-child(3) {
+				text-align: justify;
+				padding: 5px 1em;
+			}
+			#expressions-functions table tr.br {
+				border-top: 2px solid black;
+			}
+		</style>
+		<p>List of functions with their descriptions:</p>
+		<table class="list">
+			<tr>
+				<th>Name</th>
+				<th>Return type</th>
+				<th>Description</th>
+			</tr>
+			<tr class="br">
+				<td><code>int(x)</code></td>
+				<td>int</td>
+				<td>
+					Converts <code>x</code> into an <i>integer</i>.
+					If <code>x</code> is a <i>string</i> and cannot be parsed as an <i>integer</i>, returns <code>0</code>.
+				</td>
+			</tr>
+			<tr>
+				<td><code>float(x)</code></td>
+				<td>float</td>
+				<td>
+					Converts <code>x</code> into a <i>float</i>.
+					If <code>x</code> is a <i>string</i> and cannot be parsed as a <i>float</i>, returns <code>0.0</code>.
+				</td>
+			</tr>
+			<tr>
+				<td><code>str(x)</code></td>
+				<td>string</td>
+				<td>
+					Converts <code>x</code> into a <i>string</i>.
+				</td>
+			</tr>
+			<tr class="br">
+				<td><code>len(x)</code></td>
+				<td>int</td>
+				<td>
+					If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.
+					If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
+				</td>
+			</tr>
+			<tr>
+				<td><code>abs(x)</code></td>
+				<td>int</td>
+				<td>
+					If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.
+					If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
+				</td>
+			</tr>
+			<tr>
+				<td><code>min(x, y, ...)</code></td>
+				<td>int,<br/>float,<br/>string</td>
+				<td>Returns smallest <i>number</i> or shortest <i>string</i>.</td>
+			</tr>
+			<tr>
+				<td><code>max(x, y, ...)</code></td>
+				<td>int,<br/>float,<br/>string</td>
+				<td>Returns largest <i>number</i> or longest <i>string</i>.</td>
+			</tr>
+			<tr class="br">
+				<td><code>lower(s)</code></td>
+				<td>string</td>
+				<td>Converts <i>string</i> <code>s</code> to lower case.</td>
+			</tr>
+			<tr>
+				<td><code>upper(s)</code></td>
+				<td>string</td>
+				<td>Converts <i>string</i> <code>s</code> to upper case.</td>
+			</tr>
+			<tr>
+				<td><code>substr(s, i, len)</code></td>
+				<td>string</td>
+				<td>
+					Returns substring of <i>string</i> <code>s</code>
+					beginning at character <code>i</code> and ending at character <code>i+len</code>.<br/>
+					If <code>i</code> is negative, it equals to <code>len(s)-abs(i)+1</code> (that is from the end backwards).
+					The same applies to <code>len</code>.<br/>
+					Beginning and end points of the substring are properly calculated and clamped between <code>0</code> and <code>len(s)</code>.
+				</td>
+			</tr>
+			<tr>
+				<td><code>match(s, regex)</code></td>
+				<td>bool</td>
+				<td>
+					Returns <code>true</code> if <i>string</i> <code>s</code> matches the <a href="https://en.wikipedia.org/wiki/Regular_expression" title="Wikipedia - Regular expression" target="_blank" class="td-0">regular expression</a> <code>regex</code>.
+				</td>
+			</tr>
+			<tr>
+				<td><code>replace(s, regex, rep)</code></td>
+				<td>string</td>
+				<td>
+					Replaces all occurances of substrings matched by
+					<a href="https://en.wikipedia.org/wiki/Regular_expression" title="Wikipedia - Regular expression" target="_blank" class="td-0">regular expression</a> <code>regex</code>
+					with parameterised replacement <i>string</i> <code>rep</code>.<br/>
+					To use capture groups in <code>rep</code>, use <code>$</code> and the number of the capture group.
+					The whole match is represented by capture group <code>$0</code>.
+				</td>
+			</tr>
+			<tr class="br">
+				<td><code>if(cond,pass,else)</code></td>
+				<td>int,<br/>float,<br/>string</td>
+				<td>
+					If <code>cond</code> evaluates to logical <code>true</code>, evaluates and returns <code>pass</code>,
+					otherwise evaluates and returns <code>else</code>.
+				</td>
+			</tr>
+			<tr>
+				<td><code>defined(var)</code></td>
+				<td>bool</td>
+				<td>
+					Returns <code>true</code> if variable <code>var</code> is defined.<br/>
+					<code>var</code> is not a string but an identifier that reflects the name of a variable.
+				</td>
+			</tr>
+		</table>
+		<br/>
+		<style>
+			#expressions-functions .example span {
+				color: blue;
+			}
+		</style>
+		<div class="example">
+			<h4><b>Example:</b> Usages of various functions.</h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						&lt;p&gt;{<span>int</span>('7.234')}&lt;/p&gt;<br/>
+						&lt;p&gt;{<span>float</span>('122.5') + 1}&lt;/p&gt;<br/>
+						&lt;p&gt;{<span>str</span>(12) + ' apples'}&lt;/p&gt;<br/>
+						<br/>
+						&lt;p&gt;{<span>len</span>('hello')}&lt;/p&gt;<br/>
+						&lt;p&gt;{<span>abs</span>(-4.5)}&lt;/p&gt;<br/>
+						&lt;p&gt;{<span>min</span>(1, 2.5, 'three')}&lt;/p&gt;<br/>
+						&lt;p&gt;{<span>max</span>(1, 2.5, 'three')}&lt;/p&gt;<br/>
+						<br/>
+						&lt;p&gt;{<span>lower</span>('World!')}&lt;/p&gt;<br/>
+						&lt;p&gt;{<span>upper</span>('World!')}&lt;/p&gt;<br/>
+						&lt;p&gt;{<span>match</span>('01:20:13', '\d?\d:\d\d:\d\d')}&lt;/p&gt;<br/>
+						&lt;p&gt;{<span>replace</span>('12 apples', '(\d+)\s+(\w+)', '$1 green $2')}&lt;/p&gt;<br/>
+						<br/>
+						&lt;p&gt;x is {<span>if</span>(<span>defined</span>(x),x,100)}&lt;/p&gt;<br/>
+					</td>
+					<td class="code">
+						&lt;p&gt;7&lt;/p&gt;<br/>
+						&lt;p&gt;123.5&lt;/p&gt;<br/>
+						&lt;p&gt;12 apples&lt;/p&gt;<br/>
+						<br/>
+						&lt;p&gt;5&lt;/p&gt;<br/>
+						&lt;p&gt;4.5&lt;/p&gt;<br/>
+						&lt;p&gt;1&lt;/p&gt;<br/>
+						&lt;p&gt;three&lt;/p&gt;<br/>
+						<br/>
+						&lt;p&gt;world!&lt;/p&gt;<br/>
+						&lt;p&gt;WORLD!&lt;/p&gt;<br/>
+						&lt;p&gt;1&lt;/p&gt;<br/>
+						&lt;p&gt;12 green apples&lt;/p&gt;<br/>
+						<br/>
+						&lt;p&gt;x is 100&lt;/p&gt;<br/>
+					</td>
+				</tr>
+			</table>
+		</div>
+		
+	</div>
+	<!-- /functions -->
+	
+	
+</div>
