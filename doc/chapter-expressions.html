@@ -1,5 +1,6 @@
-<div id="expressions">
-	<h2>1. Expressions</h2>
+<SET ci='ci + 1' cii='0'/>
+<div id="macros">
+	<h2>{ci}. Expressions</h2>
 	<p>
 		In certain contexts, expressions can be used to interpolate HTML text nodes,
 		or to handle flow controll when evaluating HTML tags.
@@ -30,7 +31,8 @@
 	
 	<br/>
 	<div id="expressions-context">
-		<h3>1.1. Expression context</h3>
+		<SET cii='cii + 1'/>
+		<h3>{ci}.{cii}. Expression context</h3>
 		<p>
 			Expressions can be defined and evaluated within HTML attribute values or HTML text nodes.
 			HTML attribute values, quoted with single quotes (<code>&apos;&apos;</code>),
@@ -66,7 +68,8 @@
 	
 	<br/>
 	<div id="expressions-constants">
-		<h3>1.2. Constants</h3>
+		<SET cii='cii + 1'/>
+		<h3>{ci}.{cii}. Constants</h3>
 		<p>
 			There are only 3 types of constants: integers, floats and strings.
 			Strings are defined as text between two double (<code>&quot;</code>) or single (<code>&apos;</code>) quotes.
@@ -105,7 +108,8 @@
 	
 	<br/>
 	<div id="expressions-operators">
-		<h3>1.3. Operators</h3>
+		<SET cii='cii + 1'/>
+		<h3>{ci}.{cii}. Operators</h3>
 		<p>
 			Expression operators consist of standard unary and binary operators:
 			<ul>
@@ -145,7 +149,8 @@
 	
 	<br/>
 	<div id="expressions-variables">
-		<h3>1.4. Variables</h3>
+		<SET cii='cii + 1'/>
+		<h3>{ci}.{cii}. Variables</h3>
 		<p>
 			Variables are defined with <code>&lt;SET/&gt;</code> macro nodes,
 			where each attribute name and its value corresponds to a variable as such: <code>&lt;SET&nbsp;variable_name="string value"/&gt;</code> sets a variable named <code>variable_name</code> to a value of <code>string value</code>.
@@ -183,7 +188,8 @@
 	
 	<br/>
 	<div id="expressions-functions">
-		<h3>1.5. Functions</h3>
+		<SET cii='cii + 1'/>
+		<h3>{ci}.{cii}. Functions</h3>
 		<p>
 			There's a limited set of functions that can be used by naming them and then suffixing their name with brackets <code>()</code> containing their arguments.
 			Maximum number of arguments per function is currently 8.

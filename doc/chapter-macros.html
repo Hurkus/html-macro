@@ -1,0 +1,271 @@
+<style>
+	#macros .macro {
+		padding: 12px;
+	}
+	#macros .macro h4 {
+		font-family: monospace;
+		font-size: 1.4em;
+		margin-right: 0.4em;
+		display: inline;
+	}
+	#macros .macro p:first-of-type {
+		display: inline;
+	}
+	#macros .macro x-line {
+		display: block;
+		height: 1px;
+		margin-top: 5px;
+		margin-bottom: 7px;
+		background: rgba(0, 0, 0, 0.5);
+	}
+	
+	#macros .macro .example table {
+		margin-top: -1em;
+	}
+	
+	#macros .macro .example {
+		box-shadow: none;
+		border: none;
+	}
+	
+</style>
+
+<SET ci='ci + 1' cii='0'/>
+<SET l="&lt;" r="&gt;" s="&nbsp;" t='s*4'></SET>
+
+<div id="macros">
+	<h2>{ci}. Macros</h2>
+	<p>
+		Certain HTML tags are not coppied to the final document.
+		Instead they perform other functions that modify the document.
+		Such tags are called <b>(HTML) macros</b> and are all written in <b>uppercase</b>.
+		Parameters for their functionality are passed by HTML attributes, which are <i>usually</i> also in uppercase.
+	</p>
+	
+	<br/>
+	<div class="example">
+		<h4><b>Example:</b> Macro demonstration for language-specific text.</h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}div{r}<br/>
+						{t}{l}<a CALL="a-IF">IF</a> lang="de"{r}<br/>
+							{t*2}{l}p{r}Deutsch{l}/p{r}<br/>
+						{t}{l}<a CALL="a-IF">/IF</a>{r}<br/>
+						{t}{l}<a CALL="a-ELSE">ELSE</a>{r}<br/>
+							{t*2}{l}p{r}English{l}/p{r}<br/>
+						{t}{l}<a CALL="a-ELSE">/ELSE</a>{r}<br/>
+					{l}/div{r}
+				</td>
+				<INFO>'{t}'</INFO>
+				<td class="code">
+					{l}div{r}<br/>
+					{t}{l}p{r}English{l}/p{r}<br/>
+					{l}/div{r}
+				</td>
+			</tr>
+		</table>
+		<p>
+			Here we decide language-specific text for the final document.
+			The decicion, which text to include, is done by the flow controll <code>IF</code> and <code>ELSE</code> macros,
+			which depend on a variable <code>lang</code>.
+		</p>
+	</div>
+	
+	<br/>
+	<p>
+		Some macro attributes can also be applied to regular HTML tags.
+		These attributes are also not included in the final document.
+	</p>
+	
+	<br/>
+	<div class="example">
+		<h4><b>Example:</b> Macro attribute demonstration for language-specific text.</h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}div{r}<br/>
+						{t*2}{l}p IF='lang=="de"'{r}Deutsch{l}/p{r}<br/>
+						{t*2}{l}p ELSE{r}English{l}/p{r}<br/>
+					{l}/div{r}
+				</td>
+				<INFO>'{t}'</INFO>
+				<td class="code">
+					{l}div{r}<br/>
+					{t}{l}p{r}English{l}/p{r}<br/>
+					{l}/div{r}
+				</td>
+			</tr>
+		</table>
+		<p>
+			Here we conditionally include the first <code>p</code> element,
+			but only if the expression in the <code>IF</code> macro attribute evaluates to <code>true</code>.
+			Otherwise, we include the second <code>p</code> element.
+		</p>
+	</div>
+	
+	
+	<br/>
+	<div id="macros-all">
+		<SET cii='cii + 1'/>
+		<h3>{ci}.{cii}. List of macros</h3>
+		<br/>
+		<CALL NAME="m-FOR"/>
+		<br/>
+		<CALL NAME="m-WHILE"/>
+	</div>
+	
+	
+</div>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-SET">
+	<SET-ATTR href="#FOR"/>
+	<SET-ATTR title="Assigns new values to variables."/>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-FOR">
+	<SET-ATTR href="#FOR"/>
+	<SET-ATTR title="Evaluates child elements for a set amount of times."/>
+</MACRO>
+<MACRO NAME="m-FOR">
+	<div id="FOR" class="macro box">
+		<h4 class="code">{l}FOR{r}...{l}/FOR{r}</h4>
+		<p>Evaluates child elements for a set amount of times.</p>
+		<x-line></x-line>
+		<p>
+			Must be in the form of <code>{l}FOR [init] [cond] [inc]{r}</code>,
+			where:
+			<ul>
+				<li>
+					<code>[init]</code> represents setting a variable in the form <code>name='value'</code>, where the attribute name is the name of the variable, and the attribute value is the value of the variable.
+				</li>
+				<li>
+					<code>[cond]</code> represents a conditional attribute <code>TRUE='...'</code> or <code>FALSE='...'</code>.
+					The loop ends when the expression of the attribute value evaluates to <code>false</code>, or <code>true</code> respectively.
+				</li>
+				<li>
+					<code>[inc]</code> represents setting a variable to a new value, in the form of <code>name='value'</code>, after each iteration of the loop.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li>
+					<code>IF='...'</code>
+					Ignore if expression evaluates to <code>false</code>
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-WHILE">{l}WHILE{r}</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-FOR">FOR</a> <span title="[init]">i='0'</span> <span title="[cond]">TRUE='i {l} 3'</span> <span title="[inc]">i='i+1'</span>{r}<br/>
+						{t}{l}p{r}\{i}{l}/p{r}<br/>
+						{l}<a CALL="a-FOR">/FOR</a>{r}
+					</td>
+					<INFO>'{t}'</INFO>
+					<td class="code">
+						{l}p{r}{0}{l}/p{r}<br/>
+						{l}p{r}{1}{l}/p{r}<br/>
+						{l}p{r}{2}{l}/p{r}<br/>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-WHILE">
+	<SET-ATTR href="#WHILE"/>
+	<SET-ATTR title="Repeatedly evaluates child elements."/>
+</MACRO>
+<MACRO NAME="m-WHILE">
+	<div id="WHILE" class="macro box">
+		<h4 class="code">{l}WHILE{r}...{l}/WHILE{r}</h4>
+		<p>Repeatedly evaluates child elements.</p>
+		<x-line></x-line>
+		<p>
+			Must be in the form of <code>{l}WHILE [cond]{r}</code>,
+			where:
+			<ul>
+				<li>
+					<code>[cond]</code> represents a conditional attribute <code>TRUE='...'</code> or <code>FALSE='...'</code>.
+					The loop ends when the expression of the attribute value evaluates to <code>false</code>, or <code>true</code> respectively.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li>
+					<code>IF='...'</code>
+					Ignore if expression evaluates to <code>false</code>
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-FOR">{l}FOR{r}</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-SET">SET</a> i='0'/{r}<br/>
+						{l}<a CALL="a-WHILE">WHILE</a> <span title="[cond]">TRUE='i {l} 3'</span>{r}<br/>
+						{t}{l}p{r}\{i}{l}/p{r}<br/>
+						{t}{l}<a CALL="a-SET">SET</a> i='i+1'/{r}<br/>
+						{l}<a href="#WHILE">/WHILE</a>{r}
+					</td>
+					<INFO>'{t}'</INFO>
+					<td class="code">
+						{l}p{r}{0}{l}/p{r}<br/>
+						{l}p{r}{1}{l}/p{r}<br/>
+						{l}p{r}{2}{l}/p{r}<br/>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->

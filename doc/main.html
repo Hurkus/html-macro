@@ -48,6 +48,13 @@
 		border-radius: 2px;
 	}
 	
+	.code a:not(:hover) {
+		color: blue;
+		text-decoration: none;
+	} .code a:hover {
+		font-weight: bold;
+	}
+	
 </style>
 <style>
 	
@@ -71,6 +78,13 @@
 </style>
 <style>
 	
+	.box {
+		padding: 8px;
+		box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+		border-radius: 3px;
+		border: 1px solid rgba(0, 0, 0, 0.1);
+	}
+	
 	.example {
 		padding: 8px;
 		box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
@@ -90,6 +104,11 @@
 	
 	.example table td {
 		width: 50%;
+		vertical-align: top;
+	}
+	
+	.example table td.code span[title]:hover {
+		font-weight: bold;
 	}
 	
 </style>
@@ -101,7 +120,11 @@
 		<br/>
 		
 		
-		<INCLUDE SRC="chapter-expressions.html"/>
+		<SET ci='0'/>
+		<INCLUDE SRC="chapter-macros.html"/>
+		<br/>
+		<br/>
+		<!-- <INCLUDE SRC="chapter-expressions.html"/> -->
 		
 		
 		<br/>

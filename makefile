@@ -57,9 +57,9 @@ test: bin/$(EXE) bin/test-$(EXE)
 
 
 .PHONY: doc
-doc: bin/documentation.html
+doc: doc/documentation.html
 
-bin/documentation.html: doc/main.html $(wildcard doc/*.html) bin/$(EXE) | bin/
+doc/documentation.html: doc/main.html $(wildcard doc/*.html) bin/$(EXE) | bin/
 	./bin/$(EXE) '$<' -o '$@'
 
 
