@@ -622,7 +622,7 @@ static const char* parse_closeTag(Parser& state, const char* s){
 	}
 	
 	// Error
-	state.result.pos = string_view(name, name_len);
+	state.result.pos = string_view(beg, s);
 	throw ParseStatus::INVALID_END_TAG;
 	
 	suffix:

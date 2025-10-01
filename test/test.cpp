@@ -350,7 +350,7 @@ static bool run(){
 		catch (const shell_exception& e){
 			printf(RB("FAIL: ") "%s ~ %s:%ld\n", test->name, test->file, test->line);
 			printf("Program exited with status " P("%d") ", expected " P("%d") ".\n", e.status, e.expected);
-			printf("%s", e.err.c_str());
+			// printf("%s", e.err.c_str());
 		}
 		catch (const output_exception& e){
 			printf(RB("FAIL: ") "%s ~ %s:%ld\n", test->name, test->file, test->line);
