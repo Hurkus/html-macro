@@ -14,7 +14,7 @@
 	#macros .macro x-line {
 		display: block;
 		height: 1px;
-		margin-top: 5px;
+		margin-top: 6px;
 		margin-bottom: 7px;
 		background: rgba(0, 0, 0, 0.5);
 	}
@@ -61,7 +61,6 @@
 						{t}{l}<a CALL="a-ELSE">/ELSE</a>{r}<br/>
 					{l}/div{r}
 				</td>
-				<INFO>'{t}'</INFO>
 				<td class="code">
 					{l}div{r}<br/>
 					{t}{l}p{r}English{l}/p{r}<br/>
@@ -97,7 +96,6 @@
 						{t*2}{l}p ELSE{r}English{l}/p{r}<br/>
 					{l}/div{r}
 				</td>
-				<INFO>'{t}'</INFO>
 				<td class="code">
 					{l}div{r}<br/>
 					{t}{l}p{r}English{l}/p{r}<br/>
@@ -114,13 +112,54 @@
 	
 	
 	<br/>
+	<br/>
 	<div id="macros-all">
 		<SET cii='cii + 1'/>
 		<h3>{ci}.{cii}. List of macros</h3>
-		<br/>
+		
+		<style>
+			#macros-all > .list {
+				column-width: 400px;
+			}
+		</style>
+		<ul class="list">
+			<li><a CALL="a-SET">{l}SET{r}</a> &mdash; Assigns values to variables.</li>
+			<li><a CALL="a-IF">{l}IF{r}</a> &mdash; Conditionally includes child elements.</li>
+			<li><a CALL="a-ELIF">{l}ELIF{r}</a></li>
+			<li><a CALL="a-ELSE">{l}ELSE{r}</a></li>
+			<li><a CALL="a-FOR">{l}FOR{r}</a> &mdash; Include child elements in a loop.</li>
+			<li><a CALL="a-WHILE">{l}WHILE{r}</a> &mdash; Include child elements in a loop.</li>
+			<li><a CALL="a-CALL">{l}CALL{r}</a></li>
+			<li><a CALL="a-INCLUDE">{l}INCLUDE{r}</a></li>
+			<li><a CALL="a-SHELL">{l}SHELL{r}</a></li>
+			<li><a CALL="a-SET-TAG">{l}SET-TAG{r}</a></li>
+			<li><a CALL="a-GET-TAG">{l}GET-TAG{r}</a></li>
+			<li><a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a></li>
+			<li><a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a></li>
+			<li><a CALL="a-DEL-ATTR">{l}DEL-ATTR{r}</a></li>
+			<li><a CALL="a-INFO">{l}INFO{r}</a> &mdash; Log messages to stderr.</li>
+			<li><a CALL="a-WARN">{l}WARN{r}</a> &mdash; Log warning messages to stderr.</li>
+			<li><a CALL="a-ERROR">{l}ERROR{r}</a> &mdash; Log error messages to stderr.</li>
+		</ul>
+		
+		<br/><br/>
+		<CALL NAME="m-SET"/>
+		<br/><br/>
+		<CALL NAME="m-IF"/>
+		<br/><br/>
+		<CALL NAME="m-ELIF"/>
+		<br/><br/>
+		<CALL NAME="m-ELSE"/>
+		<br/><br/>
 		<CALL NAME="m-FOR"/>
-		<br/>
+		<br/><br/>
 		<CALL NAME="m-WHILE"/>
+		<br/><br/>
+		<CALL NAME="m-INFO"/>
+		<br/><br/>
+		<CALL NAME="m-WARN"/>
+		<br/><br/>
+		<CALL NAME="m-ERROR"/>
 	</div>
 	
 	
@@ -129,9 +168,235 @@
 <!--  -->
 <!--  -->
 <!--  -->
+<MACRO NAME="h">
+	<h4 class="code">{name}</h4>
+	<p>{desc}</p>
+	<x-line></x-line>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
 <MACRO NAME="a-SET">
-	<SET-ATTR href="#FOR"/>
-	<SET-ATTR title="Assigns new values to variables."/>
+	<SET-ATTR href="#SET"/>
+	<SET-ATTR title="Assigns values to variables."/>
+</MACRO>
+<MACRO NAME="m-SET">
+	<div id="SET" class="macro box">
+		<SET name="{l}SET/{r}" desc="Assigns values to variables."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}SET [name='value'] /{r}</code>,
+			where each attribute name and value corresponds to a variable.<br/>
+			The type of the variable is same as the return type of the expression in the attribute value.
+			If the attribute value is within double quotes, it is considered to be a string.<br/>
+			All variables are <b>global</b>.
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li>
+					<code>IF='...'</code>
+					Stop assigning variables <b>after</b> this attribute, if expression evaluates to <code>false</code>.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a href="#expressions">expressions</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-SET">SET</a>
+							<span title="Set variable x to an integer 4">x='4'</span>
+							<span title="Set variable y to a float 6.5">y='6.5'</span>
+							<span title="Set variable s to a string 'apples'">s="apples"</span>/{r}<br/>
+						{l}p{r}I have
+							<span title="Insert result of multiplying variable x with variable y">\{int(x*y)}</span>
+							bushels of <span title="Insert variable s">\{s}</span>{l}/p{r}
+					</td>
+					<td class="code">
+						{l}p{r}I have 26 bushels of apples{l}/p{r}
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-IF">
+	<SET-ATTR href="#IF"/>
+	<SET-ATTR title="Conditionally includes child elements."/>
+</MACRO>
+<MACRO NAME="m-IF">
+	<div id="IF" class="macro box">
+		<SET name="{l}IF{r}...{l}/IF{r}" desc="Conditionally includes child elements."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}IF [cond]{r}</code>,
+			where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
+			or direct variable comparison <code>var='value'</code>.
+			Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
+			<br/>
+			Child elements are included in the final document only if all conditionals <code>[cond]</code> are evaluated to <code>true</code>.
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-ELIF">{l}ELIF{r}</a>,
+			<a CALL="a-ELSE">{l}ELSE{r}</a>,
+			<a CALL="a-SET">{l}SET{r}</a>,
+			<a href="#expressions">expressions</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-IF">IF</a> <span title="Check if expression 6>3 evaluates to true.">TRUE='6>3'</span>{r}<br/>
+							{t}{l}p{r}6 is greater than 3{l}/p{r}<br/>
+						{l}<a CALL="a-IF">/IF</a>{r}<br/>
+					</td>
+					<td class="code">
+						{l}p{r}6 is greater than 3{l}/p{r}<br/>
+					</td>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-SET">SET</a> <span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/{r}<br/>
+						{l}<a CALL="a-IF">IF</a> <span title="Check if variable lang equals string &quot;en&quot;">lang="en"</span>{r}<br/>
+							{t}{l}p{r}English{l}/p{r}<br/>
+						{l}<a CALL="a-IF">/IF</a>{r}<br/>
+					</td>
+					<td class="code">
+						{l}p{r}English{l}/p{r}<br/>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-ELIF">
+	<SET-ATTR href="#ELIF"/>
+	<SET-ATTR title="Includes child elements if previous condition macros fail."/>
+</MACRO>
+<MACRO NAME="m-ELIF">
+	<div id="ELIF" class="macro box">
+		<SET name="{l}ELIF{r}...{l}/ELIF{r}" desc="Includes child elements if previous condition macros fail."/>
+		<CALL NAME="h"/>
+		<p>
+			Must follow a previous <a CALL="a-IF"><code>{l}IF{r}</code></a> macro and be in the form of <code>{l}ELIF [cond]{r}</code>,
+			where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
+			or direct variable comparison <code>var='value'</code>.
+			Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
+			<br/>
+			Child elements are included in the final document only if a previous <a CALL="a-IF"><code>{l}IF{r}</code></a> macro failed and
+			all conditionals <code>[cond]</code> of this macro are evaluated to <code>true</code>.
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-IF">{l}IF{r}</a>,
+			<a CALL="a-ELSE">{l}ELSE{r}</a>,
+			<a CALL="a-SET">{l}SET{r}</a>,
+			<a href="#expressions">expressions</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-SET">SET</a> <span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/{r}<br/>
+						<br/>
+						{l}<a CALL="a-IF">IF</a> <span title="Check if variable lang equals string &quot;de&quot;">lang="de"</span>{r}<br/>
+							{t}{l}p{r}Deutsch{l}/p{r}<br/>
+						{l}<a CALL="a-IF">/IF</a>{r}<br/>
+						{l}<a CALL="a-ELIF">ELIF</a> <span title="Check if variable lang equals string &quot;en&quot;">lang="en"</span>{r}<br/>
+							{t}{l}p{r}English{l}/p{r}<br/>
+						{l}<a CALL="a-ELIF">/ELIF</a>{r}<br/>
+					</td>
+					<td class="code">
+						{l}p{r}English{l}/p{r}<br/>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-ELSE">
+	<SET-ATTR href="#ELSE"/>
+	<SET-ATTR title="Includes child elements if previous condition macros fail.."/>
+</MACRO>
+<MACRO NAME="m-ELSE">
+	<div id="ELSE" class="macro box">
+		<SET name="{l}ELSE{r}...{l}/ELSE{r}" desc="Includes child elements if previous condition macros fail."/>
+		<CALL NAME="h"/>
+		<p>
+			Must follow a previous <a CALL="a-IF"><code>{l}IF{r}</code></a> or <a CALL="a-ELIF"><code>{l}ELIF{r}</code></a> macro.
+			<br/>
+			Child elements are included in the final document only if a previous <a CALL="a-IF"><code>{l}IF{r}</code></a> or <a CALL="a-ELIF"><code>{l}ELIF{r}</code></a> macro failed.
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-IF">{l}IF{r}</a>,
+			<a CALL="a-ELSE">{l}ELIF{r}</a>,
+			<a CALL="a-SET">{l}SET{r}</a>,
+			<a href="#expressions">expressions</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-SET">SET</a> <span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/{r}<br/>
+						<br/>
+						{l}<a CALL="a-IF">IF</a> <span title="Check if variable lang equals string &quot;de&quot;">lang="de"</span>{r}<br/>
+							{t}{l}p{r}Deutsch{l}/p{r}<br/>
+						{l}<a CALL="a-IF">/IF</a>{r}<br/>
+						{l}<a CALL="a-ELSE">ELSE</a>{r}<br/>
+							{t}{l}p{r}English{l}/p{r}<br/>
+						{l}<a CALL="a-ELSE">/ELSE</a>{r}<br/>
+					</td>
+					<td class="code">
+						{l}p{r}English{l}/p{r}<br/>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
 </MACRO>
 <!--  -->
 <!--  -->
@@ -143,9 +408,8 @@
 </MACRO>
 <MACRO NAME="m-FOR">
 	<div id="FOR" class="macro box">
-		<h4 class="code">{l}FOR{r}...{l}/FOR{r}</h4>
-		<p>Evaluates child elements for a set amount of times.</p>
-		<x-line></x-line>
+		<SET name="{l}FOR{r}...{l}/FOR{r}" desc="Evaluates child elements for a set amount of times."/>
+		<CALL NAME="h"/>
 		<p>
 			Must be in the form of <code>{l}FOR [init] [cond] [inc]{r}</code>,
 			where:
@@ -168,13 +432,14 @@
 			<ul>
 				<li>
 					<code>IF='...'</code>
-					Ignore if expression evaluates to <code>false</code>
+					Ignore if expression evaluates to <code>false</code>.
 				</li>
 			</ul>
 		</p>
 		<br/>
 		<p>See also:
-			<a CALL="a-WHILE">{l}WHILE{r}</a>
+			<a CALL="a-WHILE">{l}WHILE{r}</a>,
+			<a href="#expressions">expressions</a>
 		</p>
 		<x-line></x-line>
 		<div class="example">
@@ -190,7 +455,6 @@
 						{t}{l}p{r}\{i}{l}/p{r}<br/>
 						{l}<a CALL="a-FOR">/FOR</a>{r}
 					</td>
-					<INFO>'{t}'</INFO>
 					<td class="code">
 						{l}p{r}{0}{l}/p{r}<br/>
 						{l}p{r}{1}{l}/p{r}<br/>
@@ -211,9 +475,8 @@
 </MACRO>
 <MACRO NAME="m-WHILE">
 	<div id="WHILE" class="macro box">
-		<h4 class="code">{l}WHILE{r}...{l}/WHILE{r}</h4>
-		<p>Repeatedly evaluates child elements.</p>
-		<x-line></x-line>
+		<SET name="{l}WHILE{r}...{l}/WHILE{r}" desc="Repeatedly evaluates child elements."/>
+		<CALL NAME="h"/>
 		<p>
 			Must be in the form of <code>{l}WHILE [cond]{r}</code>,
 			where:
@@ -230,13 +493,14 @@
 			<ul>
 				<li>
 					<code>IF='...'</code>
-					Ignore if expression evaluates to <code>false</code>
+					Ignore if expression evaluates to <code>false</code>.
 				</li>
 			</ul>
 		</p>
 		<br/>
 		<p>See also:
-			<a CALL="a-FOR">{l}FOR{r}</a>
+			<a CALL="a-FOR">{l}FOR{r}</a>,
+			<a href="#expressions">expressions</a>
 		</p>
 		<x-line></x-line>
 		<div class="example">
@@ -254,7 +518,6 @@
 						{t}{l}<a CALL="a-SET">SET</a> i='i+1'/{r}<br/>
 						{l}<a href="#WHILE">/WHILE</a>{r}
 					</td>
-					<INFO>'{t}'</INFO>
 					<td class="code">
 						{l}p{r}{0}{l}/p{r}<br/>
 						{l}p{r}{1}{l}/p{r}<br/>
@@ -263,6 +526,108 @@
 				</tr>
 			</table>
 		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-INFO">
+	<SET-ATTR href="#INFO"/>
+	<SET-ATTR title="Log messages to stderr."/>
+</MACRO>
+<MACRO NAME="m-INFO">
+	<div id="INFO" class="macro box">
+		<SET name="{l}INFO{r}...{l}/INFO{r}" desc="Log messages to stderr."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}INFO{r}[msg]{l}/INFO{r}</code>,
+			where the child element <code>[msg]</code> is text that is printed to stderr.<br/>
+			The text can be interpolated with variables/expressions.
+		</p>
+		<br/>
+		<p>
+			Attributes:
+			<ul>
+				<li>
+					<code>IF='...'</code>
+					Ignore if expression evaluates to <code>false</code>.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-WARN">{l}WARN{r}</a>,
+			<a CALL="a-ERROR">{l}ERROR{r}</a>
+		</p>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-WARN">
+	<SET-ATTR href="#WARN"/>
+	<SET-ATTR title="Log warning messages to stderr."/>
+</MACRO>
+<MACRO NAME="m-WARN">
+	<div id="WARN" class="macro box">
+		<SET name="{l}WARN{r}...{l}/WARN{r}" desc="Log warning messages to stderr."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}WARN{r}[msg]{l}/WARN{r}</code>,
+			where the child element <code>[msg]</code> is text that is printed to stderr.<br/>
+			The text can be interpolated with variables/expressions.
+		</p>
+		<br/>
+		<p>
+			Attributes:
+			<ul>
+				<li>
+					<code>IF='...'</code>
+					Ignore if expression evaluates to <code>false</code>.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-INFO">{l}INFO{r}</a>,
+			<a CALL="a-ERROR">{l}ERROR{r}</a>
+		</p>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-ERROR">
+	<SET-ATTR href="#ERROR"/>
+	<SET-ATTR title="Log error messages to stderr."/>
+</MACRO>
+<MACRO NAME="m-ERROR">
+	<div id="ERROR" class="macro box">
+		<SET name="{l}ERROR{r}...{l}/ERROR{r}" desc="Log error messages to stderr."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}ERROR{r}[msg]{l}/ERROR{r}</code>,
+			where the child element <code>[msg]</code> is text that is printed to stderr.<br/>
+			The text can be interpolated with variables/expressions.
+		</p>
+		<br/>
+		<p>
+			Attributes:
+			<ul>
+				<li>
+					<code>IF='...'</code>
+					Ignore if expression evaluates to <code>false</code>.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-INFO">{l}INFO{r}</a>,
+			<a CALL="a-WARN">{l}WARN{r}</a>
+		</p>
 	</div>
 </MACRO>
 <!--  -->

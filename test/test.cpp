@@ -73,7 +73,7 @@ string slurp(const filepath& path){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-TmpFile::TmpFile(string_view name, const string_view& content){
+TmpFile::TmpFile(string_view name, string_view content){
 	if (dir.empty()){
 		dir = "/tmp/html-macro-test";
 		filesystem::create_directory(dir);
@@ -96,9 +96,8 @@ TmpFile::~TmpFile(){
 
 struct _TmpFile_static_t {
 	~_TmpFile_static_t(){
-		if (!TmpFile::dir.empty()){
+		if (!TmpFile::dir.empty())
 			filesystem::remove_all(TmpFile::dir);
-		}
 	}
 } _TmpFile_static;
 
@@ -187,7 +186,7 @@ int exe(const vector<string>& args, string& out, string& err){
 			}
 			
 		}
-			
+		
 		close(p_stdout[0]);
 		close(p_stderr[0]);
 		
@@ -235,7 +234,7 @@ struct output_exception {
 };
 
 
-bool run(const vector<string>& args, const string& out, const string& err, int status){
+bool run(const vector<string>& args, string_view out, string_view err, int status){
 	string out_buff;
 	string err_buff;
 	
@@ -243,9 +242,9 @@ bool run(const vector<string>& args, const string& out, const string& err, int s
 	if (_status != status)
 		throw shell_exception{_status, status, move(err_buff)};
 	else if (out_buff != out)
-		throw output_exception{out, move(out_buff)};
+		throw output_exception{string(out), move(out_buff)};
 	else if (err_buff != err)
-		throw output_exception{err, move(err_buff)};
+		throw output_exception{string(err), move(err_buff)};
 	
 	return true;
 }

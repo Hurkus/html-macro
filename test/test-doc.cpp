@@ -2,12 +2,134 @@
 using namespace std;
 
 #define NL "\n"
+#define REGISTER2(name)	REGISTER(#name, test_##name)
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-REGISTER("doc_expressions_functions", test_doc_expressions_functions);
+REGISTER2(doc_macro_SET);
+bool test_doc_macro_SET(){
+	TmpFile in = TmpFile(
+		"<SET x='4' y='6.5' s=\"apples\"/>" NL
+		"<p>I have {int(x*y)} bushels of {s}</p> " NL
+	);
+	string_view out = (
+		NL
+		"<p>I have 26 bushels of apples</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_IF);
+bool test_doc_macro_IF(){
+	TmpFile in1 = TmpFile(
+		"<IF TRUE='6>3'>" NL
+		"    <p>6 is greater than 3</p>" NL
+		"</IF>" NL
+	);
+	string_view out1 = ( NL
+		"<p>6 is greater than 3</p>" NL
+	);
+	if (!run({in1}, out1, "", 0)){
+		return false;
+	}
+	
+	TmpFile in2 = TmpFile(
+		"<SET lang=\"en\"/>" NL
+		"<IF lang=\"en\">" NL
+		"    <p>English</p>" NL
+		"</IF>" NL
+	);
+	string_view out2 = ( NL
+		"<p>English</p>" NL
+	);
+	return run({in2}, out2, "", 0);
+}
+
+
+REGISTER2(doc_macro_ELIF);
+bool test_doc_macro_ELIF(){
+	TmpFile in = TmpFile(
+		"<SET lang=\"en\"/>" NL
+		"" NL
+		"<IF lang=\"de\">" NL
+		"    <p>Deutsch</p>" NL
+		"</IF>" NL
+		"<ELIF lang=\"en\">" NL
+		"    <p>English</p>" NL
+		"</ELIF>" NL
+	);
+	string_view out = (
+		NL
+		"<p>English</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_ELSE);
+bool test_doc_macro_ELSE(){
+	TmpFile in = TmpFile(
+		"<SET lang=\"en\"/>" NL
+		"" NL
+		"<IF lang=\"de\">" NL
+		"    <p>Deutsch</p>" NL
+		"</IF>" NL
+		"<ELSE>" NL
+		"    <p>English</p>" NL
+		"</ELSE>" NL
+	);
+	string_view out = (
+		NL
+		"<p>English</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+REGISTER2(doc_macro_FOR);
+bool test_doc_macro_FOR(){
+	TmpFile in = TmpFile(
+		"<FOR i='0' TRUE='i < 3' i='i+1'>" NL
+		"    <p>{i}</p>" NL
+		"</FOR>" NL
+	);
+	string_view out = ( NL
+		"<p>0</p>" NL
+		"<p>1</p>" NL
+		"<p>2</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_WHILE);
+bool test_doc_macro_WHILE(){
+	TmpFile in = TmpFile(
+		"<SET i='0'/>" NL
+		"<WHILE TRUE='i < 3'>" NL
+		"    <p>{i}</p>" NL
+		"    <SET i='i+1'/>" NL
+		"</WHILE>" NL
+	);
+	string_view out = ( NL
+		"<p>0</p>" NL
+		"<p>1</p>" NL
+		"<p>2</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+REGISTER2(doc_expressions_functions);
 bool test_doc_expressions_functions(){
 	TmpFile in = TmpFile(
 		"<p>{int('7.234')}</p>" NL
@@ -26,7 +148,7 @@ bool test_doc_expressions_functions(){
 		"" NL
 		"<p>x is {if(defined(x),x,100)}</p>" NL
 	);
-	string out = (
+	string_view out = (
 		"<p>7</p>" NL
 		"<p>123.5</p>" NL
 		"<p>12 apples</p>" NL
@@ -40,8 +162,7 @@ bool test_doc_expressions_functions(){
 		"<p>12 green apples</p>" NL
 		"<p>x is 100</p>" NL
 	);
-	string err = "";
-	return run({in}, out, err, 0);
+	return run({in}, out, "", 0);
 }
 
 

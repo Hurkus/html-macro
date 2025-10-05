@@ -53,8 +53,8 @@ struct TmpFile {
 	static filepath dir;
 	filepath path;
 	
-	TmpFile(std::string_view name, const std::string_view& content);
-	TmpFile(const std::string_view& content) : TmpFile("file", content) {}
+	TmpFile(std::string_view name, std::string_view content);
+	TmpFile(std::string_view content) : TmpFile("file", content) {}
 	~TmpFile();
 	
 	operator std::string() const {
@@ -72,7 +72,7 @@ std::string slurp(const filepath& path);
 
 int exe(const std::vector<std::string>& args, std::string& out, std::string& err);
 
-bool run(const std::vector<std::string>& args, const std::string& out, const std::string& err, int status = 0);
+bool run(const std::vector<std::string>& args, std::string_view out, std::string_view err, int status = 0);
 
 
 // ------------------------------------------------------------------------------------------ //
