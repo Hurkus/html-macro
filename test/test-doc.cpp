@@ -129,6 +129,89 @@ bool test_doc_macro_WHILE(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+REGISTER2(doc_macro_SET_TAG);
+bool test_doc_macro_SET_TAG(){
+	TmpFile in = TmpFile(
+		"<div>" NL
+		"    <SET-TAG p/>" NL
+		"    text" NL
+		"</div>" NL
+	);
+	string_view out = (
+		"<p>" NL
+		"    text" NL
+		"</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_GET_TAG);
+bool test_doc_macro_GET_TAG(){
+	TmpFile in = TmpFile(
+		"<div>" NL
+		"    <GET-TAG tag/>" NL
+		"    This text is within a {tag} element." NL
+		"</div>" NL
+	);
+	string_view out = (
+		"<div>" NL
+		"    This text is within a div element." NL
+		"</div>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_SET_ATTR);
+bool test_doc_macro_SET_ATTR(){
+	TmpFile in = TmpFile(
+		"<div>" NL
+		"    <SET-ATTR title=\"text\"/>" NL
+		"    text" NL
+		"</div>" NL
+	);
+	string_view out = (
+		"<div title=\"text\">" NL
+		"    text" NL
+		"</div>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_GET_ATTR);
+bool test_doc_macro_GET_ATTR(){
+	TmpFile in = TmpFile(
+		"<div id=\"box\">" NL
+		"    <GET-ATTR x=\"id\"/>" NL
+		"    <SET-ATTR class='x'/>" NL
+		"</div>" NL
+	);
+	string_view out = (
+		"<div id=\"box\" class=\"box\"></div>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_DEL_ATTR);
+bool test_doc_macro_DEL_ATTR(){
+	TmpFile in = TmpFile(
+		"<div id=\"box\">" NL
+		"    <DEL-ATTR id/>" NL
+		"</div>" NL
+	);
+	string_view out = (
+		"<div></div>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 REGISTER2(doc_expressions_functions);
 bool test_doc_expressions_functions(){
 	TmpFile in = TmpFile(

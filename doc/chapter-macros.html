@@ -1,3 +1,6 @@
+<SET ci='ci + 1' cii='0'/>
+<SET l="&lt;" r="&gt;" s="&nbsp;" t='s*4'></SET>
+<!--  -->
 <style>
 	#macros .macro {
 		padding: 12px;
@@ -29,10 +32,7 @@
 	}
 	
 </style>
-
-<SET ci='ci + 1' cii='0'/>
-<SET l="&lt;" r="&gt;" s="&nbsp;" t='s*4'></SET>
-
+<!--  -->
 <div id="macros">
 	<h2>{ci}. Macros</h2>
 	<p>
@@ -155,6 +155,22 @@
 		<br/><br/>
 		<CALL NAME="m-WHILE"/>
 		<br/><br/>
+		<CALL NAME="m-CALL"/>
+		<br/><br/>
+		<CALL NAME="m-INCLUDE"/>
+		<br/><br/>
+		<CALL NAME="m-SHELL"/>
+		<br/><br/>
+		<CALL NAME="m-SET-TAG"/>
+		<br/><br/>
+		<CALL NAME="m-GET-TAG"/>
+		<br/><br/>
+		<CALL NAME="m-SET-ATTR"/>
+		<br/><br/>
+		<CALL NAME="m-GET-ATTR"/>
+		<br/><br/>
+		<CALL NAME="m-DEL-ATTR"/>
+		<br/><br/>
 		<CALL NAME="m-INFO"/>
 		<br/><br/>
 		<CALL NAME="m-WARN"/>
@@ -196,10 +212,9 @@
 		<p>
 			Other attributes:
 			<ul>
-				<li>
-					<code>IF='...'</code>
-					Stop assigning variables <b>after</b> this attribute, if expression evaluates to <code>false</code>.
-				</li>
+				<li CALL="common-IF-after"></li>
+				<li CALL="common-ELIF-after"></li>
+				<li CALL="common-ELSE-after"></li>
 			</ul>
 		</p>
 		<br/>
@@ -430,10 +445,9 @@
 		<p>
 			Other attributes:
 			<ul>
-				<li>
-					<code>IF='...'</code>
-					Ignore if expression evaluates to <code>false</code>.
-				</li>
+				<li CALL="common-IF"></li>
+				<li CALL="common-ELIF"></li>
+				<li CALL="common-ELSE"></li>
 			</ul>
 		</p>
 		<br/>
@@ -491,10 +505,9 @@
 		<p>
 			Other attributes:
 			<ul>
-				<li>
-					<code>IF='...'</code>
-					Ignore if expression evaluates to <code>false</code>.
-				</li>
+				<li CALL="common-IF"></li>
+				<li CALL="common-ELIF"></li>
+				<li CALL="common-ELSE"></li>
 			</ul>
 		</p>
 		<br/>
@@ -532,6 +545,311 @@
 <!--  -->
 <!--  -->
 <!--  -->
+<MACRO NAME="a-SET-TAG">
+	<SET-ATTR href="#SET-TAG"/>
+	<SET-ATTR title="Sets tag of parent element."/>
+</MACRO>
+<MACRO NAME="m-SET-TAG">
+	<div id="SET-TAG" class="macro box">
+		<SET name="{l}SET-TAG/{r}" desc="Sets tag of parent element."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}SET-TAG NAME='...' /{r}</code> or <code>{l}SET-TAG [name] /{r}</code>.
+		</p>
+		<br/>
+		<p>
+			Attributes:
+			<ul>
+				<li>
+					<code>NAME='...'</code>
+					Set tag of parent element to result of the attribute value expression.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li CALL="common-IF-after"></li>
+				<li CALL="common-ELIF-after"></li>
+				<li CALL="common-ELSE-after"></li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}div{r}<br/>
+						{t}{l}<a CALL="a-SET-TAG">SET-TAG</a> <span title="New name for parent elemnt div">p</span>/{r}<br/>
+						{t}text<br/>
+						{l}/div{r}
+					</td>
+					<td class="code">
+						{l}p{r}<br/>
+						{t}text<br/>
+						{l}/p{r}
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-GET-TAG">
+	<SET-ATTR href="#GET-TAG"/>
+	<SET-ATTR title="Set variable to parent tag name."/>
+</MACRO>
+<MACRO NAME="m-GET-TAG">
+	<div id="GET-TAG" class="macro box">
+		<SET name="{l}GET-TAG/{r}" desc="Set variable to parent tag name."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}GET-TAG [variable] /{r}</code>,
+			where <code>[variable]</code> is the name of the variable that will store the parent element tag name.
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li CALL="common-IF-after"></li>
+				<li CALL="common-ELIF-after"></li>
+				<li CALL="common-ELSE-after"></li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-SET-TAG">{l}SET-TAG{r}</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}div{r}<br/>
+						{t}{l}<a CALL="a-GET-TAG">GET-TAG</a> <span title="Variable name">tag</span>/{r}<br/>
+						{t}This text is within a \{tag} element.<br/>
+						{l}/div{r}
+					</td>
+					<td class="code">
+						{l}div{r}<br/>
+						{t}This text is within a div element.<br/>
+						{l}/div{r}
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-SET-ATTR">
+	<SET-ATTR href="#SET-ATTR"/>
+	<SET-ATTR title="Set attribute value of parent element."/>
+</MACRO>
+<MACRO NAME="m-SET-ATTR">
+	<div id="SET-ATTR" class="macro box">
+		<SET name="{l}SET-ATTR/{r}" desc="Set attribute value of parent element."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}SET-ATTR [name]=[value] /{r}</code>,
+			where:
+			<ul>
+				<li>
+					<code>[name]</code> represents the name of the attribute that will be added or overwritten on the parent element.
+				</li>
+				<li>
+					<code>[value]</code> represents the value or evaluatable expression of the new attribute.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li CALL="common-IF-after"></li>
+				<li CALL="common-ELIF-after"></li>
+				<li CALL="common-ELSE-after"></li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a>,
+			<a CALL="a-DEL-ATTR">{l}DEL-ATTR{r}</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}div{r}<br/>
+						{t}{l}<a CALL="a-SET-ATTR">SET-ATTR</a> <span title="Add attribute title to parent element div.">title="text"</span>/{r}<br/>
+						{t}text<br/>
+						{l}/div{r}
+					</td>
+					<td class="code">
+						{l}div title="text"{r}<br/>
+						{t}text<br/>
+						{l}/div{r}
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-GET-ATTR">
+	<SET-ATTR href="#GET-ATTR"/>
+	<SET-ATTR title="Set variable to value of a parent's attribute."/>
+</MACRO>
+<MACRO NAME="m-GET-ATTR">
+	<div id="GET-ATTR" class="macro box">
+		<SET name="{l}GET-ATTR/{r}" desc="Set variable to value of a parent's attribute."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}GET-ATTR [variable]=[attribute] /{r}</code> where:
+			<ul>
+				<li>
+					<code>[variable]</code> represents the name of the variable which will hold the value of the attribute.
+				</li>
+				<li>
+					<code>[attribute]</code> represents the name of the parent element's attribute from which to retrieve the value.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			The type of the variable <code>[variable]</code> is <i>string</i>, as attribute values are strings.
+			If the attribute is not found however, the variable is set to an integer <code>0</code>.
+			<br/>
+			If there are multiple attributes with the same name, the value of the first one is used.
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li CALL="common-IF-after"></li>
+				<li CALL="common-ELIF-after"></li>
+				<li CALL="common-ELSE-after"></li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a>,
+			<a CALL="a-DEL-ATTR">{l}DEL-ATTR{r}</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}div id="box"{r}<br/>
+						{t}{l}<a CALL="a-GET-ATTR">GET-ATTR</a> <span title="Store value of attribute &apos;id&apos; into variable x">x="id"</span>/{r}<br/>
+						{t}{l}<a CALL="a-SET-ATTR">SET-ATTR</a> <span title="Set attribute &apos;class&apos; to variable x">class='x'</span>/{r}<br/>
+						{l}/div{r}
+					</td>
+					<td class="code">
+						{l}div id="box" class="box"{r}<br/>
+						{l}/div{r}
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-DEL-ATTR">
+	<SET-ATTR href="#DEL-ATTR"/>
+	<SET-ATTR title="Remove attribute from parent element."/>
+</MACRO>
+<MACRO NAME="m-DEL-ATTR">
+	<div id="DEL-ATTR" class="macro box">
+		<SET name="{l}DEL-ATTR/{r}" desc="Remove attribute from parent element."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}DEL-ATTR [name] /{r}</code> where:
+			<ul>
+				<li>
+					<code>[name]</code> represents the name of the attribute that will be removed from the parent element.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li CALL="common-IF-after"></li>
+				<li CALL="common-ELIF-after"></li>
+				<li CALL="common-ELSE-after"></li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a>,
+			<a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}div id="box"{r}<br/>
+						{t}{l}<a CALL="a-DEL-ATTR">DEL-ATTR</a> <span title="Delete attribute &apos;id&apos;">id</span>/{r}<br/>
+						{l}/div{r}
+					</td>
+					<td class="code">
+						{l}div{r}<br/>
+						{l}/div{r}
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
 <MACRO NAME="a-INFO">
 	<SET-ATTR href="#INFO"/>
 	<SET-ATTR title="Log messages to stderr."/>
@@ -549,10 +867,9 @@
 		<p>
 			Attributes:
 			<ul>
-				<li>
-					<code>IF='...'</code>
-					Ignore if expression evaluates to <code>false</code>.
-				</li>
+				<li CALL="common-IF"></li>
+				<li CALL="common-ELIF"></li>
+				<li CALL="common-ELSE"></li>
 			</ul>
 		</p>
 		<br/>
@@ -583,10 +900,9 @@
 		<p>
 			Attributes:
 			<ul>
-				<li>
-					<code>IF='...'</code>
-					Ignore if expression evaluates to <code>false</code>.
-				</li>
+				<li CALL="common-IF"></li>
+				<li CALL="common-ELIF"></li>
+				<li CALL="common-ELSE"></li>
 			</ul>
 		</p>
 		<br/>
@@ -617,10 +933,9 @@
 		<p>
 			Attributes:
 			<ul>
-				<li>
-					<code>IF='...'</code>
-					Ignore if expression evaluates to <code>false</code>.
-				</li>
+				<li CALL="common-IF"></li>
+				<li CALL="common-ELIF"></li>
+				<li CALL="common-ELSE"></li>
 			</ul>
 		</p>
 		<br/>
@@ -634,3 +949,29 @@
 <!--  -->
 <!--  -->
 <!--  -->
+<MACRO NAME="common-IF">
+	<code>IF='[expr]'</code>
+	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
+</MACRO>
+<MACRO NAME="common-IF-after">
+	<code>IF='[expr]'</code>
+	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
+</MACRO>
+<MACRO NAME="common-ELIF">
+	<code>ELIF='[expr]'</code>
+	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
+	or a conditional on a previous element passed.
+</MACRO>
+<MACRO NAME="common-ELIF-after">
+	<code>ELIF='[expr]'</code>
+	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
+	or a conditional on a previous element passed.
+</MACRO>
+<MACRO NAME="common-ELSE">
+	<code>ELSE</code>
+	Ignore if a conditional on a previous element evaluated passed.
+</MACRO>
+<MACRO NAME="common-ELSE-after">
+	<code>ELSE</code>
+	Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
+</MACRO>

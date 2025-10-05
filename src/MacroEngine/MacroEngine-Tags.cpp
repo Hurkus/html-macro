@@ -100,6 +100,7 @@ void MacroEngine::tag(const Node& op, Node& dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+// <SET-ATTR [IF=''] [name]=[value] />
 void MacroEngine::setAttr(const Node& op, Node& dst){
 	string newValue_buff;
 	string_view newValue;
@@ -176,10 +177,13 @@ void MacroEngine::getAttr(const Node& op, Node& dst){
 		for (const Attr* a = dst.attribute ; a != nullptr ; a = a->next){
 			if (a->name() == attrName){
 				MacroEngine::variables.insert(varName, a->value());
-				break;
+				goto next;
 			}
 		}
 		
+		// Not found
+		MacroEngine::variables.insert(varName, 0L);
+		next:
 	}
 	
 }
