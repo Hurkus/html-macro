@@ -54,7 +54,7 @@ struct TmpFile {
 	filepath path;
 	
 	TmpFile(std::string_view name, std::string_view content);
-	TmpFile(std::string_view content) : TmpFile("file", content) {}
+	TmpFile(std::string_view content) : TmpFile("file.html", content) {}
 	~TmpFile();
 	
 	operator std::string() const {

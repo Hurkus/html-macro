@@ -79,7 +79,7 @@ TmpFile::TmpFile(string_view name, string_view content){
 		filesystem::create_directory(dir);
 	}
 	
-	path = dir / (string(name) + ".html");
+	path = dir / name;
 	ofstream out = ofstream(path);
 	out.write(content.data(), content.length());
 	out.close();
@@ -241,10 +241,10 @@ bool run(const vector<string>& args, string_view out, string_view err, int statu
 	int _status = exe(args, out_buff, err_buff);
 	if (_status != status)
 		throw shell_exception{_status, status, move(err_buff)};
-	else if (out_buff != out)
-		throw output_exception{string(out), move(out_buff)};
 	else if (err_buff != err)
 		throw output_exception{string(err), move(err_buff)};
+	else if (out_buff != out)
+		throw output_exception{string(out), move(out_buff)};
 	
 	return true;
 }

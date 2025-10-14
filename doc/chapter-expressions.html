@@ -215,7 +215,7 @@
 				<th>Return type</th>
 				<th>Description</th>
 			</tr>
-			<tr class="br">
+			<tr id="function-int" class="br">
 				<td><code>int(x)</code></td>
 				<td>int</td>
 				<td>
@@ -223,7 +223,7 @@
 					If <code>x</code> is a <i>string</i> and cannot be parsed as an <i>integer</i>, returns <code>0</code>.
 				</td>
 			</tr>
-			<tr>
+			<tr id="function-float">
 				<td><code>float(x)</code></td>
 				<td>float</td>
 				<td>
@@ -231,14 +231,14 @@
 					If <code>x</code> is a <i>string</i> and cannot be parsed as a <i>float</i>, returns <code>0.0</code>.
 				</td>
 			</tr>
-			<tr>
+			<tr id="function-str">
 				<td><code>str(x)</code></td>
 				<td>string</td>
 				<td>
 					Converts <code>x</code> into a <i>string</i>.
 				</td>
 			</tr>
-			<tr class="br">
+			<tr id="function-len" class="br">
 				<td><code>len(x)</code></td>
 				<td>int</td>
 				<td>
@@ -246,7 +246,7 @@
 					If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
 				</td>
 			</tr>
-			<tr>
+			<tr id="function-abs">
 				<td><code>abs(x)</code></td>
 				<td>int</td>
 				<td>
@@ -254,27 +254,27 @@
 					If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
 				</td>
 			</tr>
-			<tr>
+			<tr id="function-min">
 				<td><code>min(x, y, ...)</code></td>
 				<td>int,<br/>float,<br/>string</td>
 				<td>Returns smallest <i>number</i> or shortest <i>string</i>.</td>
 			</tr>
-			<tr>
+			<tr id="function-max">
 				<td><code>max(x, y, ...)</code></td>
 				<td>int,<br/>float,<br/>string</td>
 				<td>Returns largest <i>number</i> or longest <i>string</i>.</td>
 			</tr>
-			<tr class="br">
+			<tr id="function-lower" class="br">
 				<td><code>lower(s)</code></td>
 				<td>string</td>
 				<td>Converts <i>string</i> <code>s</code> to lower case.</td>
 			</tr>
-			<tr>
+			<tr id="function-upper">
 				<td><code>upper(s)</code></td>
 				<td>string</td>
 				<td>Converts <i>string</i> <code>s</code> to upper case.</td>
 			</tr>
-			<tr>
+			<tr id="function-substr">
 				<td><code>substr(s, i, len)</code></td>
 				<td>string</td>
 				<td>
@@ -285,14 +285,14 @@
 					Beginning and end points of the substring are properly calculated and clamped between <code>0</code> and <code>len(s)</code>.
 				</td>
 			</tr>
-			<tr>
+			<tr id="function-match">
 				<td><code>match(s, regex)</code></td>
 				<td>bool</td>
 				<td>
 					Returns <code>true</code> if <i>string</i> <code>s</code> matches the <a href="https://en.wikipedia.org/wiki/Regular_expression" title="Wikipedia - Regular expression" target="_blank" class="td-0">regular expression</a> <code>regex</code>.
 				</td>
 			</tr>
-			<tr>
+			<tr id="function-replace">
 				<td><code>replace(s, regex, rep)</code></td>
 				<td>string</td>
 				<td>
@@ -303,7 +303,7 @@
 					The whole match is represented by capture group <code>$0</code>.
 				</td>
 			</tr>
-			<tr class="br">
+			<tr id="function-if" class="br">
 				<td><code>if(cond,pass,else)</code></td>
 				<td>int,<br/>float,<br/>string</td>
 				<td>
@@ -311,7 +311,7 @@
 					otherwise evaluates and returns <code>else</code>.
 				</td>
 			</tr>
-			<tr>
+			<tr id="function-defined">
 				<td><code>defined(var)</code></td>
 				<td>bool</td>
 				<td>

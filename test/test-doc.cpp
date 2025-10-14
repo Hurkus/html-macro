@@ -8,6 +8,84 @@ using namespace std;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+REGISTER2(doc_macro_MACRO);
+bool test_doc_macro_MACRO(){
+	TmpFile in = TmpFile(
+		"<ul>" NL
+		"	<FOR i='0' TRUE='i<3' i='i+1' >" NL
+		"		<CALL NAME=\"func\"/>" NL
+		"	</FOR>" NL
+		"</ul>" NL
+		NL
+		"<MACRO NAME=\"func\">" NL
+		"<SET col='if(i == 1, \"red\", \"green\")' />" NL
+		"<li style=\"color:{col};\">Line #{i}</li>" NL
+		"</MACRO>" NL
+	);
+	string_view out = (
+		"<ul>" NL
+		"	<li style=\"color:green;\">Line #0</li>" NL
+		"	<li style=\"color:red;\">Line #1</li>" NL
+		"	<li style=\"color:green;\">Line #2</li>" NL
+		"</ul>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_INCLUDE);
+bool test_doc_macro_INCLUDE(){
+	TmpFile in = TmpFile(
+		"<SET name=\"cookbook\"/>" NL
+		"<body>" NL
+		"	<INCLUDE SRC=\"header.html\"/>" NL
+		"	<p>Amazing content!</p>" NL
+		"	<INCLUDE SRC=\"footer.html\"/>" NL
+		"</body>" NL
+	);
+	
+	TmpFile header = TmpFile("header.html",
+		"<style>" NL
+		"	#header {" NL
+		"		color: red;" NL
+		"	}" NL
+		"</style>" NL
+		"<div id=\"header\">" NL
+		"	<h1>Yet another {name}</h1>" NL
+		"</div>" NL
+	);
+	
+	TmpFile footer = TmpFile("footer.html",
+		"<div id=\"footer\">" NL
+		"	<p>Contacts: none</p>" NL
+		"	<p>Last edited on: 14/10/2025</p>" NL
+		"</div>" NL
+	);
+	
+	string_view out = (
+		NL
+		"<body><style>" NL
+		"	#header {" NL
+		"		color: red;" NL
+		"	}" NL
+		"</style>" NL
+		"	<div id=\"header\">" NL
+		"		<h1>Yet another cookbook</h1>" NL
+		"	</div>" NL
+		"	<p>Amazing content!</p>" NL
+		"	<div id=\"footer\">" NL
+		"		<p>Contacts: none</p>" NL
+		"		<p>Last edited on: 14/10/2025</p>" NL
+		"	</div>" NL
+		"</body>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 REGISTER2(doc_macro_SET);
 bool test_doc_macro_SET(){
 	TmpFile in = TmpFile(
@@ -26,7 +104,7 @@ REGISTER2(doc_macro_IF);
 bool test_doc_macro_IF(){
 	TmpFile in1 = TmpFile(
 		"<IF TRUE='6>3'>" NL
-		"    <p>6 is greater than 3</p>" NL
+		"	<p>6 is greater than 3</p>" NL
 		"</IF>" NL
 	);
 	string_view out1 = ( NL
@@ -39,7 +117,7 @@ bool test_doc_macro_IF(){
 	TmpFile in2 = TmpFile(
 		"<SET lang=\"en\"/>" NL
 		"<IF lang=\"en\">" NL
-		"    <p>English</p>" NL
+		"	<p>English</p>" NL
 		"</IF>" NL
 	);
 	string_view out2 = ( NL
@@ -55,10 +133,10 @@ bool test_doc_macro_ELIF(){
 		"<SET lang=\"en\"/>" NL
 		"" NL
 		"<IF lang=\"de\">" NL
-		"    <p>Deutsch</p>" NL
+		"	<p>Deutsch</p>" NL
 		"</IF>" NL
 		"<ELIF lang=\"en\">" NL
-		"    <p>English</p>" NL
+		"	<p>English</p>" NL
 		"</ELIF>" NL
 	);
 	string_view out = (
@@ -75,10 +153,10 @@ bool test_doc_macro_ELSE(){
 		"<SET lang=\"en\"/>" NL
 		"" NL
 		"<IF lang=\"de\">" NL
-		"    <p>Deutsch</p>" NL
+		"	<p>Deutsch</p>" NL
 		"</IF>" NL
 		"<ELSE>" NL
-		"    <p>English</p>" NL
+		"	<p>English</p>" NL
 		"</ELSE>" NL
 	);
 	string_view out = (
@@ -96,7 +174,7 @@ REGISTER2(doc_macro_FOR);
 bool test_doc_macro_FOR(){
 	TmpFile in = TmpFile(
 		"<FOR i='0' TRUE='i < 3' i='i+1'>" NL
-		"    <p>{i}</p>" NL
+		"	<p>{i}</p>" NL
 		"</FOR>" NL
 	);
 	string_view out = ( NL
@@ -113,8 +191,8 @@ bool test_doc_macro_WHILE(){
 	TmpFile in = TmpFile(
 		"<SET i='0'/>" NL
 		"<WHILE TRUE='i < 3'>" NL
-		"    <p>{i}</p>" NL
-		"    <SET i='i+1'/>" NL
+		"	<p>{i}</p>" NL
+		"	<SET i='i+1'/>" NL
 		"</WHILE>" NL
 	);
 	string_view out = ( NL

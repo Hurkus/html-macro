@@ -123,25 +123,32 @@
 			}
 		</style>
 		<ul class="list">
+			<li><a CALL="a-MACRO">{l}MACRO{r}</a> &mdash; Defines a new macro.</li>
+			<li><a CALL="a-CALL">{l}CALL{r}</a>  &mdash; Invokes a <a CALL="a-MACRO">{l}MACRO{r}</a>.</li>
+			<li><a CALL="a-INCLUDE">{l}INCLUDE{r}</a></li>
 			<li><a CALL="a-SET">{l}SET{r}</a> &mdash; Assigns values to variables.</li>
 			<li><a CALL="a-IF">{l}IF{r}</a> &mdash; Conditionally includes child elements.</li>
-			<li><a CALL="a-ELIF">{l}ELIF{r}</a></li>
-			<li><a CALL="a-ELSE">{l}ELSE{r}</a></li>
+			<li><a CALL="a-ELIF">{l}ELIF{r}</a> &mdash; Extends <a CALL="a-IF">{l}IF{r}</a>.</li>
+			<li><a CALL="a-ELSE">{l}ELSE{r}</a> &mdash; Extends <a CALL="a-IF">{l}IF{r}</a>.</li>
 			<li><a CALL="a-FOR">{l}FOR{r}</a> &mdash; Include child elements in a loop.</li>
 			<li><a CALL="a-WHILE">{l}WHILE{r}</a> &mdash; Include child elements in a loop.</li>
-			<li><a CALL="a-CALL">{l}CALL{r}</a></li>
-			<li><a CALL="a-INCLUDE">{l}INCLUDE{r}</a></li>
-			<li><a CALL="a-SHELL">{l}SHELL{r}</a></li>
 			<li><a CALL="a-SET-TAG">{l}SET-TAG{r}</a></li>
 			<li><a CALL="a-GET-TAG">{l}GET-TAG{r}</a></li>
 			<li><a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a></li>
 			<li><a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a></li>
 			<li><a CALL="a-DEL-ATTR">{l}DEL-ATTR{r}</a></li>
+			<li><a CALL="a-SHELL">{l}SHELL{r}</a></li>
 			<li><a CALL="a-INFO">{l}INFO{r}</a> &mdash; Log messages to stderr.</li>
 			<li><a CALL="a-WARN">{l}WARN{r}</a> &mdash; Log warning messages to stderr.</li>
 			<li><a CALL="a-ERROR">{l}ERROR{r}</a> &mdash; Log error messages to stderr.</li>
 		</ul>
 		
+		<br/><br/>
+		<CALL NAME="m-MACRO"/>
+		<br/><br/>
+		<CALL NAME="m-CALL"/>
+		<br/><br/>
+		<CALL NAME="m-INCLUDE"/>
 		<br/><br/>
 		<CALL NAME="m-SET"/>
 		<br/><br/>
@@ -155,12 +162,6 @@
 		<br/><br/>
 		<CALL NAME="m-WHILE"/>
 		<br/><br/>
-		<CALL NAME="m-CALL"/>
-		<br/><br/>
-		<CALL NAME="m-INCLUDE"/>
-		<br/><br/>
-		<CALL NAME="m-SHELL"/>
-		<br/><br/>
 		<CALL NAME="m-SET-TAG"/>
 		<br/><br/>
 		<CALL NAME="m-GET-TAG"/>
@@ -170,6 +171,8 @@
 		<CALL NAME="m-GET-ATTR"/>
 		<br/><br/>
 		<CALL NAME="m-DEL-ATTR"/>
+		<br/><br/>
+		<CALL NAME="m-SHELL"/>
 		<br/><br/>
 		<CALL NAME="m-INFO"/>
 		<br/><br/>
@@ -188,6 +191,289 @@
 	<h4 class="code">{name}</h4>
 	<p>{desc}</p>
 	<x-line></x-line>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-MACRO">
+	<SET-ATTR href="#MACRO"/>
+	<SET-ATTR title="Defines a new macro."/>
+</MACRO>
+<MACRO NAME="m-MACRO">
+	<div id="MACRO" class="macro box">
+		<SET name="{l}MACRO{r}...{l}/MACRO{r}" desc="Defines a new macro."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}MACR NAME="[name]"{r}</code>, where:
+			<ul>
+				<li>
+					<code>[name]</code> represents the name of the new macro, which will be used to invoke it.
+					Only the latest macro with the same name is cached.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			Macro elements serve as <em>templates</em> for instantiating a large number of simmilar HTML element trees.
+			All <a CALL="a-MACRO">{l}MACRO{r}</a> elements are referenced globally, i.e. cached and removed from the source document right after the document is parsed and before any instantiation occurs.
+			This means their position in the document doesn't matter.
+		</p>
+		<br/>
+		<p>
+			All files have an anonymous <a CALL="a-MACRO">{l}MACRO{r}</a> root element.
+		</p>
+		<br/>
+		<p>
+			When instantiated, all child elements are (recursively) coppied and evaluated:
+			<ul>
+				<li>Macro elements are evaluated.</li>
+				<li>Regular HTML elements are coppied.</li>
+				<li>Attributes are coppied and evaluated for any expressions or attribute macros.</li>
+				<li>Text elements are interpolated for expressions.</li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-CALL">{l}CALL{r}</a>,
+			<a CALL="a-INCLUDE">{l}INCLUDE{r}</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-MACRO">MACRO</a> <span title="Macro is named &apos;func&apos;">NAME="func"</span>{r}<br/>
+							{t}{l}<a CALL="a-SET">SET</a>
+								<span title="Set variable named &apos;col&apos; using a condition function in the expression.">col='<a href="#function-if">if(i == 1, "red", "green")</a>'</span>
+							/{r}<br/>
+							{t}{l}li <span title="Insert previously computed variable into the style attribute.">style="color:\{col};"</span>{r}Line #<span title="Insert variable i">\{i}</span>{l}/li{r}<br/>
+						{l}<a CALL="a-MACRO">/MACRO</a>{r}<br/>
+						<br/>
+						{l}ul{r}<br/>
+							{t}{l}<a CALL="a-FOR">FOR</a>
+								<span title="Initialize variable i to 0">i='0'</span>
+								<span title="Repeat while variable i is less than 3">TRUE='i{l}3'</span>
+								<span title="Increment variable i by 1 after each iteration">i='i+1'</span>
+							{r}<br/>
+								{t*2}{l}<a CALL="a-CALL">CALL</a> <span title="Invoke macro named &apos;func&apos; defined above">NAME="func"</span>/{r}<br/>
+							{t}{l}<a CALL="a-FOR">/FOR</a>{r}<br/>
+						{l}/ul{r}
+					</td>
+					<td class="code">
+						{l}ul{r}<br/>
+							{t}{l}li style="color:green;"{r}Line #0{l}/li{r}<br/>
+							{t}{l}li style="color:red;"{r}Line #1{l}/li{r}<br/>
+							{t}{l}li style="color:green;"{r}Line #2{l}/li{r}<br/>
+						{l}/ul{r}
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-CALL">
+	<SET-ATTR href="#CALL"/>
+	<SET-ATTR title="Invokes a user-defined macro."/>
+</MACRO>
+<MACRO NAME="m-CALL">
+	<div id="CALL" class="macro box">
+		<SET name="{l}CALL/{r}" desc="Invokes a user-defined macro"/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}CALL NAME="[name]"{r}</code>, where:
+			<ul>
+				<li>
+					<code>[name]</code> represents the name of a <a CALL="a-MACRO">{l}MACRO{r}</a>.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li CALL="common-IF"></li>
+				<li CALL="common-ELIF"></li>
+				<li CALL="common-ELSE"></li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-MACRO">{l}MACRO{r}</a>,
+			<a CALL="a-INCLUDE">{l}INCLUDE{r}</a>
+		</p>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="a-INCLUDE">
+	<SET-ATTR href="#INCLUDE"/>
+	<SET-ATTR title="Includes contents of another file."/>
+</MACRO>
+<MACRO NAME="a-INCLUDE-HTML">
+	<SET-ATTR href="#INCLUDE-HTML"/>
+	<SET-ATTR title="Includes an HTML (.html) file as a macro."/>
+</MACRO>
+<MACRO NAME="a-INCLUDE-CSS">
+	<SET-ATTR href="#INCLUDE-CSS"/>
+	<SET-ATTR title="Includes a CSS (.css) file."/>
+</MACRO>
+<MACRO NAME="a-INCLUDE-JS">
+	<SET-ATTR href="#INCLUDE-JS"/>
+	<SET-ATTR title="Includes a JavaScript (.js) file."/>
+</MACRO>
+<MACRO NAME="a-INCLUDE-TXT">
+	<SET-ATTR href="#INCLUDE-TXT"/>
+	<SET-ATTR title="Includes file as plain text."/>
+</MACRO>
+<MACRO NAME="m-INCLUDE">
+	<div id="INCLUDE" class="macro box">
+		<SET name="{l}INCLUDE/{r}" desc="Includes contents of another file."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}INCLUDE SRC="[path]"/{r}</code>, where:
+			<ul>
+				<li>
+					<code>[path]</code> represents the path of the new file relative to the current file.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<style>
+			#INCLUDE.macro ul.file-types li {
+				padding-top: 7px;
+			}
+		</style>
+		<p>
+			Parsing of the included file depends on the file type, which is determined from the file extension.
+			If the file type is ambiguous, it can be forced with a specialised <code>{l}INCLUDE-[type]{r}</code> macros:
+			<ul class="file-types">
+				<li id="INCLUDE-HTML">
+					<code>{l}INCLUDE-HTML/{r}</code> for <em>.html</em> files.<br/>
+					The file is parsed as an HTML macro, i.e. the root element is invoked as a macro after parsing.<br/>
+					All <a CALL="a-MACRO">{l}MACRO{r}</a> elements are added to the global list of defined macros (overwriting existing ones).
+				</li>
+				<li id="INCLUDE-CSS">
+					<code>{l}INCLUDE-CSS/{r}</code> for style <em>.css</em> files.<br/>
+					The file is processed for any CSS expressions.<br/>
+					<span style="color:hsl(0, 100%, 30%);">The attribute version of this macro is more usefull, as it allowes wrapping the content in <code>{l}style{r}{l}/style{r}</code> tags.</span><br/>
+					May be subjected to optimizations in future versions.
+				</li>
+				<li id="INCLUDE-JS">
+					<code>{l}INCLUDE-JS/{r}</code> for JavaScript <em>.js</em> files.<br/>
+					Mainly untouched; handled as plain text.<br/>
+					<span style="color:hsl(0, 100%, 30%);">The attribute version of this macro is more usefull, as it allowes wrapping the content in <code>{l}script{r}{l}/script{r}</code> tags.</span><br/>
+					May be subjected to optimizations in future versions.
+				</li>
+				<li id="INCLUDE-TXT">
+					<code>{l}INCLUDE-TXT/{r}</code> for plain text files.<br/>
+					Untouched and coppied to the final document.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			Every included file is cached which means that parsing is done only once per file.<br/>
+			The same file can be included multiple times which means that the user must prevent infinitely recursive includes.
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-CALL">{l}CALL{r}</a>
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li CALL="common-IF-after"></li>
+				<li CALL="common-ELIF-after"></li>
+				<li CALL="common-ELSE-after"></li>
+			</ul>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>header.html</th>
+				</tr>
+				<tr>
+					<td class="code" style="color: hsl(0, 60%, 40%);">
+						{l}style{r}<br/>
+						{t}#header {<br/>
+							{t*2}color: red;<br/>
+						{t}}<br/>
+						{l}/style{r}<br/>
+						{l}div id="header"{r}<br/>
+						{t}{l}h1{r}Yet another <span title="Insert content of variable name">\{name}</span>{l}/h1{r}<br/>
+						{l}/div{r}
+					</td>
+				</tr>
+				<tr>
+					<th>footer.html</th>
+				</tr>
+				<tr>
+					<td class="code" style="color: hsl(100, 50%, 20%);">
+						{l}div id="footer"{r}<br/>
+							{t}{l}p{r}Contacts: none{l}/p{r}<br/>
+							{t}{l}p{r}Last edited on: 14/10/2025{l}/p{r}<br/>
+						{l}/div{r}
+					</td>
+				</tr>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-SET">SET</a> <span title="Set variable name to 'cookbook'">name="cookbook"</span>/{r}<br/>
+						{l}body{r}<br/>
+						{t}{l}<a CALL="a-INCLUDE">INCLUDE</a> <span title="Path to the file is relative to the current file.">SRC="header.html"</span>/{r}<br/>
+						{t}{l}p{r}Amazing content!{l}/p{r}<br/>
+						{t}{l}<a CALL="a-INCLUDE">INCLUDE</a> <span title="Path to the file is relative to the current file.">SRC="footer.html"</span>/{r}<br/>
+						{l}/body{r}
+					</td>
+					<td class="code">
+						<span title="Content from the main file">
+							{l}body{r}<br/>
+						</span>
+						<span style="color: hsl(0, 60%, 40%);" title="Content from header.html">
+								{t}{l}style{r}<br/>
+								{t}{t}#header {<br/>
+									{t}{t*2}color: red;<br/>
+								{t}{t}}<br/>
+								{t}{l}/style{r}<br/>
+								{t}{l}div id="header"{r}<br/>
+									{t*2}{l}h1{r}Yet another cookbook{l}/h1{r}<br/>
+								{t}{l}/div{r}<br/>
+						</span>
+						<span title="Content from the main file">
+								{t}{l}p{r}Amazing content!{l}/p{r}<br/>
+						</span>
+						<span style="color: hsl(100, 50%, 20%);" title="Content from footer.html">
+								{t}{l}div id="footer"{r}<br/>
+									{t*2}{l}p{r}Contacts: none{l}/p{r}<br/>
+									{t*2}{l}p{r}Last edited on: 14/10/2025{l}/p{r}<br/>
+								{t}{l}/div{r}<br/>
+						</span>
+						<span title="Content from the main file">
+							{l}/body{r}
+						</span>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
 </MACRO>
 <!--  -->
 <!--  -->
