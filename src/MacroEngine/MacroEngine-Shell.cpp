@@ -99,8 +99,7 @@ static string_view trim_whitespace(string_view s){
 
 // Called from child process
 static void _setEnv(const VariableMap& vars, const vector<string_view>& env){
-	char buff[128];
-	int n = 0;
+	char buff[96];
 	
 	for (string_view name : env){
 		const auto* keyval = vars.find(name);
@@ -111,21 +110,26 @@ static void _setEnv(const VariableMap& vars, const vector<string_view>& env){
 		const Value& val = keyval->value;
 		
 		switch (val.type){
-			case Value::Type::LONG:
-				n = snprintf(buff, sizeof(buff), "%ld", val.data.l);
-				goto buffenv;
-			case Value::Type::DOUBLE:
-				n = snprintf(buff, sizeof(buff), "%lf", val.data.d);
-				goto buffenv;
-			case Value::Type::STRING:
+			case Value::Type::LONG: {
+				if (snprintf(buff, sizeof(buff), "%ld", val.data.l) >= 0)
+					setenv(keyval->key, buff, 1);
+				else
+					assert(false);
+			} break;
+			
+			case Value::Type::DOUBLE: {
+				if (snprintf(buff, sizeof(buff), "%lf", val.data.d) >= 0)
+					setenv(keyval->key, buff, 1);
+				else
+					assert(false);
+			} break;
+			
+			case Value::Type::STRING: {
 				assert(val.data.s[val.data_len] == 0);
 				setenv(keyval->key, val.data.s, 1);
-				continue;
+			} break;
 		}
 		
-		buffenv:
-		if (n >= 0)
-			setenv(keyval->key, buff, 1);
 	}
 	
 }
@@ -204,6 +208,7 @@ static int _shell(const ShellCmd& cmd) noexcept {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+// Comma separated list of names
 static void _extractVars(string_view csv, vector<string_view>& vars){
 	const char* p = csv.data();
 	const char* end = p + csv.length();

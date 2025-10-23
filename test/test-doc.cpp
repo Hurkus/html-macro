@@ -290,6 +290,80 @@ bool test_doc_macro_DEL_ATTR(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+REGISTER2(doc_macro_SHELL);
+bool test_doc_macro_SHELL(){
+	TmpFile in = TmpFile(
+		"<SET t='0' fmt=\"%d/%m/%Y\" />" NL
+		"<p>" NL
+		"    The world was created on:" NL
+		"    <SHELL VARS=\"t,fmt\">date -d \"@$t\" +\"$fmt\"</SHELL>" NL
+		"</p>" NL
+	);
+	string_view out = (
+		NL
+		"<p>" NL
+		"    The world was created on:" NL
+		"    01/01/1970"
+		"</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+REGISTER2(doc_attr_macro_IF);
+bool test_doc_attr_macro_IF(){
+	TmpFile in = TmpFile(
+		"<SET n='1'/>" NL
+		"<p IF='n==1'>one</p>" NL
+		"<p ELIF='n==2'>two</p>" NL
+		"<p ELSE>none</p>" NL
+	);
+	string_view out = (
+		NL
+		"<p>one</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_attr_macro_ELIF);
+bool test_doc_attr_macro_ELIF(){
+	TmpFile in = TmpFile(
+		"<SET n='2'/>" NL
+		"<p IF='n==1'>one</p>" NL
+		"<p ELIF='n==2'>two</p>" NL
+		"<p ELSE>none</p>" NL
+	);
+	string_view out = (
+		NL
+		"<p>two</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_attr_macro_ELSE);
+bool test_doc_attr_macro_ELSE(){
+	TmpFile in = TmpFile(
+		"<SET n='3'/>" NL
+		"<p IF='n==1'>one</p>" NL
+		"<p ELIF='n==2'>two</p>" NL
+		"<p ELSE>none</p>" NL
+	);
+	string_view out = (
+		NL
+		"<p>none</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 REGISTER2(doc_expressions_functions);
 bool test_doc_expressions_functions(){
 	TmpFile in = TmpFile(

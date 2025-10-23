@@ -53,12 +53,12 @@
 			<tr>
 				<td class="code">
 					{l}div{r}<br/>
-						{t}{l}<a CALL="a-IF">IF</a> lang="de"{r}<br/>
+						{t}{l}<a CALL="link-em-IF">IF</a> <span title="Check if variable lang is equal to string &quot;de&quot;">lang="de"</span>{r}<br/>
 							{t*2}{l}p{r}Deutsch{l}/p{r}<br/>
-						{t}{l}<a CALL="a-IF">/IF</a>{r}<br/>
-						{t}{l}<a CALL="a-ELSE">ELSE</a>{r}<br/>
+						{t}{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
+						{t}{l}<a CALL="link-em-ELSE">ELSE</a>{r}<br/>
 							{t*2}{l}p{r}English{l}/p{r}<br/>
-						{t}{l}<a CALL="a-ELSE">/ELSE</a>{r}<br/>
+						{t}{l}<a CALL="link-em-ELSE">/ELSE</a>{r}<br/>
 					{l}/div{r}
 				</td>
 				<td class="code">
@@ -70,15 +70,15 @@
 		</table>
 		<p>
 			Here we decide language-specific text for the final document.
-			The decicion, which text to include, is done by the flow controll <code>IF</code> and <code>ELSE</code> macros,
+			The decision, which text to include, is done by the flow controll <code>IF</code> and <code>ELSE</code> macros,
 			which depend on a variable <code>lang</code>.
 		</p>
 	</div>
 	
 	<br/>
 	<p>
-		Some macro attributes can also be applied to regular HTML tags.
-		These attributes are also not included in the final document.
+		Some <a href="#attribute-macros">attributes</a> applied to regular HTML tags can also act as macros.
+		These attributes are also excluded from the final document.
 	</p>
 	
 	<br/>
@@ -92,8 +92,8 @@
 			<tr>
 				<td class="code">
 					{l}div{r}<br/>
-						{t*2}{l}p IF='lang=="de"'{r}Deutsch{l}/p{r}<br/>
-						{t*2}{l}p ELSE{r}English{l}/p{r}<br/>
+						{t*2}{l}p <a CALL="am-a-IF"><span title="Include this element only if expression &apos;lang==&quot;de&quot;&apos; evaluates to true">IF='lang=="de"'</span></a>{r}Deutsch{l}/p{r}<br/>
+						{t*2}{l}p <a CALL="am-a-ELSE"><span title="Include this element only if the previous element's flow controll macro attribute evaluates to false">ELSE</span></a>{r}English{l}/p{r}<br/>
 					{l}/div{r}
 				</td>
 				<td class="code">
@@ -113,31 +113,31 @@
 	
 	<br/>
 	<br/>
-	<div id="macros-all">
+	<div id="macros-list">
 		<SET cii='cii + 1'/>
 		<h3>{ci}.{cii}. List of macros</h3>
 		
 		<style>
-			#macros-all > .list {
+			#macros-list > .list {
 				column-width: 400px;
 			}
 		</style>
 		<ul class="list">
 			<li><a CALL="a-MACRO">{l}MACRO{r}</a> &mdash; Defines a new macro.</li>
 			<li><a CALL="a-CALL">{l}CALL{r}</a>  &mdash; Invokes a <a CALL="a-MACRO">{l}MACRO{r}</a>.</li>
-			<li><a CALL="a-INCLUDE">{l}INCLUDE{r}</a></li>
+			<li><a CALL="a-INCLUDE">{l}INCLUDE{r}</a> &mdash; Includes contents of another file.</li>
 			<li><a CALL="a-SET">{l}SET{r}</a> &mdash; Assigns values to variables.</li>
-			<li><a CALL="a-IF">{l}IF{r}</a> &mdash; Conditionally includes child elements.</li>
-			<li><a CALL="a-ELIF">{l}ELIF{r}</a> &mdash; Extends <a CALL="a-IF">{l}IF{r}</a>.</li>
-			<li><a CALL="a-ELSE">{l}ELSE{r}</a> &mdash; Extends <a CALL="a-IF">{l}IF{r}</a>.</li>
+			<li><a CALL="link-em-IF">{l}IF{r}</a> &mdash; Conditionally includes child elements.</li>
+			<li><a CALL="link-em-ELIF">{l}ELIF{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
+			<li><a CALL="link-em-ELSE">{l}ELSE{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
 			<li><a CALL="a-FOR">{l}FOR{r}</a> &mdash; Include child elements in a loop.</li>
 			<li><a CALL="a-WHILE">{l}WHILE{r}</a> &mdash; Include child elements in a loop.</li>
-			<li><a CALL="a-SET-TAG">{l}SET-TAG{r}</a></li>
-			<li><a CALL="a-GET-TAG">{l}GET-TAG{r}</a></li>
-			<li><a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a></li>
-			<li><a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a></li>
-			<li><a CALL="a-DEL-ATTR">{l}DEL-ATTR{r}</a></li>
-			<li><a CALL="a-SHELL">{l}SHELL{r}</a></li>
+			<li><a CALL="a-SET-TAG">{l}SET-TAG{r}</a> &mdash; Sets tag of parent element.</li>
+			<li><a CALL="a-GET-TAG">{l}GET-TAG{r}</a> &mdash; Set variable to parent tag.</li>
+			<li><a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a> &mdash; Set parent element attribute value.</li>
+			<li><a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a> &mdash; Set variable to value of a parent's attribute.</li>
+			<li><a CALL="a-DEL-ATTR">{l}DEL-ATTR{r}</a> &mdash; Remove attribute from parent element.</li>
+			<li><a CALL="a-SHELL">{l}SHELL{r}</a> &mdash; Execute shell command.</li>
 			<li><a CALL="a-INFO">{l}INFO{r}</a> &mdash; Log messages to stderr.</li>
 			<li><a CALL="a-WARN">{l}WARN{r}</a> &mdash; Log warning messages to stderr.</li>
 			<li><a CALL="a-ERROR">{l}ERROR{r}</a> &mdash; Log error messages to stderr.</li>
@@ -179,6 +179,38 @@
 		<CALL NAME="m-WARN"/>
 		<br/><br/>
 		<CALL NAME="m-ERROR"/>
+	</div>
+	
+	<br/>
+	<br/>
+	<div id="attribute-macros">
+		<SET cii='cii + 1'/>
+		<h3>{ci}.{cii}. Attribute macros</h3>
+		<p>
+			While regular HTML elements and their attributes are usually coppied to the final document,
+			some of the attributes can also act as macros.
+			They are called <b>attribute macros</b> and are written in <b>uppercase</b>.
+			These attributes are not coppied to the final document.
+		</p>
+		
+		<br/>
+		<p>
+			List of attribute macros:
+			<ul>
+				<li><a call="am-a-IF">IF='...'</a> &mdash; Conditionally include element.</li>
+				<li><a>ELIF='...'</a> &mdash; Conditionally inlude element.</li>
+				<li><a>ELSE='...'</a> &mdash; Conditionally inlude element.</li>
+				<li><a>CALL="..."</a> &mdash; Invoke a user-defined macro <i>inside</i> the current element.</li>
+				<li><a>INCLUDE="..."</a> &mdash; Include contents of another file as child elements of the current element.</li>
+			</ul>
+		</p>
+		
+		<br/><br/>
+		<CALL NAME="am-IF"/>
+		<br/><br/>
+		<CALL NAME="am-ELIF"/>
+		<br/><br/>
+		<CALL NAME="am-ELSE"/>
 	</div>
 	
 	
@@ -537,7 +569,7 @@
 <!--  -->
 <!--  -->
 <!--  -->
-<MACRO NAME="a-IF">
+<MACRO NAME="link-em-IF">
 	<SET-ATTR href="#IF"/>
 	<SET-ATTR title="Conditionally includes child elements."/>
 </MACRO>
@@ -555,8 +587,8 @@
 		</p>
 		<br/>
 		<p>See also:
-			<a CALL="a-ELIF">{l}ELIF{r}</a>,
-			<a CALL="a-ELSE">{l}ELSE{r}</a>,
+			<a CALL="link-em-ELIF">{l}ELIF{r}</a>,
+			<a CALL="link-em-ELSE">{l}ELSE{r}</a>,
 			<a CALL="a-SET">{l}SET{r}</a>,
 			<a href="#expressions">expressions</a>
 		</p>
@@ -570,9 +602,9 @@
 				</tr>
 				<tr>
 					<td class="code">
-						{l}<a CALL="a-IF">IF</a> <span title="Check if expression 6>3 evaluates to true.">TRUE='6>3'</span>{r}<br/>
+						{l}<a CALL="link-em-IF">IF</a> <span title="Check if expression 6>3 evaluates to true.">TRUE='6>3'</span>{r}<br/>
 							{t}{l}p{r}6 is greater than 3{l}/p{r}<br/>
-						{l}<a CALL="a-IF">/IF</a>{r}<br/>
+						{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
 					</td>
 					<td class="code">
 						{l}p{r}6 is greater than 3{l}/p{r}<br/>
@@ -581,9 +613,9 @@
 				<tr>
 					<td class="code">
 						{l}<a CALL="a-SET">SET</a> <span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/{r}<br/>
-						{l}<a CALL="a-IF">IF</a> <span title="Check if variable lang equals string &quot;en&quot;">lang="en"</span>{r}<br/>
+						{l}<a CALL="link-em-IF">IF</a> <span title="Check if variable lang equals string &quot;en&quot;">lang="en"</span>{r}<br/>
 							{t}{l}p{r}English{l}/p{r}<br/>
-						{l}<a CALL="a-IF">/IF</a>{r}<br/>
+						{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
 					</td>
 					<td class="code">
 						{l}p{r}English{l}/p{r}<br/>
@@ -597,7 +629,7 @@
 <!--  -->
 <!--  -->
 <!--  -->
-<MACRO NAME="a-ELIF">
+<MACRO NAME="link-em-ELIF">
 	<SET-ATTR href="#ELIF"/>
 	<SET-ATTR title="Includes child elements if previous condition macros fail."/>
 </MACRO>
@@ -606,18 +638,18 @@
 		<SET name="{l}ELIF{r}...{l}/ELIF{r}" desc="Includes child elements if previous condition macros fail."/>
 		<CALL NAME="h"/>
 		<p>
-			Must follow a previous <a CALL="a-IF"><code>{l}IF{r}</code></a> macro and be in the form of <code>{l}ELIF [cond]{r}</code>,
+			Must follow a previous <a CALL="link-em-IF"><code>{l}IF{r}</code></a> macro and be in the form of <code>{l}ELIF [cond]{r}</code>,
 			where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
 			or direct variable comparison <code>var='value'</code>.
 			Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
 			<br/>
-			Child elements are included in the final document only if a previous <a CALL="a-IF"><code>{l}IF{r}</code></a> macro failed and
+			Child elements are included in the final document only if a previous <a CALL="link-em-IF"><code>{l}IF{r}</code></a> macro failed and
 			all conditionals <code>[cond]</code> of this macro are evaluated to <code>true</code>.
 		</p>
 		<br/>
 		<p>See also:
-			<a CALL="a-IF">{l}IF{r}</a>,
-			<a CALL="a-ELSE">{l}ELSE{r}</a>,
+			<a CALL="link-em-IF">{l}IF{r}</a>,
+			<a CALL="link-em-ELSE">{l}ELSE{r}</a>,
 			<a CALL="a-SET">{l}SET{r}</a>,
 			<a href="#expressions">expressions</a>
 		</p>
@@ -633,12 +665,12 @@
 					<td class="code">
 						{l}<a CALL="a-SET">SET</a> <span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/{r}<br/>
 						<br/>
-						{l}<a CALL="a-IF">IF</a> <span title="Check if variable lang equals string &quot;de&quot;">lang="de"</span>{r}<br/>
+						{l}<a CALL="link-em-IF">IF</a> <span title="Check if variable lang equals string &quot;de&quot;">lang="de"</span>{r}<br/>
 							{t}{l}p{r}Deutsch{l}/p{r}<br/>
-						{l}<a CALL="a-IF">/IF</a>{r}<br/>
-						{l}<a CALL="a-ELIF">ELIF</a> <span title="Check if variable lang equals string &quot;en&quot;">lang="en"</span>{r}<br/>
+						{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
+						{l}<a CALL="link-em-ELIF">ELIF</a> <span title="Check if variable lang equals string &quot;en&quot;">lang="en"</span>{r}<br/>
 							{t}{l}p{r}English{l}/p{r}<br/>
-						{l}<a CALL="a-ELIF">/ELIF</a>{r}<br/>
+						{l}<a CALL="link-em-ELIF">/ELIF</a>{r}<br/>
 					</td>
 					<td class="code">
 						{l}p{r}English{l}/p{r}<br/>
@@ -652,23 +684,23 @@
 <!--  -->
 <!--  -->
 <!--  -->
-<MACRO NAME="a-ELSE">
+<MACRO NAME="link-em-ELSE">
 	<SET-ATTR href="#ELSE"/>
-	<SET-ATTR title="Includes child elements if previous condition macros fail.."/>
+	<SET-ATTR title="Includes child elements if previous condition macros fail."/>
 </MACRO>
 <MACRO NAME="m-ELSE">
 	<div id="ELSE" class="macro box">
 		<SET name="{l}ELSE{r}...{l}/ELSE{r}" desc="Includes child elements if previous condition macros fail."/>
 		<CALL NAME="h"/>
 		<p>
-			Must follow a previous <a CALL="a-IF"><code>{l}IF{r}</code></a> or <a CALL="a-ELIF"><code>{l}ELIF{r}</code></a> macro.
+			Must follow a previous <a CALL="link-em-IF"><code>{l}IF{r}</code></a> or <a CALL="link-em-ELIF"><code>{l}ELIF{r}</code></a> macro.
 			<br/>
-			Child elements are included in the final document only if a previous <a CALL="a-IF"><code>{l}IF{r}</code></a> or <a CALL="a-ELIF"><code>{l}ELIF{r}</code></a> macro failed.
+			Child elements are included in the final document only if a previous <a CALL="link-em-IF"><code>{l}IF{r}</code></a> or <a CALL="link-em-ELIF"><code>{l}ELIF{r}</code></a> macro failed.
 		</p>
 		<br/>
 		<p>See also:
-			<a CALL="a-IF">{l}IF{r}</a>,
-			<a CALL="a-ELSE">{l}ELIF{r}</a>,
+			<a CALL="link-em-IF">{l}IF{r}</a>,
+			<a CALL="link-em-ELSE">{l}ELIF{r}</a>,
 			<a CALL="a-SET">{l}SET{r}</a>,
 			<a href="#expressions">expressions</a>
 		</p>
@@ -684,12 +716,12 @@
 					<td class="code">
 						{l}<a CALL="a-SET">SET</a> <span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/{r}<br/>
 						<br/>
-						{l}<a CALL="a-IF">IF</a> <span title="Check if variable lang equals string &quot;de&quot;">lang="de"</span>{r}<br/>
+						{l}<a CALL="link-em-IF">IF</a> <span title="Check if variable lang equals string &quot;de&quot;">lang="de"</span>{r}<br/>
 							{t}{l}p{r}Deutsch{l}/p{r}<br/>
-						{l}<a CALL="a-IF">/IF</a>{r}<br/>
-						{l}<a CALL="a-ELSE">ELSE</a>{r}<br/>
+						{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
+						{l}<a CALL="link-em-ELSE">ELSE</a>{r}<br/>
 							{t}{l}p{r}English{l}/p{r}<br/>
-						{l}<a CALL="a-ELSE">/ELSE</a>{r}<br/>
+						{l}<a CALL="link-em-ELSE">/ELSE</a>{r}<br/>
 					</td>
 					<td class="code">
 						{l}p{r}English{l}/p{r}<br/>
@@ -778,8 +810,7 @@
 		<SET name="{l}WHILE{r}...{l}/WHILE{r}" desc="Repeatedly evaluates child elements."/>
 		<CALL NAME="h"/>
 		<p>
-			Must be in the form of <code>{l}WHILE [cond]{r}</code>,
-			where:
+			Must be in the form of <code>{l}WHILE [cond]{r}</code>, where:
 			<ul>
 				<li>
 					<code>[cond]</code> represents a conditional attribute <code>TRUE='...'</code> or <code>FALSE='...'</code>.
@@ -1136,6 +1167,100 @@
 <!--  -->
 <!--  -->
 <!--  -->
+<MACRO NAME="a-SHELL">
+	<SET-ATTR href="#SHELL"/>
+	<SET-ATTR title="Execute shell command."/>
+</MACRO>
+<MACRO NAME="m-SHELL">
+	<div id="SHELL" class="macro box">
+		<SET name="{l}SHELL/{r}" desc="Execute shell command."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}SHELL{r}[cmd]{l}/SHELL{r}</code> where:
+			<ul>
+				<li>
+					<code>[cmd]</code> represents the command that will be passed to a shell.
+					The command is not interpolated for any expressions.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			The underlying shell for executing the command is <a href="https://www.man7.org/linux/man-pages/man1/bash.1.html">bash</a>.
+		</p>
+		<br/>
+		<p>
+			Attributes:
+			<ul>
+				<li>
+					<code>VARS="[name,...]"</code>
+					Set shell environment variables to the comma-separated-list of variable names.
+					This is the only way to share variables, as the command <code>[cmd]</code> is not interpolated.
+					Listed variables are accessed by the <code>$[name]</code> operator.
+				</li>
+				<li>
+					<code>STDOUT="[VOID|TEXT|[variable]]"</code>
+					Determines what to do with the <i>stdout</i> stream (default <code>TEXT</code>):
+					<ul>
+						<li>
+							<code>VOID</code> Discards all output.
+						</li>
+						<li>
+							<code>TEXT</code> Insert shell output as text into the final document.
+							The last newline of the output is trimmed.
+						</li>
+						<li>
+							<code>[variable]</code> Store shell output into a variable named <code>[variable]</code>.
+							The last newline of the output is trimmed.
+						</li>
+					</ul>
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			Other attributes:
+			<ul>
+				<li CALL="common-IF"></li>
+				<li CALL="common-ELIF"></li>
+				<li CALL="common-ELSE"></li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="a-SET">{l}SET{r}</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-SET">SET</a> <span title="Set variable t to integer 0">t='0'</span> <span title="Set variable fmt to string &apos;%d/%m/%Y&apos;">fmt="%d/%m/%Y"</span> /{r}<br/>
+						{l}p{r}<br/>
+							{t}The world was created on:<br/>
+							{t}{l}<a CALL="a-SHELL">SHELL</a> <span title="Set shell environment variables $t to variable t and $fmt to fmt">VARS="t,fmt"</span>{r}<span title="date -d &quot;@0&quot; +&quot;%d/%m/%Y&quot;">date -d "@$t" +"$fmt"</span>{l}<a CALL="a-SHELL">/SHELL</a>{r}<br/>
+						{l}/p{r}
+					</td>
+					<td class="code">
+						{l}p{r}<br/>
+						{t}The world was created on:<br/>
+						{t}01/01/1970<br/>
+						{l}/p{r}
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
 <MACRO NAME="a-INFO">
 	<SET-ATTR href="#INFO"/>
 	<SET-ATTR title="Log messages to stderr."/>
@@ -1229,6 +1354,188 @@
 			<a CALL="a-INFO">{l}INFO{r}</a>,
 			<a CALL="a-WARN">{l}WARN{r}</a>
 		</p>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="am-a-IF">
+	<SET-ATTR href="#ATTR-IF"/>
+	<SET-ATTR title="Conditionally include element."/>
+</MACRO>
+<MACRO NAME="am-IF">
+	<div id="ATTR-IF" class="macro box">
+		<SET name="IF=..." desc="Conditionally include element."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}... IF='[expr]' ...{r}</code>, where:
+			<ul>
+				<li>
+					<code>[expr]</code> represents the expression that is evaluated to a boolean.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			If the expression <code>expr</code> evaluates to <code>true</code>, the element is included in the final document; otherwise it is discarded.
+			This attribute macro can also be found on almost all macro elements, where it performs the same function with a small caveat:
+			<ul>
+				<li>
+					Evaluation of an element macro is terminated only after this attribute macro is encountered and evaluated to false; any previous attributes can already have an effect on the final document.
+					If such behaviour is unwanted (for example in a <a CALL="a-SET">{l}SET/{r}</a> macro), the <code>IF</code> attribute should be written before all others.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="am-a-ELIF">ELIF</a>,
+			<a CALL="am-a-ELSE">ELSE</a>,
+			<a href="#expressions">expressions</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-SET">SET</a> <span title="Set variable n to integer 1">n='1'</span>/{r}<br/>
+						{l}p <a CALL="am-a-IF">IF='n==1'</a>{r}one{l}/p{r}<br/>
+						{l}p <a CALL="am-a-ELIF">ELIF='n==2'</a>{r}two{l}/p{r}<br/>
+						{l}p <a CALL="am-a-ELSE">ELSE</a>{r}none{l}/p{r}
+					</td>
+					<td class="code">
+						{l}p{r}one{l}/p{r}
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="am-a-ELIF">
+	<SET-ATTR href="#ATTR-ELIF"/>
+	<SET-ATTR title="Include element if previous condition atribute macro fails."/>
+</MACRO>
+<MACRO NAME="am-ELIF">
+	<div id="ATTR-ELIF" class="macro box">
+		<SET name="ELIF=..." desc="Include element if previous condition atribute macro fails."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}... ELIF='[expr]' ...{r}</code>, where:
+			<ul>
+				<li>
+					<code>[expr]</code> represents the expression that is evaluated to a boolean.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			The element is included in the final document only if an attribute macro <a CALL="am-a-IF"><code>IF</code></a> or <code>ELIF</code> on a previous element evaluates to <code>false</code>,
+			and the expression <code>expr</code> evaluates to <code>true</code>.
+			This attribute macro can also be found on almost all macro elements, where it performs the same function with a small caveat:
+			<ul>
+				<li>
+					Evaluation of an element macro is terminated only after this attribute macro is encountered and is determined, that the element should be discarded.
+					Any previous attributes can already have an effect on the final document.
+					If such behaviour is unwanted (for example in a <a CALL="a-SET">{l}SET/{r}</a> macro), the <code>ELIF</code> attribute should be written before all others.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="am-a-IF">IF</a>,
+			<a CALL="am-a-ELSE">ELSE</a>,
+			<a href="#expressions">expressions</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-SET">SET</a> <span title="Set variable n to integer 2">n='2'</span>/{r}<br/>
+						{l}p <a CALL="am-a-IF">IF='n==1'</a>{r}one{l}/p{r}<br/>
+						{l}p <a CALL="am-a-ELIF">ELIF='n==2'</a>{r}two{l}/p{r}<br/>
+						{l}p <a CALL="am-a-ELSE">ELSE</a>{r}none{l}/p{r}
+					</td>
+					<td class="code">
+						{l}p{r}two{l}/p{r}
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</MACRO>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="am-a-ELSE">
+	<SET-ATTR href="#ATTR-ELSE"/>
+	<SET-ATTR title="Include element if previous condition atribute macro fails."/>
+</MACRO>
+<MACRO NAME="am-ELSE">
+	<div id="ATTR-ELSE" class="macro box">
+		<SET name="ELSE" desc="Include element if previous condition atribute macro fails."/>
+		<CALL NAME="h"/>
+		<p>
+			Must be in the form of <code>{l}... ELSE ...{r}</code>, where:
+			<ul>
+				<li>
+					<code>[expr]</code> represents the expression that is evaluated to a boolean.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>
+			The element is included in the final document only if an attribute macro <a CALL="am-a-IF"><code>IF</code></a> or <a CALL="am-a-ELIF"><code>ELIF</code></a> on a previous element evaluates to <code>false</code>.
+			This attribute macro can also be found on almost all macro elements, where it performs the same function with a small caveat:
+			<ul>
+				<li>
+					Evaluation of an element macro is terminated only after this attribute macro is encountered and is determined, that the element should be discarded.
+					Any previous attributes can already have an effect on the final document.
+					If such behaviour is unwanted (for example in a <a CALL="a-SET">{l}SET/{r}</a> macro), the <code>ELSE</code> attribute should be written before all others.
+				</li>
+			</ul>
+		</p>
+		<br/>
+		<p>See also:
+			<a CALL="am-a-IF">IF</a>,
+			<a CALL="am-a-ELSE">ELSE</a>
+		</p>
+		<x-line></x-line>
+		<div class="example">
+			<h4><b>Example</b></h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}<a CALL="a-SET">SET</a> <span title="Set variable n to integer 3">n='3'</span>/{r}<br/>
+						{l}p <a CALL="am-a-IF">IF='n==1'</a>{r}one{l}/p{r}<br/>
+						{l}p <a CALL="am-a-ELIF">ELIF='n==2'</a>{r}two{l}/p{r}<br/>
+						{l}p <a CALL="am-a-ELSE">ELSE</a>{r}none{l}/p{r}
+					</td>
+					<td class="code">
+						{l}p{r}none{l}/p{r}
+					</td>
+				</tr>
+			</table>
+		</div>
 	</div>
 </MACRO>
 <!--  -->
