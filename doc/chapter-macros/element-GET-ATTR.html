@@ -1,0 +1,65 @@
+<MACRO NAME="a-GET-ATTR">
+	<SET-ATTR href="#GET-ATTR"/>
+	<SET-ATTR title="Set variable to value of a parent's attribute."/>
+</MACRO>
+
+
+<div id="GET-ATTR" class="macro box" IF='!header'>
+	<h4 class="code">{l}GET-ATTR/{r}</h4>
+	<p>Set variable to value of a parent's attribute.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}GET-ATTR [variable]=[attribute] /{r}</code> where:
+		<ul>
+			<li>
+				<code>[variable]</code> represents the name of the variable which will hold the value of the attribute.
+			</li>
+			<li>
+				<code>[attribute]</code> represents the name of the parent element's attribute from which to retrieve the value.
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		The type of the variable <code>[variable]</code> is <i>string</i>, as attribute values are strings.
+		If the attribute is not found however, the variable is set to an integer <code>0</code>.
+		<br/>
+		If there are multiple attributes with the same name, the value of the first one is used.
+	</p>
+	<br/>
+	<p>
+		Other attributes:
+		<ul>
+			<li CALL="common-IF-after"></li>
+			<li CALL="common-ELIF-after"></li>
+			<li CALL="common-ELSE-after"></li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a>,
+		<a CALL="a-DEL-ATTR">{l}DEL-ATTR{r}</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}div id="box"{r}<br/>
+					{t}{l}<a CALL="a-GET-ATTR">GET-ATTR</a> <span title="Store value of attribute &apos;id&apos; into variable x">x="id"</span>/{r}<br/>
+					{t}{l}<a CALL="a-SET-ATTR">SET-ATTR</a> <span title="Set attribute &apos;class&apos; to variable x">class='x'</span>/{r}<br/>
+					{l}/div{r}
+				</td>
+				<td class="code">
+					{l}div id="box" class="box"{r}<br/>
+					{l}/div{r}
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

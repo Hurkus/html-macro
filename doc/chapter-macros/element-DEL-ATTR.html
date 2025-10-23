@@ -1,0 +1,54 @@
+<MACRO NAME="a-DEL-ATTR">
+	<SET-ATTR href="#DEL-ATTR"/>
+	<SET-ATTR title="Remove attribute from parent element."/>
+</MACRO>
+
+
+<div id="DEL-ATTR" class="macro box" IF='!header'>
+	<h4 class="code">{l}DEL-ATTR/{r}</h4>
+	<p>Remove attribute from parent element.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}DEL-ATTR [name] /{r}</code> where:
+		<ul>
+			<li>
+				<code>[name]</code> represents the name of the attribute that will be removed from the parent element.
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		Other attributes:
+		<ul>
+			<li CALL="common-IF-after"></li>
+			<li CALL="common-ELIF-after"></li>
+			<li CALL="common-ELSE-after"></li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a>,
+		<a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}div id="box"{r}<br/>
+					{t}{l}<a CALL="a-DEL-ATTR">DEL-ATTR</a> <span title="Delete attribute &apos;id&apos;">id</span>/{r}<br/>
+					{l}/div{r}
+				</td>
+				<td class="code">
+					{l}div{r}<br/>
+					{l}/div{r}
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

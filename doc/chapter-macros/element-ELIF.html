@@ -1,0 +1,52 @@
+<MACRO NAME="link-em-ELIF">
+	<SET-ATTR href="#ELIF"/>
+	<SET-ATTR title="Includes child elements if previous condition macros fail."/>
+</MACRO>
+
+
+<div id="ELIF" class="macro box" IF='!header'>
+	<h4 class="code">{l}ELIF{r}...{l}/ELIF{r}</h4>
+	<p>Includes child elements if previous condition macros fail</p>
+	<x-line></x-line>
+	<p>
+		Must follow a previous <a CALL="link-em-IF"><code>{l}IF{r}</code></a> macro and be in the form of <code>{l}ELIF [cond]{r}</code>,
+		where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
+		or direct variable comparison <code>var='value'</code>.
+		Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
+		<br/>
+		Child elements are included in the final document only if a previous <a CALL="link-em-IF"><code>{l}IF{r}</code></a> macro failed and
+		all conditionals <code>[cond]</code> of this macro are evaluated to <code>true</code>.
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="link-em-IF">{l}IF{r}</a>,
+		<a CALL="link-em-ELSE">{l}ELSE{r}</a>,
+		<a CALL="a-SET">{l}SET{r}</a>,
+		<a href="#expressions">expressions</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="a-SET">SET</a> <span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/{r}<br/>
+					<br/>
+					{l}<a CALL="link-em-IF">IF</a> <span title="Check if variable lang equals string &quot;de&quot;">lang="de"</span>{r}<br/>
+						{t}{l}p{r}Deutsch{l}/p{r}<br/>
+					{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
+					{l}<a CALL="link-em-ELIF">ELIF</a> <span title="Check if variable lang equals string &quot;en&quot;">lang="en"</span>{r}<br/>
+						{t}{l}p{r}English{l}/p{r}<br/>
+					{l}<a CALL="link-em-ELIF">/ELIF</a>{r}<br/>
+				</td>
+				<td class="code">
+					{l}p{r}English{l}/p{r}<br/>
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

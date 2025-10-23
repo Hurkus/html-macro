@@ -1,0 +1,51 @@
+<MACRO NAME="a-GET-TAG">
+	<SET-ATTR href="#GET-TAG"/>
+	<SET-ATTR title="Set variable to parent tag name."/>
+</MACRO>
+
+
+<div id="GET-TAG" class="macro box" IF='!header'>
+	<h4 class="code">{l}GET-TAG/{r}</h4>
+	<p>Set variable to parent tag name.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}GET-TAG [variable] /{r}</code>,
+		where <code>[variable]</code> is the name of the variable that will store the parent element tag name.
+	</p>
+	<br/>
+	<p>
+		Other attributes:
+		<ul>
+			<li CALL="common-IF-after"></li>
+			<li CALL="common-ELIF-after"></li>
+			<li CALL="common-ELSE-after"></li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="a-SET-TAG">{l}SET-TAG{r}</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}div{r}<br/>
+					{t}{l}<a CALL="a-GET-TAG">GET-TAG</a> <span title="Variable name">tag</span>/{r}<br/>
+					{t}This text is within a \{tag} element.<br/>
+					{l}/div{r}
+				</td>
+				<td class="code">
+					{l}div{r}<br/>
+					{t}This text is within a div element.<br/>
+					{l}/div{r}
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

@@ -1,0 +1,30 @@
+<MACRO NAME="a-WARN">
+	<SET-ATTR href="#WARN"/>
+	<SET-ATTR title="Log warning messages to stderr."/>
+</MACRO>
+
+
+<div id="WARN" class="macro box" IF='!header'>
+	<h4 class="code">{l}WARN{r}...{l}/WARN{r}</h4>
+	<p>Log warning messages to stderr.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}WARN{r}[msg]{l}/WARN{r}</code>,
+		where the child element <code>[msg]</code> is text that is printed to stderr.<br/>
+		The text can be interpolated with variables/expressions.
+	</p>
+	<br/>
+	<p>
+		Attributes:
+		<ul>
+			<li CALL="common-IF"></li>
+			<li CALL="common-ELIF"></li>
+			<li CALL="common-ELSE"></li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="a-INFO">{l}INFO{r}</a>,
+		<a CALL="a-ERROR">{l}ERROR{r}</a>
+	</p>
+</div>

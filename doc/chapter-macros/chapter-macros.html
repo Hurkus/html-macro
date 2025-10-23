@@ -1,0 +1,274 @@
+<SET ci='ci + 1' cii='0'/>
+<SET l="&lt;" r="&gt;" s="&nbsp;" t='s*4'></SET>
+<!--  -->
+<!--  -->
+<SET header='true'/>
+<INCLUDE SRC="element-MACRO.html"/>
+<INCLUDE SRC="element-CALL.html"/>
+<INCLUDE SRC="element-INCLUDE.html"/>
+<INCLUDE SRC="element-SET.html"/>
+<INCLUDE SRC="element-IF.html"/>
+<INCLUDE SRC="element-ELIF.html"/>
+<INCLUDE SRC="element-ELSE.html"/>
+<INCLUDE SRC="element-FOR.html"/>
+<INCLUDE SRC="element-WHILE.html"/>
+<INCLUDE SRC="element-SET-TAG.html"/>
+<INCLUDE SRC="element-GET-TAG.html"/>
+<INCLUDE SRC="element-SET-ATTR.html"/>
+<INCLUDE SRC="element-GET-ATTR.html"/>
+<INCLUDE SRC="element-DEL-ATTR.html"/>
+<INCLUDE SRC="element-SHELL.html"/>
+<INCLUDE SRC="element-INFO.html"/>
+<INCLUDE SRC="element-WARN.html"/>
+<INCLUDE SRC="element-ERROR.html"/>
+<INCLUDE SRC="attr-IF.html"/>
+<INCLUDE SRC="attr-ELIF.html"/>
+<INCLUDE SRC="attr-ELSE.html"/>
+<SET header='false'/>
+<!--  -->
+<!--  -->
+<style>
+	#macros .macro {
+		padding: 12px;
+	}
+	#macros .macro h4 {
+		font-family: monospace;
+		font-size: 1.4em;
+		margin-right: 0.4em;
+		display: inline;
+	}
+	#macros .macro p:first-of-type {
+		display: inline;
+	}
+	#macros .macro x-line {
+		display: block;
+		height: 1px;
+		margin-top: 6px;
+		margin-bottom: 7px;
+		background: rgba(0, 0, 0, 0.5);
+	}
+	
+	#macros .macro .example table {
+		margin-top: -1em;
+	}
+	
+	#macros .macro .example {
+		box-shadow: none;
+		border: none;
+	}
+	
+</style>
+<!--  -->
+<div id="macros">
+	<h2>{ci}. Macros</h2>
+	<p>
+		Certain HTML tags are not coppied to the final document.
+		Instead they perform other functions that modify the document.
+		Such tags are called <b>(HTML) macros</b> and are all written in <b>uppercase</b>.
+		Parameters for their functionality are passed by HTML attributes, which are <i>usually</i> also in uppercase.
+	</p>
+	
+	<br/>
+	<div class="example">
+		<h4><b>Example:</b> Macro demonstration for language-specific text.</h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}div{r}<br/>
+						{t}{l}<a CALL="link-em-IF">IF</a> <span title="Check if variable lang is equal to string &quot;de&quot;">lang="de"</span>{r}<br/>
+							{t*2}{l}p{r}Deutsch{l}/p{r}<br/>
+						{t}{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
+						{t}{l}<a CALL="link-em-ELSE">ELSE</a>{r}<br/>
+							{t*2}{l}p{r}English{l}/p{r}<br/>
+						{t}{l}<a CALL="link-em-ELSE">/ELSE</a>{r}<br/>
+					{l}/div{r}
+				</td>
+				<td class="code">
+					{l}div{r}<br/>
+					{t}{l}p{r}English{l}/p{r}<br/>
+					{l}/div{r}
+				</td>
+			</tr>
+		</table>
+		<p>
+			Here we decide language-specific text for the final document.
+			The decision, which text to include, is done by the flow controll <code>IF</code> and <code>ELSE</code> macros,
+			which depend on a variable <code>lang</code>.
+		</p>
+	</div>
+	
+	<br/>
+	<p>
+		Some <a href="#attribute-macros">attributes</a> applied to regular HTML tags can also act as macros.
+		These attributes are also excluded from the final document.
+	</p>
+	
+	<br/>
+	<div class="example">
+		<h4><b>Example:</b> Macro attribute demonstration for language-specific text.</h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}div{r}<br/>
+						{t*2}{l}p <a CALL="am-a-IF"><span title="Include this element only if expression &apos;lang==&quot;de&quot;&apos; evaluates to true">IF='lang=="de"'</span></a>{r}Deutsch{l}/p{r}<br/>
+						{t*2}{l}p <a CALL="am-a-ELSE"><span title="Include this element only if the previous element's flow controll macro attribute evaluates to false">ELSE</span></a>{r}English{l}/p{r}<br/>
+					{l}/div{r}
+				</td>
+				<td class="code">
+					{l}div{r}<br/>
+					{t}{l}p{r}English{l}/p{r}<br/>
+					{l}/div{r}
+				</td>
+			</tr>
+		</table>
+		<p>
+			Here we conditionally include the first <code>p</code> element,
+			but only if the expression in the <code>IF</code> macro attribute evaluates to <code>true</code>.
+			Otherwise, we include the second <code>p</code> element.
+		</p>
+	</div>
+	
+	
+	<br/>
+	<br/>
+	<div id="macros-list">
+		<SET cii='cii + 1'/>
+		<h3>{ci}.{cii}. List of macros</h3>
+		
+		<style>
+			#macros-list > .list {
+				column-width: 400px;
+			}
+		</style>
+		<ul class="list">
+			<li><a CALL="a-MACRO">{l}MACRO{r}</a> &mdash; Defines a new macro.</li>
+			<li><a CALL="a-CALL">{l}CALL{r}</a>  &mdash; Invokes a <a CALL="a-MACRO">{l}MACRO{r}</a>.</li>
+			<li><a CALL="a-INCLUDE">{l}INCLUDE{r}</a> &mdash; Includes contents of another file.</li>
+			<li><a CALL="a-SET">{l}SET{r}</a> &mdash; Assigns values to variables.</li>
+			<li><a CALL="link-em-IF">{l}IF{r}</a> &mdash; Conditionally includes child elements.</li>
+			<li><a CALL="link-em-ELIF">{l}ELIF{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
+			<li><a CALL="link-em-ELSE">{l}ELSE{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
+			<li><a CALL="a-FOR">{l}FOR{r}</a> &mdash; Include child elements in a loop.</li>
+			<li><a CALL="a-WHILE">{l}WHILE{r}</a> &mdash; Include child elements in a loop.</li>
+			<li><a CALL="a-SET-TAG">{l}SET-TAG{r}</a> &mdash; Sets tag of parent element.</li>
+			<li><a CALL="a-GET-TAG">{l}GET-TAG{r}</a> &mdash; Set variable to parent tag.</li>
+			<li><a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a> &mdash; Set parent element attribute value.</li>
+			<li><a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a> &mdash; Set variable to value of a parent's attribute.</li>
+			<li><a CALL="a-DEL-ATTR">{l}DEL-ATTR{r}</a> &mdash; Remove attribute from parent element.</li>
+			<li><a CALL="a-SHELL">{l}SHELL{r}</a> &mdash; Execute shell command.</li>
+			<li><a CALL="a-INFO">{l}INFO{r}</a> &mdash; Log messages to stderr.</li>
+			<li><a CALL="a-WARN">{l}WARN{r}</a> &mdash; Log warning messages to stderr.</li>
+			<li><a CALL="a-ERROR">{l}ERROR{r}</a> &mdash; Log error messages to stderr.</li>
+		</ul>
+		
+		<br/><br/>
+		<INCLUDE SRC="element-MACRO.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-CALL.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-INCLUDE.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-SET.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-IF.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-ELIF.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-ELSE.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-FOR.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-WHILE.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-SET-TAG.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-GET-TAG.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-SET-ATTR.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-GET-ATTR.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-DEL-ATTR.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-SHELL.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-INFO.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-WARN.html"/>
+		<br/><br/>
+		<INCLUDE SRC="element-ERROR.html"/>
+	</div>
+	
+	<br/>
+	<br/>
+	<div id="attribute-macros">
+		<SET cii='cii + 1'/>
+		<h3>{ci}.{cii}. Attribute macros</h3>
+		<p>
+			While regular HTML elements and their attributes are usually coppied to the final document,
+			some of the attributes can also act as macros.
+			They are called <b>attribute macros</b> and are written in <b>uppercase</b>.
+			These attributes are not coppied to the final document.
+		</p>
+		
+		<br/>
+		<p>
+			List of attribute macros:
+			<ul>
+				<li><a CALL="am-a-IF">IF</a> &mdash; Conditionally include element.</li>
+				<li><a>ELIF</a> &mdash; Conditionally inlude element.</li>
+				<li><a>ELSE</a> &mdash; Conditionally inlude element.</li>
+				<li><a>CALL</a> &mdash; Invoke a user-defined macro <i>inside</i> the current element.</li>
+				<li><a>INCLUDE</a> &mdash; Include contents of another file as child elements of the current element.</li>
+			</ul>
+		</p>
+		
+		<br/><br/>
+		<!-- <CALL NAME="am-IF"/> -->
+		<INCLUDE SRC="attr-IF.html"/>
+		<br/><br/>
+		<INCLUDE SRC="attr-ELIF.html"/>
+		<br/><br/>
+		<INCLUDE SRC="attr-ELSE.html"/>
+	</div>
+	
+	
+</div>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="common-IF">
+	<code>IF='[expr]'</code>
+	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
+</MACRO>
+<MACRO NAME="common-IF-after">
+	<code>IF='[expr]'</code>
+	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
+</MACRO>
+<MACRO NAME="common-ELIF">
+	<code>ELIF='[expr]'</code>
+	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
+	or a conditional on a previous element passed.
+</MACRO>
+<MACRO NAME="common-ELIF-after">
+	<code>ELIF='[expr]'</code>
+	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
+	or a conditional on a previous element passed.
+</MACRO>
+<MACRO NAME="common-ELSE">
+	<code>ELSE</code>
+	Ignore if a conditional on a previous element evaluated passed.
+</MACRO>
+<MACRO NAME="common-ELSE-after">
+	<code>ELSE</code>
+	Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
+</MACRO>

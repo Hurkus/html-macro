@@ -1,0 +1,48 @@
+<MACRO NAME="link-em-ELSE">
+	<SET-ATTR href="#ELSE"/>
+	<SET-ATTR title="Includes child elements if previous condition macros fail."/>
+</MACRO>
+
+
+<div id="ELSE" class="macro box" IF='!header'>
+	<h4 class="code">{l}ELSE{r}...{l}/ELSE{r}</h4>
+	<p>Includes child elements if previous condition macros fail.</p>
+	<x-line></x-line>
+	<p>
+		Must follow a previous <a CALL="link-em-IF"><code>{l}IF{r}</code></a> or <a CALL="link-em-ELIF"><code>{l}ELIF{r}</code></a> macro.
+		<br/>
+		Child elements are included in the final document only if a previous <a CALL="link-em-IF"><code>{l}IF{r}</code></a> or <a CALL="link-em-ELIF"><code>{l}ELIF{r}</code></a> macro failed.
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="link-em-IF">{l}IF{r}</a>,
+		<a CALL="link-em-ELSE">{l}ELIF{r}</a>,
+		<a CALL="a-SET">{l}SET{r}</a>,
+		<a href="#expressions">expressions</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="a-SET">SET</a> <span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/{r}<br/>
+					<br/>
+					{l}<a CALL="link-em-IF">IF</a> <span title="Check if variable lang equals string &quot;de&quot;">lang="de"</span>{r}<br/>
+						{t}{l}p{r}Deutsch{l}/p{r}<br/>
+					{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
+					{l}<a CALL="link-em-ELSE">ELSE</a>{r}<br/>
+						{t}{l}p{r}English{l}/p{r}<br/>
+					{l}<a CALL="link-em-ELSE">/ELSE</a>{r}<br/>
+				</td>
+				<td class="code">
+					{l}p{r}English{l}/p{r}<br/>
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

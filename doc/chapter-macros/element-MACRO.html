@@ -1,0 +1,82 @@
+<MACRO NAME="a-MACRO">
+	<SET-ATTR href="#MACRO"/>
+	<SET-ATTR title="Defines a new macro."/>
+</MACRO>
+
+
+<div id="MACRO" class="macro box" IF='!header'>
+	<h4 class="code">{l}MACRO{r}...{l}/MACRO{r}</h4>
+	<p>Defines a new macro.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}MACR NAME="[name]"{r}</code>, where:
+		<ul>
+			<li>
+				<code>[name]</code> represents the name of the new macro, which will be used to invoke it.
+				Only the latest macro with the same name is cached.
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		Macro elements serve as <em>templates</em> for instantiating a large number of simmilar HTML element trees.
+		All <a CALL="a-MACRO">{l}MACRO{r}</a> elements are referenced globally, i.e. cached and removed from the source document right after the document is parsed and before any instantiation occurs.
+		This means their position in the document doesn't matter.
+	</p>
+	<br/>
+	<p>
+		All files have an anonymous <a CALL="a-MACRO">{l}MACRO{r}</a> root element.
+	</p>
+	<br/>
+	<p>
+		When instantiated, all child elements are (recursively) coppied and evaluated:
+		<ul>
+			<li>Macro elements are evaluated.</li>
+			<li>Regular HTML elements are coppied.</li>
+			<li>Attributes are coppied and evaluated for any expressions or attribute macros.</li>
+			<li>Text elements are interpolated for expressions.</li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="a-CALL">{l}CALL{r}</a>,
+		<a CALL="a-INCLUDE">{l}INCLUDE{r}</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="a-MACRO">MACRO</a> <span title="Macro is named &apos;func&apos;">NAME="func"</span>{r}<br/>
+						{t}{l}<a CALL="a-SET">SET</a>
+							<span title="Set variable named &apos;col&apos; using a condition function in the expression.">col='<a href="#function-if">if(i == 1, "red", "green")</a>'</span>
+						/{r}<br/>
+						{t}{l}li <span title="Insert previously computed variable into the style attribute.">style="color:\{col};"</span>{r}Line #<span title="Insert variable i">\{i}</span>{l}/li{r}<br/>
+					{l}<a CALL="a-MACRO">/MACRO</a>{r}<br/>
+					<br/>
+					{l}ul{r}<br/>
+						{t}{l}<a CALL="a-FOR">FOR</a>
+							<span title="Initialize variable i to 0">i='0'</span>
+							<span title="Repeat while variable i is less than 3">TRUE='i{l}3'</span>
+							<span title="Increment variable i by 1 after each iteration">i='i+1'</span>
+						{r}<br/>
+							{t*2}{l}<a CALL="a-CALL">CALL</a> <span title="Invoke macro named &apos;func&apos; defined above">NAME="func"</span>/{r}<br/>
+						{t}{l}<a CALL="a-FOR">/FOR</a>{r}<br/>
+					{l}/ul{r}
+				</td>
+				<td class="code">
+					{l}ul{r}<br/>
+						{t}{l}li style="color:green;"{r}Line #0{l}/li{r}<br/>
+						{t}{l}li style="color:red;"{r}Line #1{l}/li{r}<br/>
+						{t}{l}li style="color:green;"{r}Line #2{l}/li{r}<br/>
+					{l}/ul{r}
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

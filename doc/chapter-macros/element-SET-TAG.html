@@ -1,0 +1,60 @@
+<MACRO NAME="a-SET-TAG">
+	<SET-ATTR href="#SET-TAG"/>
+	<SET-ATTR title="Sets tag of parent element."/>
+</MACRO>
+
+
+<div id="SET-TAG" class="macro box" IF='!header'>
+	<h4 class="code">{l}SET-TAG/{r}</h4>
+	<p>Sets tag of parent element.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}SET-TAG NAME='...' /{r}</code> or <code>{l}SET-TAG [name] /{r}</code>.
+	</p>
+	<br/>
+	<p>
+		Attributes:
+		<ul>
+			<li>
+				<code>NAME='...'</code>
+				Set tag of parent element to result of the attribute value expression.
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		Other attributes:
+		<ul>
+			<li CALL="common-IF-after"></li>
+			<li CALL="common-ELIF-after"></li>
+			<li CALL="common-ELSE-after"></li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}div{r}<br/>
+					{t}{l}<a CALL="a-SET-TAG">SET-TAG</a> <span title="New name for parent elemnt div">p</span>/{r}<br/>
+					{t}text<br/>
+					{l}/div{r}
+				</td>
+				<td class="code">
+					{l}p{r}<br/>
+					{t}text<br/>
+					{l}/p{r}
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

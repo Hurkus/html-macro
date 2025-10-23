@@ -1,0 +1,33 @@
+<MACRO NAME="a-CALL">
+	<SET-ATTR href="#CALL"/>
+	<SET-ATTR title="Invokes a user-defined macro."/>
+</MACRO>
+
+
+<div id="CALL" class="macro box" IF='!header'>
+	<h4 class="code">{l}CALL/{r}</h4>
+	<p>Invokes a user-defined macro</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}CALL NAME="[name]"{r}</code>, where:
+		<ul>
+			<li>
+				<code>[name]</code> represents the name of a <a CALL="a-MACRO">{l}MACRO{r}</a>.
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		Other attributes:
+		<ul>
+			<li CALL="common-IF"></li>
+			<li CALL="common-ELIF"></li>
+			<li CALL="common-ELSE"></li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="a-MACRO">{l}MACRO{r}</a>,
+		<a CALL="a-INCLUDE">{l}INCLUDE{r}</a>
+	</p>
+</div>

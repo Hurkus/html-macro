@@ -1,0 +1,57 @@
+<MACRO NAME="am-a-ELSE">
+	<SET-ATTR href="#ATTR-ELSE"/>
+	<SET-ATTR title="Include element if previous condition atribute macro fails."/>
+</MACRO>
+
+
+<div id="ATTR-ELSE" class="macro box" IF='!header'>
+	<h4 class="code">ELSE</h4>
+	<p>Include element if previous condition atribute macro fails.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}... ELSE ...{r}</code>, where:
+		<ul>
+			<li>
+				<code>[expr]</code> represents the expression that is evaluated to a boolean.
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		The element is included in the final document only if an attribute macro <a CALL="am-a-IF"><code>IF</code></a> or <a CALL="am-a-ELIF"><code>ELIF</code></a> on a previous element evaluates to <code>false</code>.
+		This attribute macro can also be found on almost all macro elements, where it performs the same function with a small caveat:
+		<ul>
+			<li>
+				Evaluation of an element macro is terminated only after this attribute macro is encountered and is determined, that the element should be discarded.
+				Any previous attributes can already have an effect on the final document.
+				If such behaviour is unwanted (for example in a <a CALL="a-SET">{l}SET/{r}</a> macro), the <code>ELSE</code> attribute should be written before all others.
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="am-a-IF">IF</a>,
+		<a CALL="am-a-ELSE">ELSE</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="a-SET">SET</a> <span title="Set variable n to integer 3">n='3'</span>/{r}<br/>
+					{l}p <a CALL="am-a-IF">IF='n==1'</a>{r}one{l}/p{r}<br/>
+					{l}p <a CALL="am-a-ELIF">ELIF='n==2'</a>{r}two{l}/p{r}<br/>
+					{l}p <a CALL="am-a-ELSE">ELSE</a>{r}none{l}/p{r}
+				</td>
+				<td class="code">
+					{l}p{r}none{l}/p{r}
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

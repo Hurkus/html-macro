@@ -1,0 +1,55 @@
+<MACRO NAME="a-SET">
+	<SET-ATTR href="#SET"/>
+	<SET-ATTR title="Assigns values to variables."/>
+</MACRO>
+
+
+<div id="SET" class="macro box" IF='!header'>
+	<h4 class="code">{l}SET/{r}</h4>
+	<p>Assigns values to variables.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}SET [name='value'] /{r}</code>,
+		where each attribute name and value corresponds to a variable.<br/>
+		The type of the variable is same as the return type of the expression in the attribute value.
+		If the attribute value is within double quotes, it is considered to be a string.<br/>
+		All variables are <b>global</b>.
+	</p>
+	<br/>
+	<p>
+		Other attributes:
+		<ul>
+			<li CALL="common-IF-after"></li>
+			<li CALL="common-ELIF-after"></li>
+			<li CALL="common-ELSE-after"></li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a href="#expressions">expressions</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="a-SET">SET</a>
+						<span title="Set variable x to an integer 4">x='4'</span>
+						<span title="Set variable y to a float 6.5">y='6.5'</span>
+						<span title="Set variable s to a string 'apples'">s="apples"</span>/{r}<br/>
+					{l}p{r}I have
+						<span title="Insert result of multiplying variable x with variable y">\{int(x*y)}</span>
+						bushels of <span title="Insert variable s">\{s}</span>{l}/p{r}
+				</td>
+				<td class="code">
+					{l}p{r}I have 26 bushels of apples{l}/p{r}
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

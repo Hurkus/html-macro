@@ -1,0 +1,57 @@
+<MACRO NAME="link-em-IF">
+	<SET-ATTR href="#IF"/>
+	<SET-ATTR title="Conditionally includes child elements."/>
+</MACRO>
+
+
+<div id="IF" class="macro box" IF='!header'>
+	<h4 class="code">{l}IF{r}...{l}/IF{r}</h4>
+	<p>Conditionally includes child elements.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}IF [cond]{r}</code>,
+		where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
+		or direct variable comparison <code>var='value'</code>.
+		Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
+		<br/>
+		Child elements are included in the final document only if all conditionals <code>[cond]</code> are evaluated to <code>true</code>.
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="link-em-ELIF">{l}ELIF{r}</a>,
+		<a CALL="link-em-ELSE">{l}ELSE{r}</a>,
+		<a CALL="a-SET">{l}SET{r}</a>,
+		<a href="#expressions">expressions</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="link-em-IF">IF</a> <span title="Check if expression 6>3 evaluates to true.">TRUE='6>3'</span>{r}<br/>
+						{t}{l}p{r}6 is greater than 3{l}/p{r}<br/>
+					{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
+				</td>
+				<td class="code">
+					{l}p{r}6 is greater than 3{l}/p{r}<br/>
+				</td>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="a-SET">SET</a> <span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/{r}<br/>
+					{l}<a CALL="link-em-IF">IF</a> <span title="Check if variable lang equals string &quot;en&quot;">lang="en"</span>{r}<br/>
+						{t}{l}p{r}English{l}/p{r}<br/>
+					{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
+				</td>
+				<td class="code">
+					{l}p{r}English{l}/p{r}<br/>
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

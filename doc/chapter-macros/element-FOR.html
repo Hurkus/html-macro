@@ -1,0 +1,63 @@
+<MACRO NAME="a-FOR">
+	<SET-ATTR href="#FOR"/>
+	<SET-ATTR title="Evaluates child elements for a set amount of times."/>
+</MACRO>
+
+
+<div id="FOR" class="macro box" IF='!header'>
+	<h4 class="code">{l}FOR{r}...{l}/FOR{r}</h4>
+	<p>Evaluates child elements for a set amount of times.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}FOR [init] [cond] [inc]{r}</code>,
+		where:
+		<ul>
+			<li>
+				<code>[init]</code> represents setting a variable in the form <code>name='value'</code>, where the attribute name is the name of the variable, and the attribute value is the value of the variable.
+			</li>
+			<li>
+				<code>[cond]</code> represents a conditional attribute <code>TRUE='...'</code> or <code>FALSE='...'</code>.
+				The loop ends when the expression of the attribute value evaluates to <code>false</code>, or <code>true</code> respectively.
+			</li>
+			<li>
+				<code>[inc]</code> represents setting a variable to a new value, in the form of <code>name='value'</code>, after each iteration of the loop.
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		Other attributes:
+		<ul>
+			<li CALL="common-IF"></li>
+			<li CALL="common-ELIF"></li>
+			<li CALL="common-ELSE"></li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="a-WHILE">{l}WHILE{r}</a>,
+		<a href="#expressions">expressions</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="a-FOR">FOR</a> <span title="[init]">i='0'</span> <span title="[cond]">TRUE='i {l} 3'</span> <span title="[inc]">i='i+1'</span>{r}<br/>
+					{t}{l}p{r}\{i}{l}/p{r}<br/>
+					{l}<a CALL="a-FOR">/FOR</a>{r}
+				</td>
+				<td class="code">
+					{l}p{r}{0}{l}/p{r}<br/>
+					{l}p{r}{1}{l}/p{r}<br/>
+					{l}p{r}{2}{l}/p{r}<br/>
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

@@ -1,0 +1,91 @@
+<MACRO NAME="a-SHELL">
+	<SET-ATTR href="#SHELL"/>
+	<SET-ATTR title="Execute shell command."/>
+</MACRO>
+
+
+<div id="SHELL" class="macro box" IF='!header'>
+	<h4 class="code">{l}SHELL/{r}</h4>
+	<p>Execute shell command.</p>
+	<x-line></x-line>
+	<p>
+		Must be in the form of <code>{l}SHELL{r}[cmd]{l}/SHELL{r}</code> where:
+		<ul>
+			<li>
+				<code>[cmd]</code> represents the command that will be passed to a shell.
+				The command is not interpolated for any expressions.
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		The underlying shell for executing the command is <a href="https://www.man7.org/linux/man-pages/man1/bash.1.html">bash</a>.
+	</p>
+	<br/>
+	<p>
+		Attributes:
+		<ul>
+			<li>
+				<code>VARS="[name,...]"</code>
+				Set shell environment variables to the comma-separated-list of variable names.
+				This is the only way to share variables, as the command <code>[cmd]</code> is not interpolated.
+				Listed variables are accessed by the <code>$[name]</code> operator.
+			</li>
+			<li>
+				<code>STDOUT="[VOID|TEXT|[variable]]"</code>
+				Determines what to do with the <i>stdout</i> stream (default <code>TEXT</code>):
+				<ul>
+					<li>
+						<code>VOID</code> Discards all output.
+					</li>
+					<li>
+						<code>TEXT</code> Insert shell output as text into the final document.
+						The last newline of the output is trimmed.
+					</li>
+					<li>
+						<code>[variable]</code> Store shell output into a variable named <code>[variable]</code>.
+						The last newline of the output is trimmed.
+					</li>
+				</ul>
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		Other attributes:
+		<ul>
+			<li CALL="common-IF"></li>
+			<li CALL="common-ELIF"></li>
+			<li CALL="common-ELSE"></li>
+		</ul>
+	</p>
+	<br/>
+	<p>See also:
+		<a CALL="a-SET">{l}SET{r}</a>
+	</p>
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="a-SET">SET</a> <span title="Set variable t to integer 0">t='0'</span> <span title="Set variable fmt to string &apos;%d/%m/%Y&apos;">fmt="%d/%m/%Y"</span> /{r}<br/>
+					{l}p{r}<br/>
+						{t}The world was created on:<br/>
+						{t}{l}<a CALL="a-SHELL">SHELL</a> <span title="Set shell environment variables $t to variable t and $fmt to fmt">VARS="t,fmt"</span>{r}<span title="date -d &quot;@0&quot; +&quot;%d/%m/%Y&quot;">date -d "@$t" +"$fmt"</span>{l}<a CALL="a-SHELL">/SHELL</a>{r}<br/>
+					{l}/p{r}
+				</td>
+				<td class="code">
+					{l}p{r}<br/>
+					{t}The world was created on:<br/>
+					{t}01/01/1970<br/>
+					{l}/p{r}
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>
