@@ -24,6 +24,8 @@
 <INCLUDE SRC="attr-IF.html"/>
 <INCLUDE SRC="attr-ELIF.html"/>
 <INCLUDE SRC="attr-ELSE.html"/>
+<INCLUDE SRC="attr-CALL.html"/>
+<INCLUDE SRC="attr-INCLUDE.html"/>
 <SET header='false'/>
 <!--  -->
 <!--  -->
@@ -118,8 +120,8 @@
 			<tr>
 				<td class="code">
 					{l}div{r}<br/>
-						{t*2}{l}p <a CALL="am-a-IF"><span title="Include this element only if expression &apos;lang==&quot;de&quot;&apos; evaluates to true">IF='lang=="de"'</span></a>{r}Deutsch{l}/p{r}<br/>
-						{t*2}{l}p <a CALL="am-a-ELSE"><span title="Include this element only if the previous element's flow controll macro attribute evaluates to false">ELSE</span></a>{r}English{l}/p{r}<br/>
+						{t*2}{l}p <a CALL="link-am-IF"><span title="Include this element only if expression &apos;lang==&quot;de&quot;&apos; evaluates to true">IF='lang=="de"'</span></a>{r}Deutsch{l}/p{r}<br/>
+						{t*2}{l}p <a CALL="link-am-ELSE"><span title="Include this element only if the previous element's flow controll macro attribute evaluates to false">ELSE</span></a>{r}English{l}/p{r}<br/>
 					{l}/div{r}
 				</td>
 				<td class="code">
@@ -149,24 +151,24 @@
 			}
 		</style>
 		<ul class="list">
-			<li><a CALL="a-MACRO">{l}MACRO{r}</a> &mdash; Defines a new macro.</li>
-			<li><a CALL="a-CALL">{l}CALL{r}</a>  &mdash; Invokes a <a CALL="a-MACRO">{l}MACRO{r}</a>.</li>
-			<li><a CALL="a-INCLUDE">{l}INCLUDE{r}</a> &mdash; Includes contents of another file.</li>
-			<li><a CALL="a-SET">{l}SET{r}</a> &mdash; Assigns values to variables.</li>
+			<li><a CALL="link-em-MACRO">{l}MACRO{r}</a> &mdash; Defines a new macro.</li>
+			<li><a CALL="link-em-CALL">{l}CALL{r}</a>  &mdash; Invokes a <a CALL="link-em-MACRO">{l}MACRO{r}</a>.</li>
+			<li><a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a> &mdash; Includes contents of another file.</li>
+			<li><a CALL="link-em-SET">{l}SET{r}</a> &mdash; Assigns values to variables.</li>
 			<li><a CALL="link-em-IF">{l}IF{r}</a> &mdash; Conditionally includes child elements.</li>
 			<li><a CALL="link-em-ELIF">{l}ELIF{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
 			<li><a CALL="link-em-ELSE">{l}ELSE{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
-			<li><a CALL="a-FOR">{l}FOR{r}</a> &mdash; Include child elements in a loop.</li>
-			<li><a CALL="a-WHILE">{l}WHILE{r}</a> &mdash; Include child elements in a loop.</li>
-			<li><a CALL="a-SET-TAG">{l}SET-TAG{r}</a> &mdash; Sets tag of parent element.</li>
+			<li><a CALL="link-em-FOR">{l}FOR{r}</a> &mdash; Include child elements in a loop.</li>
+			<li><a CALL="link-em-WHILE">{l}WHILE{r}</a> &mdash; Include child elements in a loop.</li>
+			<li><a CALL="link-em-SET-TAG">{l}SET-TAG{r}</a> &mdash; Sets tag of parent element.</li>
 			<li><a CALL="a-GET-TAG">{l}GET-TAG{r}</a> &mdash; Set variable to parent tag.</li>
-			<li><a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a> &mdash; Set parent element attribute value.</li>
-			<li><a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a> &mdash; Set variable to value of a parent's attribute.</li>
-			<li><a CALL="a-DEL-ATTR">{l}DEL-ATTR{r}</a> &mdash; Remove attribute from parent element.</li>
+			<li><a CALL="link-em-SET-ATTR">{l}SET-ATTR{r}</a> &mdash; Set parent element attribute value.</li>
+			<li><a CALL="link-em-GET-ATTR">{l}GET-ATTR{r}</a> &mdash; Set variable to value of a parent's attribute.</li>
+			<li><a CALL="link-em-DEL-ATTR">{l}DEL-ATTR{r}</a> &mdash; Remove attribute from parent element.</li>
 			<li><a CALL="a-SHELL">{l}SHELL{r}</a> &mdash; Execute shell command.</li>
-			<li><a CALL="a-INFO">{l}INFO{r}</a> &mdash; Log messages to stderr.</li>
-			<li><a CALL="a-WARN">{l}WARN{r}</a> &mdash; Log warning messages to stderr.</li>
-			<li><a CALL="a-ERROR">{l}ERROR{r}</a> &mdash; Log error messages to stderr.</li>
+			<li><a CALL="link-em-INFO">{l}INFO{r}</a> &mdash; Log messages to stderr.</li>
+			<li><a CALL="link-em-WARN">{l}WARN{r}</a> &mdash; Log warning messages to stderr.</li>
+			<li><a CALL="link-em-ERROR">{l}ERROR{r}</a> &mdash; Log error messages to stderr.</li>
 		</ul>
 		
 		<br/><br/>
@@ -223,11 +225,11 @@
 		<p>
 			List of attribute macros:
 			<ul>
-				<li><a CALL="am-a-IF">IF</a> &mdash; Conditionally include element.</li>
-				<li><a>ELIF</a> &mdash; Conditionally inlude element.</li>
-				<li><a>ELSE</a> &mdash; Conditionally inlude element.</li>
-				<li><a>CALL</a> &mdash; Invoke a user-defined macro <i>inside</i> the current element.</li>
-				<li><a>INCLUDE</a> &mdash; Include contents of another file as child elements of the current element.</li>
+				<li><a CALL="link-am-IF">IF</a> &mdash; Conditionally include element.</li>
+				<li><a CALL="link-am-ELIF">ELIF</a> &mdash; Conditionally inlude element.</li>
+				<li><a CALL="link-am-ELSE">ELSE</a> &mdash; Conditionally inlude element.</li>
+				<li><a CALL="link-am-CALL">CALL</a> &mdash; Invoke a user-defined macro <i>inside</i> the current element.</li>
+				<li><a CALL="link-am-INCLUDE">INCLUDE</a> &mdash; Include contents of another file as child elements of the current element.</li>
 			</ul>
 		</p>
 		
@@ -238,6 +240,10 @@
 		<INCLUDE SRC="attr-ELIF.html"/>
 		<br/><br/>
 		<INCLUDE SRC="attr-ELSE.html"/>
+		<br/><br/>
+		<INCLUDE SRC="attr-CALL.html"/>
+		<br/><br/>
+		<INCLUDE SRC="attr-INCLUDE.html"/>
 	</div>
 	
 	

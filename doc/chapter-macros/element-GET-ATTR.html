@@ -1,4 +1,4 @@
-<MACRO NAME="a-GET-ATTR">
+<MACRO NAME="link-em-GET-ATTR">
 	<SET-ATTR href="#GET-ATTR"/>
 	<SET-ATTR title="Set variable to value of a parent's attribute."/>
 </MACRO>
@@ -37,8 +37,8 @@
 	</p>
 	<br/>
 	<p>See also:
-		<a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a>,
-		<a CALL="a-DEL-ATTR">{l}DEL-ATTR{r}</a>
+		<a CALL="link-em-SET-ATTR">{l}SET-ATTR{r}</a>,
+		<a CALL="link-em-DEL-ATTR">{l}DEL-ATTR{r}</a>
 	</p>
 	<x-line></x-line>
 	<div class="example">
@@ -51,8 +51,8 @@
 			<tr>
 				<td class="code">
 					{l}div id="box"{r}<br/>
-					{t}{l}<a CALL="a-GET-ATTR">GET-ATTR</a> <span title="Store value of attribute &apos;id&apos; into variable x">x="id"</span>/{r}<br/>
-					{t}{l}<a CALL="a-SET-ATTR">SET-ATTR</a> <span title="Set attribute &apos;class&apos; to variable x">class='x'</span>/{r}<br/>
+					{t}{l}<a CALL="link-em-GET-ATTR">GET-ATTR</a> <span title="Store value of attribute &apos;id&apos; into variable x">x="id"</span>/{r}<br/>
+					{t}{l}<a CALL="link-em-SET-ATTR">SET-ATTR</a> <span title="Set attribute &apos;class&apos; to variable x">class='x'</span>/{r}<br/>
 					{l}/div{r}
 				</td>
 				<td class="code">

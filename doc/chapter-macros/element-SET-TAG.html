@@ -1,4 +1,4 @@
-<MACRO NAME="a-SET-TAG">
+<MACRO NAME="link-em-SET-TAG">
 	<SET-ATTR href="#SET-TAG"/>
 	<SET-ATTR title="Sets tag of parent element."/>
 </MACRO>
@@ -32,7 +32,7 @@
 	</p>
 	<br/>
 	<p>See also:
-		<a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a>
+		<a CALL="link-em-GET-ATTR">{l}GET-ATTR{r}</a>
 	</p>
 	<x-line></x-line>
 	<div class="example">
@@ -45,7 +45,7 @@
 			<tr>
 				<td class="code">
 					{l}div{r}<br/>
-					{t}{l}<a CALL="a-SET-TAG">SET-TAG</a> <span title="New name for parent elemnt div">p</span>/{r}<br/>
+					{t}{l}<a CALL="link-em-SET-TAG">SET-TAG</a> <span title="New name for parent elemnt div">p</span>/{r}<br/>
 					{t}text<br/>
 					{l}/div{r}
 				</td>

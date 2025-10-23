@@ -1,4 +1,4 @@
-<MACRO NAME="a-WHILE">
+<MACRO NAME="link-em-WHILE">
 	<SET-ATTR href="#WHILE"/>
 	<SET-ATTR title="Repeatedly evaluates child elements."/>
 </MACRO>
@@ -28,7 +28,7 @@
 	</p>
 	<br/>
 	<p>See also:
-		<a CALL="a-FOR">{l}FOR{r}</a>,
+		<a CALL="link-em-FOR">{l}FOR{r}</a>,
 		<a href="#expressions">expressions</a>
 	</p>
 	<x-line></x-line>
@@ -41,10 +41,10 @@
 			</tr>
 			<tr>
 				<td class="code">
-					{l}<a CALL="a-SET">SET</a> i='0'/{r}<br/>
-					{l}<a CALL="a-WHILE">WHILE</a> <span title="[cond]">TRUE='i {l} 3'</span>{r}<br/>
+					{l}<a CALL="link-em-SET">SET</a> i='0'/{r}<br/>
+					{l}<a CALL="link-em-WHILE">WHILE</a> <span title="[cond]">TRUE='i {l} 3'</span>{r}<br/>
 					{t}{l}p{r}\{i}{l}/p{r}<br/>
-					{t}{l}<a CALL="a-SET">SET</a> i='i+1'/{r}<br/>
+					{t}{l}<a CALL="link-em-SET">SET</a> i='i+1'/{r}<br/>
 					{l}<a href="#WHILE">/WHILE</a>{r}
 				</td>
 				<td class="code">

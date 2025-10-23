@@ -1,4 +1,4 @@
-<MACRO NAME="am-a-IF">
+<MACRO NAME="link-am-IF">
 	<SET-ATTR href="#ATTR-IF"/>
 	<SET-ATTR title="Conditionally include element."/>
 </MACRO>
@@ -23,14 +23,14 @@
 		<ul>
 			<li>
 				Evaluation of an element macro is terminated only after this attribute macro is encountered and evaluated to false; any previous attributes can already have an effect on the final document.
-				If such behaviour is unwanted (for example in a <a CALL="a-SET">{l}SET/{r}</a> macro), the <code>IF</code> attribute should be written before all others.
+				If such behaviour is unwanted (for example in a <a CALL="link-em-SET">{l}SET/{r}</a> macro), the <code>IF</code> attribute should be written before all others.
 			</li>
 		</ul>
 	</p>
 	<br/>
 	<p>See also:
-		<a CALL="am-a-ELIF">ELIF</a>,
-		<a CALL="am-a-ELSE">ELSE</a>,
+		<a CALL="link-am-ELIF">attribute ELIF</a>,
+		<a CALL="link-am-ELSE">attribute ELSE</a>,
 		<a href="#expressions">expressions</a>
 	</p>
 	<x-line></x-line>
@@ -43,10 +43,10 @@
 			</tr>
 			<tr>
 				<td class="code">
-					{l}<a CALL="a-SET">SET</a> <span title="Set variable n to integer 1">n='1'</span>/{r}<br/>
-					{l}p <a CALL="am-a-IF">IF='n==1'</a>{r}one{l}/p{r}<br/>
-					{l}p <a CALL="am-a-ELIF">ELIF='n==2'</a>{r}two{l}/p{r}<br/>
-					{l}p <a CALL="am-a-ELSE">ELSE</a>{r}none{l}/p{r}
+					{l}<a CALL="link-em-SET">SET</a> <span title="Set variable n to integer 1">n='1'</span>/{r}<br/>
+					{l}p <a CALL="link-am-IF">IF='n==1'</a>{r}one{l}/p{r}<br/>
+					{l}p <a CALL="link-am-ELIF">ELIF='n==2'</a>{r}two{l}/p{r}<br/>
+					{l}p <a CALL="link-am-ELSE">ELSE</a>{r}none{l}/p{r}
 				</td>
 				<td class="code">
 					{l}p{r}one{l}/p{r}

@@ -1,4 +1,4 @@
-<MACRO NAME="a-DEL-ATTR">
+<MACRO NAME="link-em-DEL-ATTR">
 	<SET-ATTR href="#DEL-ATTR"/>
 	<SET-ATTR title="Remove attribute from parent element."/>
 </MACRO>
@@ -27,8 +27,8 @@
 	</p>
 	<br/>
 	<p>See also:
-		<a CALL="a-SET-ATTR">{l}SET-ATTR{r}</a>,
-		<a CALL="a-GET-ATTR">{l}GET-ATTR{r}</a>
+		<a CALL="link-em-SET-ATTR">{l}SET-ATTR{r}</a>,
+		<a CALL="link-em-GET-ATTR">{l}GET-ATTR{r}</a>
 	</p>
 	<x-line></x-line>
 	<div class="example">
@@ -41,7 +41,7 @@
 			<tr>
 				<td class="code">
 					{l}div id="box"{r}<br/>
-					{t}{l}<a CALL="a-DEL-ATTR">DEL-ATTR</a> <span title="Delete attribute &apos;id&apos;">id</span>/{r}<br/>
+					{t}{l}<a CALL="link-em-DEL-ATTR">DEL-ATTR</a> <span title="Delete attribute &apos;id&apos;">id</span>/{r}<br/>
 					{l}/div{r}
 				</td>
 				<td class="code">

@@ -1,4 +1,4 @@
-<MACRO NAME="a-CALL">
+<MACRO NAME="link-em-CALL">
 	<SET-ATTR href="#CALL"/>
 	<SET-ATTR title="Invokes a user-defined macro."/>
 </MACRO>
@@ -6,13 +6,13 @@
 
 <div id="CALL" class="macro box" IF='!header'>
 	<h4 class="code">{l}CALL/{r}</h4>
-	<p>Invokes a user-defined macro</p>
+	<p>Invokes a user-defined macro.</p>
 	<x-line></x-line>
 	<p>
 		Must be in the form of <code>{l}CALL NAME="[name]"{r}</code>, where:
 		<ul>
 			<li>
-				<code>[name]</code> represents the name of a <a CALL="a-MACRO">{l}MACRO{r}</a>.
+				<code>[name]</code> represents the name of a <a CALL="link-em-MACRO">{l}MACRO{r}</a>.
 			</li>
 		</ul>
 	</p>
@@ -27,7 +27,8 @@
 	</p>
 	<br/>
 	<p>See also:
-		<a CALL="a-MACRO">{l}MACRO{r}</a>,
-		<a CALL="a-INCLUDE">{l}INCLUDE{r}</a>
+		<a CALL="link-am-CALL">attribute CALL</a>,
+		<a CALL="link-em-MACRO">{l}MACRO{r}</a>,
+		<a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a>
 	</p>
 </div>

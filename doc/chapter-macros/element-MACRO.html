@@ -1,4 +1,4 @@
-<MACRO NAME="a-MACRO">
+<MACRO NAME="link-em-MACRO">
 	<SET-ATTR href="#MACRO"/>
 	<SET-ATTR title="Defines a new macro."/>
 </MACRO>
@@ -20,12 +20,12 @@
 	<br/>
 	<p>
 		Macro elements serve as <em>templates</em> for instantiating a large number of simmilar HTML element trees.
-		All <a CALL="a-MACRO">{l}MACRO{r}</a> elements are referenced globally, i.e. cached and removed from the source document right after the document is parsed and before any instantiation occurs.
+		All <a CALL="link-em-MACRO">{l}MACRO{r}</a> elements are referenced globally, i.e. cached and removed from the source document right after the document is parsed and before any instantiation occurs.
 		This means their position in the document doesn't matter.
 	</p>
 	<br/>
 	<p>
-		All files have an anonymous <a CALL="a-MACRO">{l}MACRO{r}</a> root element.
+		All files have an anonymous <a CALL="link-em-MACRO">{l}MACRO{r}</a> root element.
 	</p>
 	<br/>
 	<p>
@@ -39,8 +39,9 @@
 	</p>
 	<br/>
 	<p>See also:
-		<a CALL="a-CALL">{l}CALL{r}</a>,
-		<a CALL="a-INCLUDE">{l}INCLUDE{r}</a>
+		<a CALL="link-em-CALL">{l}CALL{r}</a>,
+		<a CALL="link-am-CALL">attribute CALL</a>,
+		<a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a>
 	</p>
 	<x-line></x-line>
 	<div class="example">
@@ -52,21 +53,21 @@
 			</tr>
 			<tr>
 				<td class="code">
-					{l}<a CALL="a-MACRO">MACRO</a> <span title="Macro is named &apos;func&apos;">NAME="func"</span>{r}<br/>
-						{t}{l}<a CALL="a-SET">SET</a>
+					{l}<a CALL="link-em-MACRO">MACRO</a> <span title="Macro is named &apos;func&apos;">NAME="func"</span>{r}<br/>
+						{t}{l}<a CALL="link-em-SET">SET</a>
 							<span title="Set variable named &apos;col&apos; using a condition function in the expression.">col='<a href="#function-if">if(i == 1, "red", "green")</a>'</span>
 						/{r}<br/>
 						{t}{l}li <span title="Insert previously computed variable into the style attribute.">style="color:\{col};"</span>{r}Line #<span title="Insert variable i">\{i}</span>{l}/li{r}<br/>
-					{l}<a CALL="a-MACRO">/MACRO</a>{r}<br/>
+					{l}<a CALL="link-em-MACRO">/MACRO</a>{r}<br/>
 					<br/>
 					{l}ul{r}<br/>
-						{t}{l}<a CALL="a-FOR">FOR</a>
+						{t}{l}<a CALL="link-em-FOR">FOR</a>
 							<span title="Initialize variable i to 0">i='0'</span>
 							<span title="Repeat while variable i is less than 3">TRUE='i{l}3'</span>
 							<span title="Increment variable i by 1 after each iteration">i='i+1'</span>
 						{r}<br/>
-							{t*2}{l}<a CALL="a-CALL">CALL</a> <span title="Invoke macro named &apos;func&apos; defined above">NAME="func"</span>/{r}<br/>
-						{t}{l}<a CALL="a-FOR">/FOR</a>{r}<br/>
+							{t*2}{l}<a CALL="link-em-CALL">CALL</a> <span title="Invoke macro named &apos;func&apos; defined above">NAME="func"</span>/{r}<br/>
+						{t}{l}<a CALL="link-em-FOR">/FOR</a>{r}<br/>
 					{l}/ul{r}
 				</td>
 				<td class="code">

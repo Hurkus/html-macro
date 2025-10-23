@@ -1,0 +1,37 @@
+<MACRO NAME="link-am-CALL">
+	<SET-ATTR href="#ATTR-CALL"/>
+	<SET-ATTR title="Invoke a user-defined macro inside the current element."/>
+</MACRO>
+
+
+<div id="ATTR-CALL" class="macro box" IF='!header'>
+	<h4 class="code">CALL=...</h4>
+	<p>Invoke a user-defined macro <i>inside</i> the current element.</p>
+	<x-line></x-line>
+	
+	<p>
+		Must be in the form of <code>{l}... CALL="[name]" ...{r}</code>, where:
+		<ul>
+			<li>
+				<code>[name]</code> represents the name of a <a CALL="link-em-MACRO">{l}MACRO{r}</a> that will be invoked.
+			</li>
+		</ul>
+	</p>
+	<br/>
+	<p>
+		The invocation occurs immediately after encountering the attribute.
+		This means that some attributes might not have fully coppied to the final document.
+		This would affect macros such as <a CALL="link-em-DEL-ATTR">{l}DEL-ATTR{r}</a>, as they would not be able to remove attributes that do not exist yet.
+		If such behaviour is unwanted, the attribute macro should be written after all others.
+		<br/><br/>
+		After invoking the macro, all child elements are evaluated/appended to the final document as per the standard procedure.
+		This attribute macro is esentially an attribute version of the <a CALL="link-em-CALL">{l}CALL{r}</a> macro.
+	</p>
+	
+	<br/>
+	<p>See also:
+		<a CALL="link-em-CALL">{l}CALL{r}</a>,
+		<a CALL="link-em-MACRO">{l}MACRO{r}</a>
+	</p>
+	
+</div>

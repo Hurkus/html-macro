@@ -61,7 +61,7 @@
 	</p>
 	<br/>
 	<p>See also:
-		<a CALL="a-SET">{l}SET{r}</a>
+		<a CALL="link-em-SET">{l}SET{r}</a>
 	</p>
 	<x-line></x-line>
 	<div class="example">
@@ -73,7 +73,7 @@
 			</tr>
 			<tr>
 				<td class="code">
-					{l}<a CALL="a-SET">SET</a> <span title="Set variable t to integer 0">t='0'</span> <span title="Set variable fmt to string &apos;%d/%m/%Y&apos;">fmt="%d/%m/%Y"</span> /{r}<br/>
+					{l}<a CALL="link-em-SET">SET</a> <span title="Set variable t to integer 0">t='0'</span> <span title="Set variable fmt to string &apos;%d/%m/%Y&apos;">fmt="%d/%m/%Y"</span> /{r}<br/>
 					{l}p{r}<br/>
 						{t}The world was created on:<br/>
 						{t}{l}<a CALL="a-SHELL">SHELL</a> <span title="Set shell environment variables $t to variable t and $fmt to fmt">VARS="t,fmt"</span>{r}<span title="date -d &quot;@0&quot; +&quot;%d/%m/%Y&quot;">date -d "@$t" +"$fmt"</span>{l}<a CALL="a-SHELL">/SHELL</a>{r}<br/>

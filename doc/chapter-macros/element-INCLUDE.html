@@ -1,20 +1,20 @@
-<MACRO NAME="a-INCLUDE">
+<MACRO NAME="link-em-INCLUDE">
 	<SET-ATTR href="#INCLUDE"/>
 	<SET-ATTR title="Includes contents of another file."/>
 </MACRO>
-<MACRO NAME="a-INCLUDE-HTML">
+<MACRO NAME="link-em-INCLUDE-HTML">
 	<SET-ATTR href="#INCLUDE-HTML"/>
 	<SET-ATTR title="Includes an HTML (.html) file as a macro."/>
 </MACRO>
-<MACRO NAME="a-INCLUDE-CSS">
+<MACRO NAME="link-em-INCLUDE-CSS">
 	<SET-ATTR href="#INCLUDE-CSS"/>
 	<SET-ATTR title="Includes a CSS (.css) file."/>
 </MACRO>
-<MACRO NAME="a-INCLUDE-JS">
+<MACRO NAME="link-em-INCLUDE-JS">
 	<SET-ATTR href="#INCLUDE-JS"/>
 	<SET-ATTR title="Includes a JavaScript (.js) file."/>
 </MACRO>
-<MACRO NAME="a-INCLUDE-TXT">
+<MACRO NAME="link-em-INCLUDE-TXT">
 	<SET-ATTR href="#INCLUDE-TXT"/>
 	<SET-ATTR title="Includes file as plain text."/>
 </MACRO>
@@ -24,6 +24,7 @@
 	<h4 class="code">{l}INCLUDE/{r}</h4>
 	<p>Includes contents of another file.</p>
 	<x-line></x-line>
+	
 	<p>
 		Must be in the form of <code>{l}INCLUDE SRC="[path]"/{r}</code>, where:
 		<ul>
@@ -32,6 +33,7 @@
 			</li>
 		</ul>
 	</p>
+	
 	<br/>
 	<style>
 		#INCLUDE.macro ul.file-types li {
@@ -45,18 +47,18 @@
 			<li id="INCLUDE-HTML">
 				<code>{l}INCLUDE-HTML/{r}</code> for <em>.html</em> files.<br/>
 				The file is parsed as an HTML macro, i.e. the root element is invoked as a macro after parsing.<br/>
-				All <a CALL="a-MACRO">{l}MACRO{r}</a> elements are added to the global list of defined macros (overwriting existing ones).
+				All <a CALL="link-em-MACRO">{l}MACRO{r}</a> elements are added to the global list of defined macros (overwriting existing ones).
 			</li>
 			<li id="INCLUDE-CSS">
 				<code>{l}INCLUDE-CSS/{r}</code> for style <em>.css</em> files.<br/>
 				The file is processed for any CSS expressions.<br/>
-				<span style="color:hsl(0, 100%, 30%);">The attribute version of this macro is more usefull, as it allowes wrapping the content in <code>{l}style{r}{l}/style{r}</code> tags.</span><br/>
+				<span style="color:hsl(0, 100%, 30%);">The attribute version of this macro is more usefull, as it allows wrapping the content in <code>{l}style{r}{l}/style{r}</code> tags.</span><br/>
 				May be subjected to optimizations in future versions.
 			</li>
 			<li id="INCLUDE-JS">
 				<code>{l}INCLUDE-JS/{r}</code> for JavaScript <em>.js</em> files.<br/>
 				Mainly untouched; handled as plain text.<br/>
-				<span style="color:hsl(0, 100%, 30%);">The attribute version of this macro is more usefull, as it allowes wrapping the content in <code>{l}script{r}{l}/script{r}</code> tags.</span><br/>
+				<span style="color:hsl(0, 100%, 30%);">The attribute version of this macro is more usefull, as it allows wrapping the content in <code>{l}script{r}{l}/script{r}</code> tags.</span><br/>
 				May be subjected to optimizations in future versions.
 			</li>
 			<li id="INCLUDE-TXT">
@@ -65,14 +67,17 @@
 			</li>
 		</ul>
 	</p>
+	
 	<br/>
 	<p>
 		Every included file is cached which means that parsing is done only once per file.<br/>
 		The same file can be included multiple times which means that the user must prevent infinitely recursive includes.
 	</p>
+	
 	<br/>
 	<p>See also:
-		<a CALL="a-CALL">{l}CALL{r}</a>
+		<a CALL="link-em-CALL">{l}CALL{r}</a>,
+		<a CALL="link-am-INCLUDE">attribute INCLUDE</a>
 	</p>
 	<br/>
 	<p>
@@ -83,6 +88,7 @@
 			<li CALL="common-ELSE-after"></li>
 		</ul>
 	</p>
+	
 	<x-line></x-line>
 	<div class="example">
 		<h4><b>Example</b></h4>
@@ -119,11 +125,11 @@
 			</tr>
 			<tr>
 				<td class="code">
-					{l}<a CALL="a-SET">SET</a> <span title="Set variable name to 'cookbook'">name="cookbook"</span>/{r}<br/>
+					{l}<a CALL="link-em-SET">SET</a> <span title="Set variable name to 'cookbook'">name="cookbook"</span>/{r}<br/>
 					{l}body{r}<br/>
-					{t}{l}<a CALL="a-INCLUDE">INCLUDE</a> <span title="Path to the file is relative to the current file.">SRC="header.html"</span>/{r}<br/>
+					{t}{l}<a CALL="link-em-INCLUDE">INCLUDE</a> <span title="Path to the file is relative to the current file.">SRC="header.html"</span>/{r}<br/>
 					{t}{l}p{r}Amazing content!{l}/p{r}<br/>
-					{t}{l}<a CALL="a-INCLUDE">INCLUDE</a> <span title="Path to the file is relative to the current file.">SRC="footer.html"</span>/{r}<br/>
+					{t}{l}<a CALL="link-em-INCLUDE">INCLUDE</a> <span title="Path to the file is relative to the current file.">SRC="footer.html"</span>/{r}<br/>
 					{l}/body{r}
 				</td>
 				<td class="code">
