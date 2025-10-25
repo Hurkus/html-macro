@@ -30,7 +30,7 @@
 	
 </style>
 <style>
-	.td-0   { text-decoration: none; }
+	.TD-0   { text-decoration: none; }
 	/* .ta-c {	text-align: center;    } */
 	/* .ta-j { text-align: justify;   } */
 </style>
@@ -43,7 +43,25 @@
 	h2, h3 {
 		margin-bottom: 5px;
 	}
-
+	
+	h2 {
+		padding: 0.2em 0.5em;
+		border-top: 5px solid rgb(127, 0, 0);
+		border-radius: 2px;
+		background: rgba(127, 0, 0, 0.1);
+		background: linear-gradient(to bottom, rgba(127, 0, 0, 0.05) 0%, transparent 100%);
+	}
+	
+	h3 {
+		padding: 0.2em 0.5em;
+		border-radius: 2px;
+		border-top: 3px solid rgb(201, 108, 0);
+		background: linear-gradient(to bottom, rgba(240, 128, 0, 0.05) 0%, transparent 100%);
+	}
+	
+</style>
+<style>
+	
 	code, .code {
 		background-color: rgb(240, 240, 240);
 		padding-left: 0.3em;
@@ -117,20 +135,51 @@
 	}
 	
 </style>
+<style>
+	
+	.content > .subtitle {
+		font-size: 0.8em;
+		display: flex;
+		gap: 5px;
+	}
+	
+	.content > .subtitle a {
+		color: inherit;
+	}
+	
+</style>
 <body>
 	<div class="content">
 		<h1>HTML-Macro</h1>
 		<br/>
+		<div class="subtitle">
+			<p>Author &ndash; <a href="https://hurkus.dev" style="font-weight: bold;">Hurkus</a></p>
+			&bull;
+			<p>Repository &ndash; <a href="https://github.com/Hurkus/html-macro/">github.com/Hurkus/html-macro/</a></p>
+			<!-- &bull; -->
+			<!-- <p>Website &ndash; <a href=""></a></p> -->
+		</div>
 		<br/>
 		
 		
 		<SET ci='0'/>
+		<INCLUDE SRC="chapter-introduction.html"/>
+		<br/>
+		<br/>
+		<br/>
+		<INCLUDE SRC="chapter-cli.html"/>
+		<br/>
+		<br/>
+		<br/>
 		<INCLUDE SRC="chapter-macros.html"/>
+		<br/>
 		<br/>
 		<br/>
 		<INCLUDE SRC="chapter-expressions.html"/>
 		
 		
+		<br/>
+		<br/>
 		<br/>
 		<br/>
 	</div>

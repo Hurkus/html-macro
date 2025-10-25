@@ -1,0 +1,87 @@
+<SET ci='ci + 1' cii='0'/>
+<SET l="&lt;" r="&gt;"/>
+<!--  -->
+<SET header='true'/>
+<INCLUDE SRC="macros/element-INCLUDE.html"/>
+<!--  -->
+<div id="cli" class="chapter">
+	<h2>{ci}. Command-line interface</h2>
+	
+	<p>
+		The program requires a path to <b>one</b> input file, which will be parsed, processed and then piped via <a href="https://en.wikipedia.org/wiki/Standard_streams">stdout</a>.<br/>
+	</p>
+	
+	
+	<br/>
+	<p>
+		General usage would be: <code>html-macro [options] [variables] {l}path{r}</code>, where:
+		<ul>
+			<li>
+				<code><a href="#cli-options" class="TD-0">[options]</a></code> represents the optional list of program options described <a href="#cli-options">below</a>.
+			</li>
+			<li>
+				<code>[variables]</code> represents the list of predefined variables used in <a href="#expressions">expressions</a>.
+				They are written in the form of <code>[name]=[value]</code>.
+			</li>
+			<li>
+				<code>{l}path{r}</code> represents the mandatory path to the input file (typically a <code>.html</code> file).
+				The <code>path</code> cannot contain an <code>=</code> character, as that would be considered a variable assignment.
+			</li>
+		</ul>
+	</p>
+	
+	
+	<br/>
+	<style>
+		#cli-options td {
+			text-align: justify;
+			padding: 10px;
+		}
+		
+		#cli-options tr > *:nth-child(1),
+		#cli-options tr > *:nth-child(2) {
+			white-space: nowrap;
+		}
+	</style>
+	<p>
+		List of program <code>[options]</code>:
+		<table id="cli-options" class="list">
+			<tr>
+				<th>Long option</th>
+				<th>Short option</th>
+				<th>Description</th>
+			</tr>
+			<tr>
+				<td><code>--help</code></td>
+				<td><code>-h</code></td>
+				<td>Print program information and a short manual/list of all options.</td>
+			</tr>
+			<tr>
+				<td><code>--include {l}path{r}</code></td>
+				<td><code>-i {l}path{r}</code></td>
+				<td>
+					Add <code>path</code> to the list of paths that are searched when including files using a relative path with the <a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a> element macro.
+					The <code>path</code> must lead to an existing <b>directory</b>.
+				</td>
+			</tr>
+			<tr>
+				<td><code>--output {l}path{r}</code></td>
+				<td><code>-o {l}path{r}</code></td>
+				<td>
+					Write output directly to a file instead of <i>stdout</i>.
+					Errors, warnings and general information are still piped to <i>stderr</i>.
+				</td>
+			</tr>
+			<tr>
+				<td></td>
+				<td><code>-x</code></td>
+				<td>
+					Discard the <i>stdout</i> stream and/or do not write any output to a file.
+					This option can be used to check for errors without generating any output.
+				</td>
+			</tr>
+		</table>
+	</p>
+	
+	
+</div>
