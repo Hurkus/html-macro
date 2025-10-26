@@ -4,7 +4,7 @@
 <SET header='true'/>
 <INCLUDE SRC="macros/element-INCLUDE.html"/>
 <!--  -->
-<div id="cli" class="chapter">
+<section id="cli" class="chapter">
 	<h2>{ci}. Command-line interface</h2>
 	
 	<p>
@@ -33,19 +33,19 @@
 	
 	<br/>
 	<style>
-		#cli-options td {
+		#cli-options table td {
 			text-align: justify;
 			padding: 10px;
 		}
 		
-		#cli-options tr > *:nth-child(1),
-		#cli-options tr > *:nth-child(2) {
+		#cli-options table tr > *:nth-child(1),
+		#cli-options table tr > *:nth-child(2) {
 			white-space: nowrap;
 		}
 	</style>
-	<p>
-		List of program <code>[options]</code>:
-		<table id="cli-options" class="list">
+	<div id="cli-options">
+		<p>List of program <code>[options]</code>:</p>
+		<table class="list">
 			<tr>
 				<th>Long option</th>
 				<th>Short option</th>
@@ -81,7 +81,7 @@
 				</td>
 			</tr>
 		</table>
-	</p>
+	</div>
 	
 	
-</div>
+</section>

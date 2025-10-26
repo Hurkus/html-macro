@@ -61,115 +61,99 @@
 	
 </style>
 <!--  -->
-<div id="macros" class="chapter">
+<section id="macros" class="chapter">
 	<h2>{ci}. Macros</h2>
+	
 	<p>
-		Certain HTML tags are not coppied to the final document.
-		Instead they perform other functions that modify the document.
-		Such tags are called <b>(HTML) macros</b> and are all written in <b>uppercase</b>.
-		Parameters for their functionality are passed by HTML attributes, which are <i>usually</i> also in uppercase.
+		While most content from source files is coppied to the final document, <b>macros</b> can invoke special functionality for generating or excluding content.
+		While the user can define custom macros (with limited functionality), there are two sets of predefined macros:
+		<ul>
+			<li><a href="#element-macros">Element macros</a></li>
+			<li><a href="#attribute-macros">Attribute macros</a></li>
+		</ul>
 	</p>
 	
-	<br/>
-	<div class="example">
-		<h4><b>Example:</b> Macro demonstration for language-specific text.</h4>
-		<table>
-			<tr>
-				<th>input</th>
-				<th>output</th>
-			</tr>
-			<tr>
-				<td class="code">
-					{l}div{r}<br/>
-						{t}{l}<a CALL="link-em-IF">IF</a> <span title="Check if variable lang is equal to string &quot;de&quot;">lang="de"</span>{r}<br/>
-							{t*2}{l}p{r}Deutsch{l}/p{r}<br/>
-						{t}{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
-						{t}{l}<a CALL="link-em-ELSE">ELSE</a>{r}<br/>
-							{t*2}{l}p{r}English{l}/p{r}<br/>
-						{t}{l}<a CALL="link-em-ELSE">/ELSE</a>{r}<br/>
-					{l}/div{r}
-				</td>
-				<td class="code">
-					{l}div{r}<br/>
-					{t}{l}p{r}English{l}/p{r}<br/>
-					{l}/div{r}
-				</td>
-			</tr>
-		</table>
-		<p>
-			Here we decide language-specific text for the final document.
-			The decision, which text to include, is done by the flow controll <code>IF</code> and <code>ELSE</code> macros,
-			which depend on a variable <code>lang</code>.
-		</p>
-	</div>
-	
-	<br/>
-	<p>
-		Some <a href="#attribute-macros">attributes</a> applied to regular HTML tags can also act as macros.
-		These attributes are also excluded from the final document.
-	</p>
-	
-	<br/>
-	<div class="example">
-		<h4><b>Example:</b> Macro attribute demonstration for language-specific text.</h4>
-		<table>
-			<tr>
-				<th>input</th>
-				<th>output</th>
-			</tr>
-			<tr>
-				<td class="code">
-					{l}div{r}<br/>
-						{t*2}{l}p <a CALL="link-am-IF"><span title="Include this element only if expression &apos;lang==&quot;de&quot;&apos; evaluates to true">IF='lang=="de"'</span></a>{r}Deutsch{l}/p{r}<br/>
-						{t*2}{l}p <a CALL="link-am-ELSE"><span title="Include this element only if the previous element's flow controll macro attribute evaluates to false">ELSE</span></a>{r}English{l}/p{r}<br/>
-					{l}/div{r}
-				</td>
-				<td class="code">
-					{l}div{r}<br/>
-					{t}{l}p{r}English{l}/p{r}<br/>
-					{l}/div{r}
-				</td>
-			</tr>
-		</table>
-		<p>
-			Here we conditionally include the first <code>p</code> element,
-			but only if the expression in the <code>IF</code> macro attribute evaluates to <code>true</code>.
-			Otherwise, we include the second <code>p</code> element.
-		</p>
-	</div>
-	
 	
 	<br/>
 	<br/>
-	<div id="macros-list">
+	<section id="element-macros">
 		<SET cii='cii + 1'/>
-		<h3>{ci}.{cii}. List of macros</h3>
+		<h3>{ci}.{cii}. Element macros</h3>
 		
+		<p>
+			Some HTML elements act as macros, and are not coppied to the final document.
+			Instead they perform other functions such as deciding what content to include or generate.
+			They are called <b>element macros</b> and their tags are written in <b>uppercase</b>.
+			Parameters for their functionality are passed with HTML attributes, which are <i>usually</i> also in written uppercase.
+		</p>
+		<br/>
+		<p>
+			What happens with child elements depends on the specific macro in question.
+			While some copy/evaluate their children, others remove them and some only affect the execution environment.
+		</p>
+		
+		<br/>
+		<div class="example">
+			<h4><b>Example:</b> Macro demonstration for language-specific text.</h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}div{r}<br/>
+							{t}{l}<a CALL="link-em-IF">IF</a> <span title="Check if variable lang is equal to string &quot;de&quot;">lang="de"</span>{r}<br/>
+								{t*2}{l}p{r}Deutsch{l}/p{r}<br/>
+							{t}{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
+							{t}{l}<a CALL="link-em-ELSE">ELSE</a>{r}<br/>
+								{t*2}{l}p{r}English{l}/p{r}<br/>
+							{t}{l}<a CALL="link-em-ELSE">/ELSE</a>{r}<br/>
+						{l}/div{r}
+					</td>
+					<td class="code">
+						{l}div{r}<br/>
+						{t}{l}p{r}English{l}/p{r}<br/>
+						{l}/div{r}
+					</td>
+				</tr>
+			</table>
+			<p>
+				Here we decide language-specific text for the final document.
+				The decision, which text to include, is done by the flow controll <code>IF</code> and <code>ELSE</code> macros,
+				which depend on a variable <code>lang</code>.
+			</p>
+		</div>
+		
+		<br/>
 		<style>
-			#macros-list > .list {
+			#element-macros > .list {
 				column-width: 400px;
 			}
 		</style>
-		<ul class="list">
-			<li><a CALL="link-em-MACRO">{l}MACRO{r}</a> &mdash; Defines a new macro.</li>
-			<li><a CALL="link-em-CALL">{l}CALL{r}</a>  &mdash; Invokes a <a CALL="link-em-MACRO">{l}MACRO{r}</a>.</li>
-			<li><a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a> &mdash; Includes contents of another file.</li>
-			<li><a CALL="link-em-SET">{l}SET{r}</a> &mdash; Assigns values to variables.</li>
-			<li><a CALL="link-em-IF">{l}IF{r}</a> &mdash; Conditionally includes child elements.</li>
-			<li><a CALL="link-em-ELIF">{l}ELIF{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
-			<li><a CALL="link-em-ELSE">{l}ELSE{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
-			<li><a CALL="link-em-FOR">{l}FOR{r}</a> &mdash; Include child elements in a loop.</li>
-			<li><a CALL="link-em-WHILE">{l}WHILE{r}</a> &mdash; Include child elements in a loop.</li>
-			<li><a CALL="link-em-SET-TAG">{l}SET-TAG{r}</a> &mdash; Sets tag of parent element.</li>
-			<li><a CALL="a-GET-TAG">{l}GET-TAG{r}</a> &mdash; Set variable to parent tag.</li>
-			<li><a CALL="link-em-SET-ATTR">{l}SET-ATTR{r}</a> &mdash; Set parent element attribute value.</li>
-			<li><a CALL="link-em-GET-ATTR">{l}GET-ATTR{r}</a> &mdash; Set variable to value of a parent's attribute.</li>
-			<li><a CALL="link-em-DEL-ATTR">{l}DEL-ATTR{r}</a> &mdash; Remove attribute from parent element.</li>
-			<li><a CALL="a-SHELL">{l}SHELL{r}</a> &mdash; Execute shell command.</li>
-			<li><a CALL="link-em-INFO">{l}INFO{r}</a> &mdash; Log messages to stderr.</li>
-			<li><a CALL="link-em-WARN">{l}WARN{r}</a> &mdash; Log warning messages to stderr.</li>
-			<li><a CALL="link-em-ERROR">{l}ERROR{r}</a> &mdash; Log error messages to stderr.</li>
-		</ul>
+		<p>
+			List of predefined element macros:
+			<ul class="list">
+				<li><a CALL="link-em-MACRO">{l}MACRO{r}</a> &mdash; Defines a new macro.</li>
+				<li><a CALL="link-em-CALL">{l}CALL{r}</a>  &mdash; Invokes a <a CALL="link-em-MACRO">{l}MACRO{r}</a>.</li>
+				<li><a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a> &mdash; Includes contents of another file.</li>
+				<li><a CALL="link-em-SET">{l}SET{r}</a> &mdash; Assigns values to variables.</li>
+				<li><a CALL="link-em-IF">{l}IF{r}</a> &mdash; Conditionally includes child elements.</li>
+				<li><a CALL="link-em-ELIF">{l}ELIF{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
+				<li><a CALL="link-em-ELSE">{l}ELSE{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
+				<li><a CALL="link-em-FOR">{l}FOR{r}</a> &mdash; Include child elements in a loop.</li>
+				<li><a CALL="link-em-WHILE">{l}WHILE{r}</a> &mdash; Include child elements in a loop.</li>
+				<li><a CALL="link-em-SET-TAG">{l}SET-TAG{r}</a> &mdash; Sets tag of parent element.</li>
+				<li><a CALL="a-GET-TAG">{l}GET-TAG{r}</a> &mdash; Set variable to parent tag.</li>
+				<li><a CALL="link-em-SET-ATTR">{l}SET-ATTR{r}</a> &mdash; Set parent element attribute value.</li>
+				<li><a CALL="link-em-GET-ATTR">{l}GET-ATTR{r}</a> &mdash; Set variable to value of a parent's attribute.</li>
+				<li><a CALL="link-em-DEL-ATTR">{l}DEL-ATTR{r}</a> &mdash; Remove attribute from parent element.</li>
+				<li><a CALL="a-SHELL">{l}SHELL{r}</a> &mdash; Execute shell command.</li>
+				<li><a CALL="link-em-INFO">{l}INFO{r}</a> &mdash; Log messages to stderr.</li>
+				<li><a CALL="link-em-WARN">{l}WARN{r}</a> &mdash; Log warning messages to stderr.</li>
+				<li><a CALL="link-em-ERROR">{l}ERROR{r}</a> &mdash; Log error messages to stderr.</li>
+			</ul>
+		</p>
 		
 		<br/><br/>
 		<INCLUDE SRC="macros/element-MACRO.html"/>
@@ -207,23 +191,51 @@
 		<INCLUDE SRC="macros/element-WARN.html"/>
 		<br/><br/>
 		<INCLUDE SRC="macros/element-ERROR.html"/>
-	</div>
+	</section>
 	
 	<br/>
 	<br/>
-	<div id="attribute-macros">
+	<section id="attribute-macros">
 		<SET cii='cii + 1'/>
 		<h3>{ci}.{cii}. Attribute macros</h3>
 		<p>
-			While regular HTML elements and their attributes are usually coppied to the final document,
-			some of the attributes can also act as macros.
+			Some of the attributes on regular HTML elements act as macros, and are not coppied to the final document.
 			They are called <b>attribute macros</b> and are written in <b>uppercase</b>.
-			These attributes are not coppied to the final document.
+			They typically serve as short forms of <a href="element-macros">element macros</a>.
 		</p>
+	
+		<br/>
+		<div class="example">
+			<h4><b>Example:</b> Macro attribute demonstration for language-specific text.</h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}div{r}<br/>
+							{t}{l}p <a CALL="link-am-IF"><span title="Include this element only if expression &apos;lang==&quot;de&quot;&apos; evaluates to true">IF='lang=="de"'</span></a>{r}Deutsch{l}/p{r}<br/>
+							{t}{l}p <a CALL="link-am-ELSE"><span title="Include this element only if the previous element's flow controll macro attribute evaluates to false">ELSE</span></a>{r}English{l}/p{r}<br/>
+						{l}/div{r}
+					</td>
+					<td class="code">
+						{l}div{r}<br/>
+						{t}{l}p{r}English{l}/p{r}<br/>
+						{l}/div{r}
+					</td>
+				</tr>
+			</table>
+			<p>
+				Here we conditionally include the first <code>p</code> element,
+				but only if the expression in the <code>IF</code> macro attribute evaluates to <code>true</code>.
+				Otherwise, we include the second <code>p</code> element.
+			</p>
+		</div>
 		
 		<br/>
 		<p>
-			List of attribute macros:
+			List of predefined attribute macros:
 			<ul>
 				<li><a CALL="link-am-IF">IF</a> &mdash; Conditionally include element.</li>
 				<li><a CALL="link-am-ELIF">ELIF</a> &mdash; Conditionally inlude element.</li>
@@ -243,10 +255,10 @@
 		<INCLUDE SRC="macros/attr-CALL.html"/>
 		<br/><br/>
 		<INCLUDE SRC="macros/attr-INCLUDE.html"/>
-	</div>
+	</section>
 	
 	
-</div>
+</section>
 <!--  -->
 <!--  -->
 <!--  -->

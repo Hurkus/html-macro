@@ -1,3 +1,4 @@
+<SET l="&lt;" r="&gt;"/>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,59 +7,25 @@
 	<title>HTML-Macro documentation</title>
 </head>
 <style>
-	
 	* {
 		margin: 0;
-		box-sizing: border-box;
+		
 	}
 	html {
 		width: 100%;
 		height: 100vh;
+		scroll-behavior: smooth;
 	}
 	body {
 		max-width: 100%;
 		min-height: 100%;
 		overflow-x: hidden;
 	}
-	
-	.content {
-		max-width: 1000px;
-		margin: auto;
-		padding: 1em;
-		font-family: sans-serif;
-	}
-	
 </style>
 <style>
 	.TD-0   { text-decoration: none; }
 	/* .ta-c {	text-align: center;    } */
 	/* .ta-j { text-align: justify;   } */
-</style>
-<style>
-	
-	h1 {
-		text-align: center;
-	}
-	
-	h2, h3 {
-		margin-bottom: 5px;
-	}
-	
-	h2 {
-		padding: 0.2em 0.5em;
-		border-top: 5px solid rgb(127, 0, 0);
-		border-radius: 2px;
-		background: rgba(127, 0, 0, 0.1);
-		background: linear-gradient(to bottom, rgba(127, 0, 0, 0.05) 0%, transparent 100%);
-	}
-	
-	h3 {
-		padding: 0.2em 0.5em;
-		border-radius: 2px;
-		border-top: 3px solid rgb(201, 108, 0);
-		background: linear-gradient(to bottom, rgba(240, 128, 0, 0.05) 0%, transparent 100%);
-	}
-	
 </style>
 <style>
 	
@@ -137,19 +104,176 @@
 </style>
 <style>
 	
-	.content > .subtitle {
+	body {
+		display: flex;
+		flex-direction: row;
+	}
+	
+</style>
+<style>
+	
+	#table-of-contents {
+		flex: 1;
+		/* order: 1; */
+		
+		min-width: 190px;
+		max-width: 250px;
+		
+		color: white;
+		font-family: sans-serif;
+		background: rgb(50, 0, 0);
+	}
+	
+	nav {
+		position: sticky;
+		top: 0;
+		padding: 10px;
+		padding-right: 2px;
+		
+		max-height: 100vh;
+		overflow-y: auto;
+	}
+	
+	nav h1 {
+		margin-right: 8px;
+		text-align: center;
+		font-size: 1.4em;
+		margin-bottom: 20px;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.75);
+	}
+	
+	nav ol {
+		list-style: none;
+		padding: 0;
+	}
+	nav > ol ol {
+		padding-left: 0.6em;
+	}
+	nav > ol ol ul {
+		list-style-type: disc;
+		padding-left: 2em;
+	}
+	
+	nav > ol > li {
+		margin-bottom: 1em;
+	}
+	
+	nav > ol ol > li {
+		margin-bottom: 0.2em;
+	}
+	
+	nav a {
+		color: white;
+		text-decoration: inherit;
+	} nav a:hover {
+		font-weight: bold;
+	}
+	
+</style>
+<style>
+	
+	.offset:has(main) {
+		margin-left: 200px;
+		border: 2px solid blue;
+	}
+	
+	main {
+		max-width: 1200px;
+		margin: auto;
+		padding: 1em;
+		font-family: sans-serif;
+	}
+	
+	main > .subtitle {
 		font-size: 0.8em;
 		display: flex;
 		gap: 5px;
 	}
 	
-	.content > .subtitle a {
+	main > .subtitle a {
 		color: inherit;
 	}
 	
+	main h1 {
+		text-align: center;
+	}
+	
+	main h2 {
+		margin-bottom: 5px;
+		padding: 0.2em 0.5em;
+		border-top: 5px solid rgb(127, 0, 0);
+		border-radius: 2px;
+		background: rgba(127, 0, 0, 0.1);
+		background: linear-gradient(to bottom, rgba(127, 0, 0, 0.05) 0%, transparent 100%);
+	}
+	
+	main h3 {
+		margin-bottom: 5px;
+		padding: 0.2em 0.5em;
+		border-radius: 2px;
+		border-top: 3px solid rgb(201, 108, 0);
+		background: linear-gradient(to bottom, rgba(240, 128, 0, 0.05) 0%, transparent 100%);
+	}
 </style>
 <body>
-	<div class="content">
+	<div id="table-of-contents">
+		<nav>
+			<h1>Table of contents</h1>
+			<ol>
+				<li><a href="#introduction">1. Introduction</a></li>
+				<li><a href="#cli">2. Command-line interface</a></li>
+				<li>
+					<a href="#macros">3. Macros</a>
+					<ol>
+						<li>
+							<a href="#element-macros">3.1. Element macros</a>
+							<ul>
+								<li><a href="#MACRO">{l}MACRO{r}</a></li>
+								<li><a href="#CALL">{l}CALL{r}</a></li>
+								<li><a href="#INCLUDE">{l}INCLUDE{r}</a></li>
+								<li><a href="#SET">{l}SET{r}</a></li>
+								<li><a href="#IF">{l}IF{r}</a></li>
+								<li><a href="#ELIF">{l}ELIF{r}</a></li>
+								<li><a href="#ELSE">{l}ELSE{r}</a></li>
+								<li><a href="#FOR">{l}FOR{r}</a></li>
+								<li><a href="#WHILE">{l}WHILE{r}</a></li>
+								<li><a href="#SET-TAG">{l}SET-TAG{r}</a></li>
+								<li><a href="#GET-TAG">{l}GET-TAG{r}</a></li>
+								<li><a href="#SET-ATTR">{l}SET-ATTR{r}</a></li>
+								<li><a href="#GET-ATTR">{l}GET-ATTR{r}</a></li>
+								<li><a href="#DEL-ATTR">{l}DEL-ATTR{r}</a></li>
+								<li><a href="#SHELL">{l}SHELL{r}</a></li>
+								<li><a href="#INFO">{l}INFO{r}</a></li>
+								<li><a href="#WARN">{l}WARN{r}</a></li>
+								<li><a href="#ERROR">{l}ERROR{r}</a></li>
+							</ul>
+						</li>
+						<li>
+							<a href="#attribute-macros">3.2. Attribute macros</a>
+							<ul>
+								<li><a href="#ATTR-IF">IF</a></li>
+								<li><a href="#ATTR-ELIF">ELIF</a></li>
+								<li><a href="#ATTR-ELSE">ELSE</a></li>
+								<li><a href="#ATTR-CALL">CALL</a></li>
+								<li><a href="#ATTR-INCLUDE">INCLUDE</a></li>
+							</ul>
+						</li>
+					</ol>
+				</li>
+				<li>
+					<a href="#expressions">4. Expressions</a>
+					<ol>
+						<li><a href="#expression-context">4.1. Expression context</a></li>
+						<li><a href="#expression-constants">4.2. Constants</a></li>
+						<li><a href="#expression-operators">4.3. Operators</a></li>
+						<li><a href="#expression-variables">4.4. Variables</a></li>
+						<li><a href="#expression-functions">4.5. Functions</a></li>
+					</ol>
+				</li>
+			</ol>
+		</nav>
+	</div>
+	<main>
 		<h1>HTML-Macro</h1>
 		<br/>
 		<div class="subtitle">
@@ -182,6 +306,6 @@
 		<br/>
 		<br/>
 		<br/>
-	</div>
+	</main>
 </body>
 </html>
