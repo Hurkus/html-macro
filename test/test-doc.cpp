@@ -364,6 +364,28 @@ bool test_doc_attr_macro_ELSE(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+REGISTER2(doc_expression_operators);
+bool test_doc_expression_operators(){
+	TmpFile in = TmpFile(
+		"{\"x is \" + 3}" NL
+		"{\"a\" * 3}" NL
+		"{\"abc\" - 2}" NL
+		"{\"a\" || \"\"}" NL
+		"{!10}" NL
+		"{3.6 % 1.25}" NL
+	);
+	string_view out = (
+		"\"x is 3\"" NL
+		"\"aaa\"" NL
+		"\"a\"" NL
+		"1" NL
+		"0" NL
+		"1.1" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
 REGISTER2(doc_expressions_functions);
 bool test_doc_expressions_functions(){
 	TmpFile in = TmpFile(

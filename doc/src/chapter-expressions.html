@@ -1,14 +1,18 @@
 <SET ci='ci + 1' cii='0'/>
+<!--  -->
+<SET header='true'/>
+<INCLUDE SRC="macros/element-SET.html"/>
+<!--  -->
 <section id="expressions" class="chapter">
 	<h2>{ci}. Expressions</h2>
 	<p>
 		In certain contexts, expressions can be used to interpolate HTML text nodes,
-		or to handle flow controll when evaluating HTML tags.
+		or to provide computed values to <a href="#macros">macros</a>.
 		They consist of constants, expression operators, variables and functions.
 	</p>
 	<br/>
 	<p>
-		There are only 3 data types that can be evaluated and used with expressions:
+		There are only 3 fundamental data types that can be evaluated from expressions:
 		<ul>
 			<li><b>int</b>eger: <i>long</i>, 64 bit,</li>
 			<li><b>float</b>ing point number: <i>double</i>, 64 bit,</li>
@@ -17,7 +21,7 @@
 	</p>
 	<br/>
 	<p>
-		For purposes of easier explanation, 2 implicit data types are defined:
+		For purposes of easier explanation and documentation, 2 implicit data types are defined:
 		<ul>
 			<li><b>number</b>: <b>int</b> or <b>float</b>,</li>
 			<li>
@@ -30,15 +34,16 @@
 	
 	
 	<br/>
-	<div id="expression-context">
+	<br/>
+	<section id="expression-context">
 		<SET cii='cii + 1'/>
 		<h3>{ci}.{cii}. Expression context</h3>
 		<p>
 			Expressions can be defined and evaluated within HTML attribute values or HTML text nodes.
 			HTML attribute values, quoted with single quotes (<code>&apos;&apos;</code>),
-			are directly evaluated as expressions and then converted to text before they are appended the output HTML node.
-			HTML attributes values, quoted with double quotes (<code>&quot;&quot;</code>),
-			are evaluated as strings, which are interpolated for any expressions within curly brackets <code>\{}</code>.
+			are directly evaluated as expressions and then converted to text before they are appended to the final document.
+			Attribute values, quoted with double quotes (<code>&quot;&quot;</code>),
+			are evaluated as strings, which are interpolated for any expressions contained within curly brackets <code>\{}</code>.
 			Similarly, HTML text nodes are also interpolated for expressions within curly brackets.
 		</p>
 		<br/>
@@ -51,9 +56,9 @@
 				</tr>
 				<tr>
 					<td class="code">
-						&lt;p attr="text \{1 + 2}"&gt;&lt;/p&gt;<br/>
-						&lt;p attr='2 * 2'&gt;&lt;/p&gt;<br/>
-						&lt;p&gt;There are \{9 / 2} apples.&lt;/p&gt;
+						&lt;p attr="text <span title="Replace this expression with its result (3)">\{1 + 2}</span>"&gt;&lt;/p&gt;<br/>
+						&lt;p attr=<span title="Set attribute value to the result of this expression (4)">'2 * 2'</span>&gt;&lt;/p&gt;<br/>
+						&lt;p&gt;There are <span title="Replace this expression with its result (4.5)">\{9 / 2}</span> apples.&lt;/p&gt;
 					</td>
 					<td class="code">
 						&lt;p attr="text 3"&gt;&lt;/p&gt;<br/>
@@ -63,18 +68,23 @@
 				</tr>
 			</table>
 		</div>
-	</div>
+	</section>
 	
 	
 	<br/>
-	<div id="expression-constants">
+	<br/>
+	<section id="expression-constants">
 		<SET cii='cii + 1'/>
 		<h3>{ci}.{cii}. Constants</h3>
 		<p>
-			There are only 3 types of constants: integers, floats and strings.
-			Strings are defined as text between two double (<code>&quot;</code>) or single (<code>&apos;</code>) quotes.
-			Booleans are integers <code>0</code> (false) and <code>1</code> (true).
+			Regex descriptions for types of constants:
+			<ul>
+				<li><b>int:</b> <code>-?[0-9]+</code></li>
+				<li><b>float:</b> <code>-?[0-9]+[.][0-9]+</code></li>
+				<li><b>string:</b> <code>&quot;.*?&quot;|&apos;.*?&apos;</code> (All text between either single <code>&apos;</code> or double <code>&quot;</code> quotes)</li>
+			</ul>
 		</p>
+		
 		<br/>
 		<style>
 			#expression-constants table td {
@@ -82,7 +92,7 @@
 			}
 		</style>
 		<p>
-			List of named constants (implemented as predefined <a class="TD-0" href="#expressions-variables" title="1.4 Variables">variables</a>):
+			Some predefined <a href="#expression-variables" title="1.4 Variables">variables</a> are available for certain numeric/logical constants:
 		</p>
 		<table class="list">
 			<tr>
@@ -99,35 +109,36 @@
 			</tr>
 			<tr>
 				<td><code>pi</code></td>
-				<td><code>3.14159...</code></td>
+				<td>&pi; or <code>3.14159...</code></td>
 			</tr>
 		</table>
-	</div>
+	</section>
 	
 	
 	<br/>
-	<div id="expression-operators">
+	<br/>
+	<section id="expression-operators">
 		<SET cii='cii + 1'/>
 		<h3>{ci}.{cii}. Operators</h3>
 		<p>
 			Expression operators consist of standard unary and binary operators:
 			<ul>
-				<li>Unary operatos:
+				<li><b>Unary operatos:</b>
 					<code>-</code> (arithmetic negation),
 					<code>!</code> (boolean negation)
 				</li>
-				<li>Arithmetic binary operators:
+				<li><b>Arithmetic binary operators:</b>
 					<code>+</code>,
 					<code>-</code>,
 					<code>*</code>,
 					<code>/</code>,
 					<code>%</code>
 				</li>
-				<li>Logical operators:
+				<li><b>Logical operators:</b>
 					<code>&&</code> (and),
 					<code>||</code> (or)
 				</li>
-				<li>Comparison binary operators:
+				<li><b>Comparison binary operators:</b>
 					<code>==</code>,
 					<code>!=</code>,
 					<code>&lt;</code>,
@@ -139,22 +150,136 @@
 		</p>
 		<br/>
 		<p>
-			For some operations with operands of different types, they are coerced to other types.
+			For some operations with operands of different types, some of the operands might get coerced/casted into other types.
 			For example, adding a number to a string results in the number being stringified and appended to the string operand.
 			Another case is coercing a string into a boolean where it evaluates to <code>true</code> when it's not empty.
 		</p>
-	</div>
+		
+		<br/>
+		<style>
+			#expression-operators table td:nth-of-type(2) {
+				max-width: 500px;
+				text-align: justify;
+				padding-left: 10px;
+				padding-right: 10px;
+			}
+			#expression-operators table tr > *:nth-of-type(1),
+			#expression-operators table tr > *:nth-of-type(3) {
+				white-space: nowrap;
+			}
+			#expression-operators table td:nth-of-type(1) {
+				font-family: monospace;
+				text-align: justify;
+			}
+		</style>
+		<p>
+			Here is a list of notable cases of operations between different types:
+			<table class="list">
+				<tr>
+					<th>Operation</th>
+					<th>Description</th>
+					<th>Example</th>
+				</tr>
+				<tr>
+					<td>
+						<span>string <code>+</code> any</span>
+					</td>
+					<td>
+						The second operand is converted into a string and then appended to the main string operand.
+					</td>
+					<td>
+						<code>&quot;x is &quot; + 3</code> &rarr; <code>&quot;x is 3&quot;</code>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						string <code>*</code> number
+					</td>
+					<td>
+						Produces a string that is appended to itself <var>n</var> times, where the number is casted into an <i>int</i>.
+					</td>
+					<td>
+						<code>&quot;a&quot; * 3</code> &rarr; <code>&quot;aaa&quot;</code>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						string <code>-</code> number
+					</td>
+					<td>
+						Shortens the string by <var>n</var> characters.
+					</td>
+					<td>
+						<code>&quot;abc&quot; - 2</code> &rarr; <code>&quot;a&quot;</code>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<span><code>!</code>string</span>,<br/>
+						<span>string <code>||</code> any</span>,<br/>
+						<span>string <code>&&</code> any</span>
+					</td>
+					<td>
+						The string is converted into a <i>bool</i>, equivalent to <code>len(string) != 0</code>
+					</td>
+					<td>
+						<code>&quot;a&quot; || &quot;&quot;</code> &rarr; <code>true || false</code> &rarr; <code>1</code>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<span><code>!</code>number</span>,<br/>
+						<span>number <code>||</code> any</span>,<br/>
+						<span>number <code>&&</code> any</span>
+					</td>
+					<td>
+						The number is converted into a <i>bool</i>, equivalent to <code>number != 0</code>
+					</td>
+					<td>
+						<code>!10</code> &rarr; <code>!true</code> &rarr; <code>0</code>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<span>float <code>%</code> number</span>
+					</td>
+					<td>
+						Produces a remainder the same way it is done with an <i>int</i>.
+					</td>
+					<td>
+						<code>3.6 % 1.25</code> &rarr; <code>1.1</code>
+					</td>
+				</tr>
+			</table>
+		</p>
+		
+		
+		<br/>
+		<p>
+			For invalid operations between certain types, either <code>0</code> or a copy of the first operand is produced.
+		</p>
+		
+	</section>
 	
 	
 	<br/>
-	<div id="expression-variables">
+	<br/>
+	<section id="expression-variables">
 		<SET cii='cii + 1'/>
 		<h3>{ci}.{cii}. Variables</h3>
 		<p>
-			Variables are defined with <code>&lt;SET/&gt;</code> macro nodes,
-			where each attribute name and its value corresponds to a variable as such: <code>&lt;SET&nbsp;variable_name="string value"/&gt;</code> sets a variable named <code>variable_name</code> to a value of <code>string value</code>.
-			Variable types are dynamic and correspond to their most recently assigned value type.
+			Variable identifiers comprise of alpha-numerical and underscore characters, where the first character cannot be a digit.
+			The equivalent regex would be: <code>[a-zA-Z_][a-zA-Z0-9_]+</code>.
+			They are defined/assigned with the <a CALL="link-em-SET">&lt;SET/&gt;</a> macro and can be referenced globally from all expressions.
+			The types of their values are dynamic and correspond to their most recently assigned value type.
 		</p>
+		
+		<br/>
+		<p>
+			At program start, some variables get predefined values, as explained in the chapter on <a href="#expression-constants">constants</a>.
+			The user can also provide more predefined variables through command-line options in the form of <code>name=value</code>, as explained in the <a href="#cli">command-line interface</a> chapter.
+		</p>
+		
 		<br/>
 		<div class="example">
 			<h4><b>Example:</b> Defining and using variables.</h4>
@@ -165,34 +290,33 @@
 				</tr>
 				<tr>
 					<td class="code">
-						&lt;SET s="header"/&gt;<br/>
-						&lt;p class='s'&gt;My title&lt;/p&gt;<br/>
+						&lt;<a CALL="link-em-SET">SET</a> <span title="Set variable s to string &quot;header&quot;">s="header"</span>/&gt;<br/>
+						&lt;p <span title="Set value of the attribute to the result of the expression, which is just the content of the variable s">class='s'</span>&gt;My title&lt;/p&gt;<br/>
 						<br/>
-						&lt;SET x='2' y='3'/&gt;<br/>
-						&lt;p&gt;My text number \{x * (y + 1)}&lt;/p&gt;
+						&lt;<a CALL="link-em-SET">SET</a> <span title="Set variable x to 2">x='2'</span> <span title="Set variable y to 3">y='3'</span>/&gt;<br/>
+						&lt;p&gt;My text number <span title="Replace this expression with its result (8)">\{x * (y + 1)}</span>&lt;/p&gt;
 					</td>
 					<td class="code">
-						<br/>
 						&lt;p class="header"&gt;My title&lt;/p&gt;<br/>
-						<br/>
-						<br/>
 						&lt;p&gt;My text number 8&lt;/p&gt;
 					</td>
 				</tr>
 			</table>
 		</div>
-	</div>
+	</section>
 	<!-- /variables -->
 	
 	
 	<br/>
-	<div id="expression-functions">
+	<br/>
+	<section id="expression-functions">
 		<SET cii='cii + 1'/>
 		<h3>{ci}.{cii}. Functions</h3>
 		<p>
-			There's a limited set of functions that can be used by naming them and then suffixing their name with brackets <code>()</code> containing their arguments.
-			Maximum number of arguments per function is currently 8.
+			Functions are predefined and can be invoked using their name, suffixed with brackets <code>()</code> containing their arguments.
+			The maximum number of arguments for variadic functions is 8.
 		</p>
+		
 		<br/>
 		<style>
 			#expression-functions table td {
@@ -371,8 +495,7 @@
 			</table>
 		</div>
 		
-	</div>
-	<!-- /functions -->
+	</section>
 	
 	
 </section>

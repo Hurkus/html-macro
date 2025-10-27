@@ -9,7 +9,6 @@
 <style>
 	* {
 		margin: 0;
-		
 	}
 	html {
 		width: 100%;
@@ -18,14 +17,17 @@
 	}
 	body {
 		max-width: 100%;
-		min-height: 100%;
-		overflow-x: hidden;
+		height: 100%;
+		overflow-y: hidden;
+		overflow-x: auto;
 	}
 </style>
 <style>
-	.TD-0   { text-decoration: none; }
-	/* .ta-c {	text-align: center;    } */
-	/* .ta-j { text-align: justify;   } */
+	.TD-0    { text-decoration: none; }
+	.TD-U    { text-decoration: underline; }
+	.TA-J    { text-align: justify; }
+	.FF-MONO { font-family: monospace; }
+	.FF-SANS { font-family: sans-serif; }
 </style>
 <style>
 	
@@ -112,26 +114,18 @@
 </style>
 <style>
 	
-	#table-of-contents {
+	nav {
 		flex: 1;
-		/* order: 1; */
+		min-width: 160px;
+		max-width: 220px;
 		
-		min-width: 190px;
-		max-width: 250px;
+		overflow-y: auto;
+		padding: 10px;
+		padding-right: 2px;
 		
 		color: white;
 		font-family: sans-serif;
 		background: rgb(50, 0, 0);
-	}
-	
-	nav {
-		position: sticky;
-		top: 0;
-		padding: 10px;
-		padding-right: 2px;
-		
-		max-height: 100vh;
-		overflow-y: auto;
 	}
 	
 	nav h1 {
@@ -151,7 +145,7 @@
 	}
 	nav > ol ol ul {
 		list-style-type: disc;
-		padding-left: 2em;
+		padding-left: 1.7em;
 	}
 	
 	nav > ol > li {
@@ -162,26 +156,40 @@
 		margin-bottom: 0.2em;
 	}
 	
-	nav a {
+	nav li {
+		color: rgba(255, 255, 255, 0.8);
+	} nav li:hover {
 		color: white;
+	}
+	
+	nav a {
+		color: rgba(255, 255, 255, 0.8);
 		text-decoration: inherit;
 	} nav a:hover {
+		color: white;
 		font-weight: bold;
 	}
 	
 </style>
 <style>
 	
-	.offset:has(main) {
-		margin-left: 200px;
-		border: 2px solid blue;
+	.main-box {
+		flex: 5 1;
+		overflow-y: auto;
 	}
 	
 	main {
 		max-width: 1200px;
-		margin: auto;
 		padding: 1em;
-		font-family: sans-serif;
+		margin: auto;
+	}
+	
+	main h1 {
+		text-align: center;
+	}
+	
+	main .version {
+		text-align: center;
 	}
 	
 	main > .subtitle {
@@ -192,10 +200,6 @@
 	
 	main > .subtitle a {
 		color: inherit;
-	}
-	
-	main h1 {
-		text-align: center;
 	}
 	
 	main h2 {
@@ -216,96 +220,97 @@
 	}
 </style>
 <body>
-	<div id="table-of-contents">
-		<nav>
-			<h1>Table of contents</h1>
-			<ol>
-				<li><a href="#introduction">1. Introduction</a></li>
-				<li><a href="#cli">2. Command-line interface</a></li>
-				<li>
-					<a href="#macros">3. Macros</a>
-					<ol>
-						<li>
-							<a href="#element-macros">3.1. Element macros</a>
-							<ul>
-								<li><a href="#MACRO">{l}MACRO{r}</a></li>
-								<li><a href="#CALL">{l}CALL{r}</a></li>
-								<li><a href="#INCLUDE">{l}INCLUDE{r}</a></li>
-								<li><a href="#SET">{l}SET{r}</a></li>
-								<li><a href="#IF">{l}IF{r}</a></li>
-								<li><a href="#ELIF">{l}ELIF{r}</a></li>
-								<li><a href="#ELSE">{l}ELSE{r}</a></li>
-								<li><a href="#FOR">{l}FOR{r}</a></li>
-								<li><a href="#WHILE">{l}WHILE{r}</a></li>
-								<li><a href="#SET-TAG">{l}SET-TAG{r}</a></li>
-								<li><a href="#GET-TAG">{l}GET-TAG{r}</a></li>
-								<li><a href="#SET-ATTR">{l}SET-ATTR{r}</a></li>
-								<li><a href="#GET-ATTR">{l}GET-ATTR{r}</a></li>
-								<li><a href="#DEL-ATTR">{l}DEL-ATTR{r}</a></li>
-								<li><a href="#SHELL">{l}SHELL{r}</a></li>
-								<li><a href="#INFO">{l}INFO{r}</a></li>
-								<li><a href="#WARN">{l}WARN{r}</a></li>
-								<li><a href="#ERROR">{l}ERROR{r}</a></li>
-							</ul>
-						</li>
-						<li>
-							<a href="#attribute-macros">3.2. Attribute macros</a>
-							<ul>
-								<li><a href="#ATTR-IF">IF</a></li>
-								<li><a href="#ATTR-ELIF">ELIF</a></li>
-								<li><a href="#ATTR-ELSE">ELSE</a></li>
-								<li><a href="#ATTR-CALL">CALL</a></li>
-								<li><a href="#ATTR-INCLUDE">INCLUDE</a></li>
-							</ul>
-						</li>
-					</ol>
-				</li>
-				<li>
-					<a href="#expressions">4. Expressions</a>
-					<ol>
-						<li><a href="#expression-context">4.1. Expression context</a></li>
-						<li><a href="#expression-constants">4.2. Constants</a></li>
-						<li><a href="#expression-operators">4.3. Operators</a></li>
-						<li><a href="#expression-variables">4.4. Variables</a></li>
-						<li><a href="#expression-functions">4.5. Functions</a></li>
-					</ol>
-				</li>
-			</ol>
-		</nav>
+	<nav>
+		<h1>Table of contents</h1>
+		<ol>
+			<li><a href="#introduction">1. Introduction</a></li>
+			<li><a href="#cli">2. Command-line interface</a></li>
+			<li>
+				<a href="#macros">3. Macros</a>
+				<ol>
+					<li>
+						<a href="#element-macros">3.1. Element macros</a>
+						<ul>
+							<li><a href="#MACRO">{l}MACRO{r}</a></li>
+							<li><a href="#CALL">{l}CALL{r}</a></li>
+							<li><a href="#INCLUDE">{l}INCLUDE{r}</a></li>
+							<li><a href="#SET">{l}SET{r}</a></li>
+							<li><a href="#IF">{l}IF{r}</a></li>
+							<li><a href="#ELIF">{l}ELIF{r}</a></li>
+							<li><a href="#ELSE">{l}ELSE{r}</a></li>
+							<li><a href="#FOR">{l}FOR{r}</a></li>
+							<li><a href="#WHILE">{l}WHILE{r}</a></li>
+							<li><a href="#SET-TAG">{l}SET-TAG{r}</a></li>
+							<li><a href="#GET-TAG">{l}GET-TAG{r}</a></li>
+							<li><a href="#SET-ATTR">{l}SET-ATTR{r}</a></li>
+							<li><a href="#GET-ATTR">{l}GET-ATTR{r}</a></li>
+							<li><a href="#DEL-ATTR">{l}DEL-ATTR{r}</a></li>
+							<li><a href="#SHELL">{l}SHELL{r}</a></li>
+							<li><a href="#INFO">{l}INFO{r}</a></li>
+							<li><a href="#WARN">{l}WARN{r}</a></li>
+							<li><a href="#ERROR">{l}ERROR{r}</a></li>
+						</ul>
+					</li>
+					<li>
+						<a href="#attribute-macros">3.2. Attribute macros</a>
+						<ul>
+							<li><a href="#ATTR-IF">IF</a></li>
+							<li><a href="#ATTR-ELIF">ELIF</a></li>
+							<li><a href="#ATTR-ELSE">ELSE</a></li>
+							<li><a href="#ATTR-CALL">CALL</a></li>
+							<li><a href="#ATTR-INCLUDE">INCLUDE</a></li>
+						</ul>
+					</li>
+				</ol>
+			</li>
+			<li>
+				<a href="#expressions">4. Expressions</a>
+				<ol>
+					<li><a href="#expression-context">4.1. Expression context</a></li>
+					<li><a href="#expression-constants">4.2. Constants</a></li>
+					<li><a href="#expression-operators">4.3. Operators</a></li>
+					<li><a href="#expression-variables">4.4. Variables</a></li>
+					<li><a href="#expression-functions">4.5. Functions</a></li>
+				</ol>
+			</li>
+		</ol>
+	</nav>
+	<div class="main-box">
+		<main class="FF-SANS">
+			<h1>HTML-Macro</h1>
+			<p class="version">version 0.11</p>
+			<br/>
+			<div class="subtitle">
+				<p>Author &ndash; <a href="https://hurkus.dev" style="font-weight: bold;">Hurkus</a></p>
+				&bull;
+				<p>Date &ndash; <span class="date TD-U">27/10/2025</span></p>
+				&bull;
+				<p>Repository &ndash; <a href="https://github.com/Hurkus/html-macro/">github.com/Hurkus/html-macro/</a></p>
+			</div>
+			<br/>
+			
+			
+			<SET ci='0'/>
+			<INCLUDE SRC="chapter-introduction.html"/>
+			<br/>
+			<br/>
+			<br/>
+			<INCLUDE SRC="chapter-cli.html"/>
+			<br/>
+			<br/>
+			<br/>
+			<INCLUDE SRC="chapter-macros.html"/>
+			<br/>
+			<br/>
+			<br/>
+			<INCLUDE SRC="chapter-expressions.html"/>
+			
+			
+			<br/>
+			<br/>
+			<br/>
+			<br/>
+		</main>
 	</div>
-	<main>
-		<h1>HTML-Macro</h1>
-		<br/>
-		<div class="subtitle">
-			<p>Author &ndash; <a href="https://hurkus.dev" style="font-weight: bold;">Hurkus</a></p>
-			&bull;
-			<p>Repository &ndash; <a href="https://github.com/Hurkus/html-macro/">github.com/Hurkus/html-macro/</a></p>
-			<!-- &bull; -->
-			<!-- <p>Website &ndash; <a href=""></a></p> -->
-		</div>
-		<br/>
-		
-		
-		<SET ci='0'/>
-		<INCLUDE SRC="chapter-introduction.html"/>
-		<br/>
-		<br/>
-		<br/>
-		<INCLUDE SRC="chapter-cli.html"/>
-		<br/>
-		<br/>
-		<br/>
-		<INCLUDE SRC="chapter-macros.html"/>
-		<br/>
-		<br/>
-		<br/>
-		<INCLUDE SRC="chapter-expressions.html"/>
-		
-		
-		<br/>
-		<br/>
-		<br/>
-		<br/>
-	</main>
 </body>
 </html>

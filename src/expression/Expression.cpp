@@ -270,14 +270,14 @@ static Value mod(const BinaryOperation& binop, const VariableMap& vars, const De
 		if (v2.type == Type::LONG)
 			v1.data.l %= v2.data.l;
 		else if (v2.type == Type::DOUBLE)
-			v1 = remainder(v1.data.l, v2.data.d);
+			v1 = fmod(v1.data.l, v2.data.d);
 	}
 	
 	else if (v1.type == Type::DOUBLE){
 		if (v2.type == Type::LONG)
-			v1 = remainder(v1.data.d, v2.data.l);
+			v1 = fmod(v1.data.d, v2.data.l);
 		else if (v2.type == Type::DOUBLE)
-			v1 = remainder(v1.data.d, v2.data.d);
+			v1 = fmod(v1.data.d, v2.data.d);
 	}
 	
 	return v1;
