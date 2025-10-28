@@ -13,13 +13,13 @@
 	html {
 		width: 100%;
 		height: 100vh;
-		scroll-behavior: smooth;
+		overflow: hidden;
 	}
 	body {
 		max-width: 100%;
 		height: 100%;
-		overflow-y: hidden;
-		overflow-x: auto;
+		overflow: auto;
+		scroll-behavior: smooth;
 	}
 </style>
 <style>
@@ -106,85 +106,14 @@
 </style>
 <style>
 	
-	body {
-		display: flex;
-		flex-direction: row;
-	}
-	
-</style>
-<style>
-	
-	nav {
-		flex: 1;
-		min-width: 160px;
-		max-width: 220px;
-		
-		overflow-y: auto;
-		padding: 10px;
-		padding-right: 2px;
-		
-		color: white;
-		font-family: sans-serif;
-		background: rgb(50, 0, 0);
-	}
-	
-	nav h1 {
-		margin-right: 8px;
-		text-align: center;
-		font-size: 1.4em;
-		margin-bottom: 20px;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.75);
-	}
-	
-	nav ol {
-		list-style: none;
-		padding: 0;
-	}
-	nav > ol ol {
-		padding-left: 0.6em;
-	}
-	nav > ol ol ul {
-		list-style-type: disc;
-		padding-left: 1.7em;
-	}
-	
-	nav > ol > li {
-		margin-bottom: 1em;
-	}
-	
-	nav > ol ol > li {
-		margin-bottom: 0.2em;
-	}
-	
-	nav li {
-		color: rgba(255, 255, 255, 0.8);
-	} nav li:hover {
-		color: white;
-	}
-	
-	nav a {
-		color: rgba(255, 255, 255, 0.8);
-		text-decoration: inherit;
-	} nav a:hover {
-		color: white;
-		font-weight: bold;
-	}
-	
-</style>
-<style>
-	
-	.main-box {
-		flex: 5 1;
-		overflow-y: auto;
-	}
-	
 	main {
 		max-width: 1200px;
 		padding: 1em;
 		margin: auto;
+		font-family: sans-serif;
 	}
 	
-	main h1 {
+	main > h1 {
 		text-align: center;
 	}
 	
@@ -192,13 +121,13 @@
 		text-align: center;
 	}
 	
-	main > .subtitle {
+	main > .details {
 		font-size: 0.8em;
 		display: flex;
 		gap: 5px;
 	}
 	
-	main > .subtitle a {
+	main > .details a {
 		color: inherit;
 	}
 	
@@ -219,18 +148,150 @@
 		background: linear-gradient(to bottom, rgba(240, 128, 0, 0.05) 0%, transparent 100%);
 	}
 </style>
+
+<style>
+	nav {
+		margin-bottom: 2em;
+	}
+	
+	nav ol,
+	nav ul {
+		list-style: none;
+		padding: 0;
+	}
+	
+	nav .lvl-1 {
+		padding-left: 1em;
+	}
+	nav .lvl-1 > li {
+		margin-bottom: 0.7em;
+	}
+	
+	nav .lvl-2 {
+		padding-left: 0.6em;
+	}
+	nav .lvl-2 > li {
+		margin-bottom: 0.2em;
+	}
+	
+	nav .lvl-3 {
+		padding-left: 1.7em;
+	}
+	nav ul.lvl-3 {
+		list-style-type: disc;
+	}
+	
+	nav a {
+		text-decoration: inherit;
+	} nav a:hover {
+		font-weight: bold;
+	}
+	
+	
+	@media screen and (min-width: 800px) {
+		body {
+			margin-left: 210px;
+		}
+		
+		nav {
+			position: fixed;
+			top: 0;
+			left: 0;
+			
+			height: 100%;
+			width: 210px;
+			
+			overflow-y: auto;
+			
+			color: white;
+			font-family: sans-serif;
+			background: rgb(50, 0, 0);
+		}
+		
+		nav h2 {
+			margin: 0;
+			padding: 0;
+			border: none;
+			
+			margin: 8px;
+			font-size: 1.4em;
+			text-align: center;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.75);
+		}
+		
+		nav * {
+			color: inherit;
+		}
+		
+		nav li:not(:hover) {
+			color: rgba(255, 255, 255, 0.8);
+		}
+		
+		nav .lvl-1 {
+			padding-left: 10px;
+			padding-right: 2px;
+		}
+		
+	}
+	
+</style>
 <body>
+	<main id="top">
+		<h1>HTML-Macro</h1>
+		<p class="version">version 0.11</p>
+		<br/>
+		<div class="details">
+			<p>Author &ndash; <a href="https://hurkus.dev" style="font-weight: bold;">Hurkus</a></p>
+			&bull;
+			<p>Date &ndash; <span class="date TD-U">27/10/2025</span></p>
+			&bull;
+			<p>Repository &ndash; <a href="https://github.com/Hurkus/html-macro/">github.com/Hurkus/html-macro/</a></p>
+		</div>
+		<br/>
+		
+		
+		<CALL NAME="nav"/>
+		
+		
+		<SET ci='0'/>
+		<INCLUDE SRC="chapter-introduction.html"/>
+		<br/>
+		<br/>
+		<br/>
+		<INCLUDE SRC="chapter-cli.html"/>
+		<br/>
+		<br/>
+		<br/>
+		<INCLUDE SRC="chapter-macros.html"/>
+		<br/>
+		<br/>
+		<br/>
+		<INCLUDE SRC="chapter-expressions.html"/>
+		
+		
+		<br/>
+		<br/>
+		<br/>
+		<br/>
+	</main>
+</body>
+</html>
+<!--  -->
+<!--  -->
+<!--  -->
+<!--  -->
+<MACRO NAME="nav">
 	<nav>
-		<h1>Table of contents</h1>
-		<ol>
+		<h2><a href="#top" style="color: inherit;">Table of contents</a></h2>
+		<ol class="lvl-1">
 			<li><a href="#introduction">1. Introduction</a></li>
 			<li><a href="#cli">2. Command-line interface</a></li>
 			<li>
 				<a href="#macros">3. Macros</a>
-				<ol>
+				<ol class="lvl-2">
 					<li>
 						<a href="#element-macros">3.1. Element macros</a>
-						<ul>
+						<ul class="lvl-3">
 							<li><a href="#MACRO">{l}MACRO{r}</a></li>
 							<li><a href="#CALL">{l}CALL{r}</a></li>
 							<li><a href="#INCLUDE">{l}INCLUDE{r}</a></li>
@@ -253,7 +314,7 @@
 					</li>
 					<li>
 						<a href="#attribute-macros">3.2. Attribute macros</a>
-						<ul>
+						<ul class="lvl-3">
 							<li><a href="#ATTR-IF">IF</a></li>
 							<li><a href="#ATTR-ELIF">ELIF</a></li>
 							<li><a href="#ATTR-ELSE">ELSE</a></li>
@@ -265,7 +326,7 @@
 			</li>
 			<li>
 				<a href="#expressions">4. Expressions</a>
-				<ol>
+				<ol class="lvl-2">
 					<li><a href="#expression-context">4.1. Expression context</a></li>
 					<li><a href="#expression-constants">4.2. Constants</a></li>
 					<li><a href="#expression-operators">4.3. Operators</a></li>
@@ -275,42 +336,4 @@
 			</li>
 		</ol>
 	</nav>
-	<div class="main-box">
-		<main class="FF-SANS">
-			<h1>HTML-Macro</h1>
-			<p class="version">version 0.11</p>
-			<br/>
-			<div class="subtitle">
-				<p>Author &ndash; <a href="https://hurkus.dev" style="font-weight: bold;">Hurkus</a></p>
-				&bull;
-				<p>Date &ndash; <span class="date TD-U">27/10/2025</span></p>
-				&bull;
-				<p>Repository &ndash; <a href="https://github.com/Hurkus/html-macro/">github.com/Hurkus/html-macro/</a></p>
-			</div>
-			<br/>
-			
-			
-			<SET ci='0'/>
-			<INCLUDE SRC="chapter-introduction.html"/>
-			<br/>
-			<br/>
-			<br/>
-			<INCLUDE SRC="chapter-cli.html"/>
-			<br/>
-			<br/>
-			<br/>
-			<INCLUDE SRC="chapter-macros.html"/>
-			<br/>
-			<br/>
-			<br/>
-			<INCLUDE SRC="chapter-expressions.html"/>
-			
-			
-			<br/>
-			<br/>
-			<br/>
-			<br/>
-		</main>
-	</div>
-</body>
-</html>
+</MACRO>
