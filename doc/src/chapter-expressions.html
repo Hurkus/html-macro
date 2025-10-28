@@ -304,7 +304,6 @@
 			</table>
 		</div>
 	</section>
-	<!-- /variables -->
 	
 	
 	<br/>
@@ -319,24 +318,22 @@
 		
 		<br/>
 		<style>
-			#expression-functions table td {
-				min-width: 6em;
-				max-width: 30em;
-			}
 			#expression-functions table td:nth-child(3) {
-				text-align: justify;
+				min-width: 12em;
 				padding: 5px 1em;
+				text-align: left;
 			}
 			#expression-functions table tr.br {
 				border-top: 2px solid black;
 			}
 		</style>
-		<p>List of functions with their descriptions:</p>
+		<p>List of functions:</p>
 		<table class="list">
 			<tr>
 				<th>Name</th>
 				<th>Return type</th>
 				<th>Description</th>
+				<th>Example</th>
 			</tr>
 			<tr id="function-int" class="br">
 				<td><code>int(x)</code></td>
@@ -344,6 +341,9 @@
 				<td>
 					Converts <code>x</code> into an <i>integer</i>.
 					If <code>x</code> is a <i>string</i> and cannot be parsed as an <i>integer</i>, returns <code>0</code>.
+				</td>
+				<td>
+					<code>int('7.234')</code> &rarr; <code>7</code>
 				</td>
 			</tr>
 			<tr id="function-float">
@@ -353,12 +353,16 @@
 					Converts <code>x</code> into a <i>float</i>.
 					If <code>x</code> is a <i>string</i> and cannot be parsed as a <i>float</i>, returns <code>0.0</code>.
 				</td>
+				<td>
+					<code>float('122.5') + 1</code> &rarr; <code>123.5</code>
+				</td>
 			</tr>
 			<tr id="function-str">
 				<td><code>str(x)</code></td>
 				<td>string</td>
+				<td>Converts <code>x</code> into a <i>string</i>.</td>
 				<td>
-					Converts <code>x</code> into a <i>string</i>.
+					<code>str(12) + ' apples'</code> &rarr; <code>12 apples</code>
 				</td>
 			</tr>
 			<tr id="function-len" class="br">
@@ -368,6 +372,9 @@
 					If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.
 					If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
 				</td>
+				<td>
+					<code>len('hello')</code> &rarr; <code>5</code>
+				</td>
 			</tr>
 			<tr id="function-abs">
 				<td><code>abs(x)</code></td>
@@ -376,36 +383,65 @@
 					If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.
 					If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
 				</td>
+				<td>
+					<code>abs(-4.5)</code> &rarr; <code>4.5</code>
+				</td>
 			</tr>
 			<tr id="function-min">
 				<td><code>min(x, y, ...)</code></td>
 				<td>int,<br/>float,<br/>string</td>
 				<td>Returns smallest <i>number</i> or shortest <i>string</i>.</td>
+				<td>
+					<code>min(1, 2.5, 'three')</code> &rarr; <code>1</code>
+				</td>
 			</tr>
 			<tr id="function-max">
 				<td><code>max(x, y, ...)</code></td>
 				<td>int,<br/>float,<br/>string</td>
 				<td>Returns largest <i>number</i> or longest <i>string</i>.</td>
+				<td>
+					<code>max(1, 2.5, 'three')</code> &rarr; <code>three</code>
+				</td>
 			</tr>
 			<tr id="function-lower" class="br">
 				<td><code>lower(s)</code></td>
 				<td>string</td>
 				<td>Converts <i>string</i> <code>s</code> to lower case.</td>
+				<td>
+					<code>lower('World!')</code> &rarr; <code>world</code>
+				</td>
 			</tr>
 			<tr id="function-upper">
 				<td><code>upper(s)</code></td>
 				<td>string</td>
 				<td>Converts <i>string</i> <code>s</code> to upper case.</td>
+				<td>
+					<code>upper(&quot;World!&quot;)</code> &rarr; <code>WORLD</code>
+				</td>
 			</tr>
 			<tr id="function-substr">
-				<td><code>substr(s, i, len)</code></td>
+				<td><code>substr(s, i, [len])</code></td>
 				<td>string</td>
+				<!-- <td>
+					Returns substring of <i>string</i> <code>s</code>
+					beginning at character <code>beg</code> and ending at (excluding) character <code>end</code> (default <code>-1</code>).<br/>
+					If <code>beg</code> or <code>end</code> are negative, they go from the end of the string backwards.
+					Beginning and end points of the substring are sorted and clamped between <code>0</code> and <code>len(s)</code>.
+				</td> -->
 				<td>
 					Returns substring of <i>string</i> <code>s</code>
-					beginning at character <code>i</code> and ending at character <code>i+len</code>.<br/>
-					If <code>i</code> is negative, it equals to <code>len(s)-abs(i)+1</code> (that is from the end backwards).
-					The same applies to <code>len</code>.<br/>
-					Beginning and end points of the substring are properly calculated and clamped between <code>0</code> and <code>len(s)</code>.
+					beginning at character <code>i</code> and ending at character <code>i+len</code>, where default value of <code>len</code> is the length of the string <code>s</code>.
+					<br/>
+					If <code>i</code> is negative, it equals to <code>len(s)-abs(i)</code> (that is from the end backwards).
+					Length <code>len</code> can also be negative, meaning it selects characters from <code>i</code> backwards.
+					<br/>
+					Beginning and end points of the substring are clamped between <code>0</code> and <code>len(s)</code>.
+				</td>
+				<td>
+					<code>substr(&quot;green&quot;, 1)</code> &rarr; <code>&quot;reen&quot;</code><br/>
+					<code>substr(&quot;green&quot;, 1, 3)</code> &rarr; <code>&quot;ree&quot;</code><br/>
+					<code>substr(&quot;green&quot;, -4, 3)</code> &rarr; <code>&quot;ree&quot;</code><br/>
+					<code>substr(&quot;green&quot;, -1, -3)</code> &rarr; <code>&quot;ree&quot;</code>
 				</td>
 			</tr>
 			<tr id="function-match">
@@ -413,6 +449,9 @@
 				<td>bool</td>
 				<td>
 					Returns <code>true</code> if <i>string</i> <code>s</code> matches the <a href="https://en.wikipedia.org/wiki/Regular_expression" title="Wikipedia - Regular expression" target="_blank" class="TD-0">regular expression</a> <code>regex</code>.
+				</td>
+				<td>
+					<code>match('1:5', '\d:\d')</code> &rarr; <code>1</code>
 				</td>
 			</tr>
 			<tr id="function-replace">
@@ -425,13 +464,19 @@
 					To use capture groups in <code>rep</code>, use <code>$</code> and the number of the capture group.
 					The whole match is represented by capture group <code>$0</code>.
 				</td>
+				<td>
+					<code>replace('12 apples', '(\d+)\s+(\w+)', '$1 green $2')</code> &rarr; <code>12 green apples</code>
+				</td>
 			</tr>
 			<tr id="function-if" class="br">
-				<td><code>if(cond,pass,else)</code></td>
+				<td><code>if(cond, pass, else)</code></td>
 				<td>int,<br/>float,<br/>string</td>
 				<td>
 					If <code>cond</code> evaluates to logical <code>true</code>, evaluates and returns <code>pass</code>,
 					otherwise evaluates and returns <code>else</code>.
+				</td>
+				<td>
+					<code>if(3 > 2, &quot;yes&quot;, &quot;no&quot;)</code> &rarr; <code>&quot;yes&quot;</code>
 				</td>
 			</tr>
 			<tr id="function-defined">
@@ -441,60 +486,11 @@
 					Returns <code>true</code> if variable <code>var</code> is defined.<br/>
 					<code>var</code> is not a string but an identifier that reflects the name of a variable.
 				</td>
+				<td>
+					<code>if(defined(x),x,100)</code> &rarr; <code>100</code>
+				</td>
 			</tr>
 		</table>
-		<br/>
-		<style>
-			#expression-functions .example span {
-				color: blue;
-			}
-		</style>
-		<div class="example">
-			<h4><b>Example:</b> Usages of various functions.</h4>
-			<table>
-				<tr>
-					<th>input</th>
-					<th>output</th>
-				</tr>
-				<tr>
-					<td class="code">
-						&lt;p&gt;{<span>int</span>('7.234')}&lt;/p&gt;<br/>
-						&lt;p&gt;{<span>float</span>('122.5') + 1}&lt;/p&gt;<br/>
-						&lt;p&gt;{<span>str</span>(12) + ' apples'}&lt;/p&gt;<br/>
-						<br/>
-						&lt;p&gt;{<span>len</span>('hello')}&lt;/p&gt;<br/>
-						&lt;p&gt;{<span>abs</span>(-4.5)}&lt;/p&gt;<br/>
-						&lt;p&gt;{<span>min</span>(1, 2.5, 'three')}&lt;/p&gt;<br/>
-						&lt;p&gt;{<span>max</span>(1, 2.5, 'three')}&lt;/p&gt;<br/>
-						<br/>
-						&lt;p&gt;{<span>lower</span>('World!')}&lt;/p&gt;<br/>
-						&lt;p&gt;{<span>upper</span>('World!')}&lt;/p&gt;<br/>
-						&lt;p&gt;{<span>match</span>('01:20:13', '\d?\d:\d\d:\d\d')}&lt;/p&gt;<br/>
-						&lt;p&gt;{<span>replace</span>('12 apples', '(\d+)\s+(\w+)', '$1 green $2')}&lt;/p&gt;<br/>
-						<br/>
-						&lt;p&gt;x is {<span>if</span>(<span>defined</span>(x),x,100)}&lt;/p&gt;<br/>
-					</td>
-					<td class="code">
-						&lt;p&gt;7&lt;/p&gt;<br/>
-						&lt;p&gt;123.5&lt;/p&gt;<br/>
-						&lt;p&gt;12 apples&lt;/p&gt;<br/>
-						<br/>
-						&lt;p&gt;5&lt;/p&gt;<br/>
-						&lt;p&gt;4.5&lt;/p&gt;<br/>
-						&lt;p&gt;1&lt;/p&gt;<br/>
-						&lt;p&gt;three&lt;/p&gt;<br/>
-						<br/>
-						&lt;p&gt;world!&lt;/p&gt;<br/>
-						&lt;p&gt;WORLD!&lt;/p&gt;<br/>
-						&lt;p&gt;1&lt;/p&gt;<br/>
-						&lt;p&gt;12 green apples&lt;/p&gt;<br/>
-						<br/>
-						&lt;p&gt;x is 100&lt;/p&gt;<br/>
-					</td>
-				</tr>
-			</table>
-		</div>
-		
 	</section>
 	
 	

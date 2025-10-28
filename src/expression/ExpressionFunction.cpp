@@ -357,54 +357,92 @@ static Value f_upper(const Function& f, const VariableMap& vars, const Debugger&
 
 
 static Value f_substr(const Function& f, const VariableMap& vars, const Debugger& dbg){
-	if (f.argc < 3){
-		HERE(dbg.error(f.name, "Missing arguments (%d/3) in function " P("substr(str,beg,end)") ".\n", f.argc));
+	if (f.argc < 2){
+		HERE(dbg.error(f.name, "Missing arguments (%d/2) in function " P("substr(str,beg,[len])") ".\n", f.argc));
 		return string_view();
 	} else if (f.argc > 3){
-		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " P("substr(str,beg,end)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " P("substr(str,beg,[len])") ".\n", f.argc));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 		assert(f.argv[1].expr != nullptr);
-		assert(f.argv[2].expr != nullptr);
 	}
 	
 	Value arg_0 = eval(*f.argv[0].expr, vars, dbg);
 	Value arg_1 = eval(*f.argv[1].expr, vars, dbg);
-	Value arg_2 = eval(*f.argv[2].expr, vars, dbg);
+	Value arg_2;
 	
-	// Parse arg 1, [beg]
-	long beg = arg_1.data.l;
-	if (arg_1.type != Type::LONG){
-		HERE(dbg.error(f.argv[1].mark, "Argument " P("beg={%s}") " in function " P("substr(str,beg,end)") " must be an integer.\n", VAL_STR(arg_1)));
-		return arg_0;
+	const bool hasLen = (f.argc >= 3);
+	if (hasLen){
+		assert(f.argv[2].expr != nullptr);
+		arg_2 = eval(*f.argv[2].expr, vars, dbg);
 	}
 	
-	// Parse arg 2, [end]
-	long end = arg_2.data.l;
-	if (arg_2.type != Type::LONG){
-		HERE(dbg.error(f.argv[2].mark, "Argument " P("end={%s}") " in function " P("substr(str,beg,end)") " must be an integer.\n", VAL_STR(arg_2)));
-		return arg_0;
+	string str_buff;
+	string_view str;
+	long beg;
+	long len;
+	
+	// Extract argument 1 [beg]
+	switch (arg_1.type){
+		case Type::LONG:
+			beg = arg_1.data.l;
+			break;
+		case Type::DOUBLE:
+			beg = long(arg_1.data.d);
+			break;
+		default:
+			HERE(dbg.error(f.argv[1].mark, "Argument " P("beg={%s}") " in function " P("substr(str,beg,[len])") " must be an integer.\n", VAL_STR(arg_1)));
+			return arg_0;
 	}
 	
+	// Extract argument 2 [len]
+	if (hasLen){
+		switch (arg_2.type){
+			case Type::LONG:
+				len = arg_2.data.l;
+				break;
+			case Type::DOUBLE:
+				len = long(arg_2.data.d);
+				break;
+			default:
+				HERE(dbg.error(f.argv[2].mark, "Argument " P("len={%s}") " in function " P("substr(str,beg,[len])") " must be an integer.\n", VAL_STR(arg_2)));
+				return arg_0;
+		}
+	}
+	
+	// Extract argument 0 [str]
 	switch (arg_0.type){
-		case Type::LONG: {
-			string s = to_string(arg_0.data.l);
-			arg_0 = substr(s, beg, end);
-		} break;
-		
-		case Type::DOUBLE: {
-			string s = to_string(arg_0.data.d);
-			arg_0 = substr(s, beg, end);
-		} break;
-			
-		case Type::STRING: [[likely]] {
-			string_view sub = substr(arg_0.sv(), beg, end);
-			if (sub.length() != size_t(arg_0.data_len))
-				arg_0 = Value(sub);
-		} break;
+		case Type::LONG:
+			str_buff = to_string(arg_0.data.l);
+			str = str_buff;
+			break;
+		case Type::DOUBLE:
+			str_buff = to_string(arg_0.data.d);
+			str = str_buff;
+			break;
+		case Type::STRING:
+			str = arg_0.sv();
+			break;
 	}
 	
-	return arg_0;
+	// Normalize beg and end
+	beg = (beg >= 0) ? beg : long(str.length()) + beg;
+	long end = (hasLen) ? beg + len : INT64_MAX;
+	
+	if (beg > end){
+		swap(beg, end);
+	}
+	
+	beg = max(0L, beg);
+	end = min(end, long(str.length()));
+	
+	// Substring
+	if (beg >= end)
+		return Value(""sv);
+	else if (beg == 0 && end == long(str.length()) && arg_0.type == Type::STRING)
+		return arg_0;
+	else
+		return Value(str.substr(beg, end - beg));
 }
 
 
