@@ -375,9 +375,9 @@ bool test_doc_expression_operators(){
 		"{3.6 % 1.25}" NL
 	);
 	string_view out = (
-		"\"x is 3\"" NL
-		"\"aaa\"" NL
-		"\"a\"" NL
+		"x is 3" NL
+		"aaa" NL
+		"a" NL
 		"1" NL
 		"0" NL
 		"1.1" NL

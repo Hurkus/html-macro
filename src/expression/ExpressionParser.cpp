@@ -229,7 +229,7 @@ static Operation::Type try_parse_binaryOp(const char*& s, const char* end) noexc
 			return Operation::Type::XOR;
 		
 		case '|':
-			if (s+1 != end && s[1] == '&'){
+			if (s+1 != end && s[1] == '|'){
 				s += 2;
 				return Operation::Type::OR;
 			}

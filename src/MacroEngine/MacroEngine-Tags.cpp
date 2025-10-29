@@ -183,7 +183,8 @@ void MacroEngine::getAttr(const Node& op, Node& dst){
 		
 		// Not found
 		MacroEngine::variables.insert(varName, 0L);
-		next:
+		
+		next: continue;
 	}
 	
 }
