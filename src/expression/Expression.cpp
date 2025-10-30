@@ -252,9 +252,9 @@ static Value div(const BinaryOperation& binop, const VariableMap& vars, const De
 	
 	else if (v1.type == Type::DOUBLE){
 		if (v2.type == Type::LONG)
-			v1.data.d -= v2.data.l;
+			v1.data.d /= v2.data.l;
 		else if (v2.type == Type::DOUBLE)
-			v1.data.d -= v2.data.d;
+			v1.data.d /= v2.data.d;
 	}
 	
 	return v1;
