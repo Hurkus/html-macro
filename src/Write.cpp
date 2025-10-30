@@ -1,6 +1,9 @@
 #include "Write.hpp"
-#include "html.hpp"
 #include <vector>
+#include <cstring>
+
+#include "html.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace html;
@@ -14,33 +17,27 @@ using namespace html;
 #define SPACE_16	SPACE_4 SPACE_4 SPACE_4 SPACE_4
 
 
-// ----------------------------------- [ Structures ] --------------------------------------- //
-
-
-// struct flushstream {
-// 	ostream& out;
-	
-// 	template<typename T>
-// 	flushstream& operator<<(T&& s){
-// 		out << forward<T>(s);
-// 		out.flush();
-// 		return *this;
-// 	}
-	
-// };
-
-
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-constexpr string_view trim_whitespace(string_view s){
+constexpr bool isWhitespace(char c){
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+
+constexpr string_view trim_nl_suffix(string_view s){
 	const char* beg = s.begin();
-	const char* end = beg + s.length();
+	const char* end = s.end();
 	
-	while (beg != end && isspace(beg[+0])) beg++;
-	while (end != beg && isspace(end[-1])) end--;
+	while (beg != end){
+		end--;
+		if (!isWhitespace(*end))
+			break;
+		else if (*end == '\n')
+			return string_view(beg, end);
+	}
 	
-	return string_view(beg, end);
+	return s;
 }
 
 
@@ -72,6 +69,60 @@ static void writeAttributes(ostream& out, const Node& node, vector<const Attr*>&
 		}
 		
 	}
+	
+	assert(stack.empty());
+}
+
+
+static void writeIndentedText(ostream& out, string_view text, const int depth){
+	// Write first line, before indentation
+	{
+		size_t i = text.find('\n');
+		
+		if (i == string_view::npos){
+			out << text;
+			return;
+		}
+		
+		i++;
+		out.write(text.data(), i);
+		text.remove_prefix(i);
+	}
+	
+	const char* beg = text.begin();
+	const char* end = text.end();
+	
+	// Get indentation
+	int indent = 0;
+	while (&beg[indent] != end){
+		if (beg[indent] != '\t')
+			break;
+		indent++;
+	}
+	
+	while (beg != end){
+		// Remove leading indentation
+		for (int i = indent ; i > 0 && beg != end ; i--){
+			if (*beg != '\t')
+				break;
+			beg++;
+		}
+		
+		out << tabs(depth);
+		
+		// Print untill newline
+		const char* p = (const char*)memchr(beg, '\n', end - beg);
+		if (p == nullptr){
+			out.write(beg, end - beg);
+			break;
+		}
+		
+		p++;
+		out.write(beg, p - beg);
+		beg = p;
+	}
+	
+	return;
 }
 
 
@@ -79,19 +130,25 @@ static void writeAttributes(ostream& out, const Node& node, vector<const Attr*>&
 
 
 bool write(ostream& out, const Document& doc, WriteOptions options){
-	vector<const Node*> node_stack = {};
-	vector<const Attr*> attr_stack = {};
-	node_stack.reserve(128);
+	vector<const Node*> node_stack = {};	// Child node list is reversed.
+	vector<const Attr*> attr_stack = {};	// Attr list is reversed.
+	node_stack.reserve(64);
 	attr_stack.reserve(16);
 	
-	assert(!(doc.options % NodeOptions::LIST_FORWARDS));
-	for (const Node* child = doc.child ; child != nullptr ; child = child->next){
-		node_stack.emplace_back(child);
-	}
+	// #ifdef DEBUG
+	// 	// Automatic flush after each write.
+	// 	out << std::unitbuf;
+	// #endif
 	
 	int depth = 0;
 	bool add_space = false;
 	bool skip_space = false;
+	
+	// Push children of root element (reverse list)
+	assert(!(doc.options % NodeOptions::LIST_FORWARDS));
+	for (const Node* child = doc.child ; child != nullptr ; child = child->next){
+		node_stack.emplace_back(child);
+	}
 	
 	while (!node_stack.empty()){
 		const Node* node = node_stack.back();
@@ -109,17 +166,43 @@ bool write(ostream& out, const Document& doc, WriteOptions options){
 		
 		
 		text: {
-			out << node->value();
-			skip_space = true;
-			add_space = false;
+			// Raw unmodified text
+			if (node->parent != nullptr && node->parent->name() == "pre"sv){
+				out << node->value();
+				skip_space = true;
+				add_space = false;
+			}
+			
+			// Stack text nodes
+			else if (node_stack.size() >= 2 && node_stack.end()[-2]->type == NodeType::TEXT){
+				writeIndentedText(out, node->value(), depth);
+			}
+			
+			// Single text node
+			else {
+				string_view text = trim_nl_suffix(node->value());
+				bool trimmed = (text.length() != size_t(node->value_len));
+				trimmed |= (node->options % NodeOptions::SPACE_AFTER);
+				
+				// Prefix with whitespace
+				if (node->options % NodeOptions::SPACE_BEFORE){ [[unlikely]]
+					if (!text.empty() && !isWhitespace(text[0]))
+						out << '\n' << tabs(depth);
+				}
+				
+				writeIndentedText(out, text, depth);
+				
+				skip_space = !trimmed;
+				add_space = trimmed;
+			}
+			
 			goto pop;
 		}
 		
 		
 		directive: {
 			if (!skip_space && (add_space || node->options % NodeOptions::SPACE_BEFORE)){
-				out << '\n';
-				out << tabs(depth);
+				out << '\n' << tabs(depth);
 			}
 			
 			out << '<' << node->value() << '>';
@@ -177,15 +260,14 @@ bool write(ostream& out, const Document& doc, WriteOptions options){
 		pop: {
 			node_stack.pop_back();
 			
-			// Last of children
+			// Check if node is last of the siblings
 			while (!node_stack.empty() && node_stack.back() == node->parent){
 				node = node_stack.back();
 				node_stack.pop_back();
 				
 				depth--;
 				if (!skip_space && add_space){
-					out << '\n';
-					out << tabs(depth);
+					out << '\n' << tabs(depth);
 				}
 				
 				out << "</" << node->name() << ">";

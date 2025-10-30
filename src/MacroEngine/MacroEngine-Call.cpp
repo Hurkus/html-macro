@@ -159,6 +159,8 @@ bool MacroEngine::include(const Node& op, const Attr& attr, Node& dst){
 			incType = IncludeType::HTML;
 	}
 	
+	Node* const original_first = dst.child;
+	
 	// Include HTML as macro
 	if (incType == IncludeType::HTML){
 		const Macro* macro = Macro::loadFile(path, false);
@@ -182,6 +184,29 @@ bool MacroEngine::include(const Node& op, const Attr& attr, Node& dst){
 		
 		Node& txt = dst.appendChild(NodeType::TEXT);
 		txt.value(str, len);
+	}
+	
+	// Transfer leading and trailing whitespace
+	if (dst.child != nullptr){
+		
+		// Transfer trailing space to last new child
+		if (dst.child != original_first){
+			dst.child->options |= (op.options & NodeOptions::SPACE_AFTER);
+		}
+		
+		// Transfer leading space to first new child
+		if (original_first != nullptr){
+			if (original_first->next != nullptr)
+				original_first->next->options |= (op.options & NodeOptions::SPACE_BEFORE);
+		} else {
+			// Find first child
+			Node* first = dst.child;
+			while (first->next != nullptr)
+				first = first->next;
+			
+			first->options |= (op.options & NodeOptions::SPACE_BEFORE);
+		}
+		
 	}
 	
 	return true;

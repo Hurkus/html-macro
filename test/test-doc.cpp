@@ -64,11 +64,12 @@ bool test_doc_macro_INCLUDE(){
 	
 	string_view out = (
 		NL
-		"<body><style>" NL
-		"	#header {" NL
-		"		color: red;" NL
-		"	}" NL
-		"</style>" NL
+		"<body>" NL
+		"	<style>" NL
+		"		#header {" NL
+		"			color: red;" NL
+		"		}" NL
+		"	</style>" NL
 		"	<div id=\"header\">" NL
 		"		<h1>Yet another cookbook</h1>" NL
 		"	</div>" NL
@@ -211,13 +212,13 @@ REGISTER2(doc_macro_SET_TAG);
 bool test_doc_macro_SET_TAG(){
 	TmpFile in = TmpFile(
 		"<div>" NL
-		"    <SET-TAG p/>" NL
-		"    text" NL
+		"	<SET-TAG p/>" NL
+		"	text" NL
 		"</div>" NL
 	);
 	string_view out = (
 		"<p>" NL
-		"    text" NL
+		"	text" NL
 		"</p>" NL
 	);
 	return run({in}, out, "", 0);
@@ -228,13 +229,13 @@ REGISTER2(doc_macro_GET_TAG);
 bool test_doc_macro_GET_TAG(){
 	TmpFile in = TmpFile(
 		"<div>" NL
-		"    <GET-TAG tag/>" NL
-		"    This text is within a {tag} element." NL
+		"	<GET-TAG tag/>" NL
+		"	This text is within a {tag} element." NL
 		"</div>" NL
 	);
 	string_view out = (
 		"<div>" NL
-		"    This text is within a div element." NL
+		"	This text is within a div element." NL
 		"</div>" NL
 	);
 	return run({in}, out, "", 0);
@@ -245,13 +246,13 @@ REGISTER2(doc_macro_SET_ATTR);
 bool test_doc_macro_SET_ATTR(){
 	TmpFile in = TmpFile(
 		"<div>" NL
-		"    <SET-ATTR title=\"text\"/>" NL
-		"    text" NL
+		"	<SET-ATTR title=\"text\"/>" NL
+		"	text" NL
 		"</div>" NL
 	);
 	string_view out = (
 		"<div title=\"text\">" NL
-		"    text" NL
+		"	text" NL
 		"</div>" NL
 	);
 	return run({in}, out, "", 0);
@@ -295,15 +296,15 @@ bool test_doc_macro_SHELL(){
 	TmpFile in = TmpFile(
 		"<SET t='0' fmt=\"%d/%m/%Y\" />" NL
 		"<p>" NL
-		"    The world was created on:" NL
-		"    <SHELL VARS=\"t,fmt\">date -d \"@$t\" +\"$fmt\"</SHELL>" NL
+		"	The world was created on:" NL
+		"	<SHELL VARS=\"t,fmt\">date -d \"@$t\" +\"$fmt\"</SHELL>" NL
 		"</p>" NL
 	);
 	string_view out = (
 		NL
 		"<p>" NL
-		"    The world was created on:" NL
-		"    01/01/1970"
+		"	The world was created on:" NL
+		"	01/01/1970" NL
 		"</p>" NL
 	);
 	return run({in}, out, "", 0);

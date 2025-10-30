@@ -60,8 +60,8 @@ enum class html::NodeOptions : uint8_t {
 	INTERPOLATE   = 1 << 3,	// Text content of `value` should be interpolated for expressions `{}`.
 	SINGLE_QUOTE  = 1 << 4, // Attribute value is in single quotes.
 	SELF_CLOSE    = 1 << 5, // <tag/>
-	SPACE_BEFORE  = 1 << 6, // Node is prefixed by whitespace.
-	SPACE_AFTER   = 1 << 7, // Node is suffixed with whitespace.
+	SPACE_BEFORE  = 1 << 6, // Node is prefixed (before opening tag) with whitespace.
+	SPACE_AFTER   = 1 << 7, // Node is suffixed (after closing tag) with whitespace.
 };
 
 template<> inline constexpr bool has_enum_operators<html::NodeOptions> = true;

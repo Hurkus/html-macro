@@ -6,256 +6,256 @@
 		<title>HTML-Macro documentation</title>
 	</head>
 	<style>
-	* {
-		margin: 0;
-	}
-	html {
-		width: 100%;
-		height: 100vh;
-		overflow: hidden;
-	}
-	body {
-		max-width: 100%;
-		height: 100%;
-		overflow: auto;
-		scroll-behavior: smooth;
-	}
-</style>
-	<style>
-	.TD-0    { text-decoration: none; }
-	.TD-U    { text-decoration: underline; }
-	.TA-J    { text-align: justify; }
-	.FF-MONO { font-family: monospace; }
-	.FF-SANS { font-family: sans-serif; }
-</style>
-	<style>
-	
-	code, .code {
-		background-color: rgb(240, 240, 240);
-		padding-left: 0.3em;
-		padding-right: 0.3em;
-		font-family: monospace;
-		border: 1px solid rgba(128, 128, 128, 0.2);
-		border-radius: 2px;
-	}
-	
-	.code a:not(:hover) {
-		color: blue;
-		text-decoration: none;
-	} .code a:hover {
-		font-weight: bold;
-	}
-	
-</style>
-	<style>
-	
-	table.list {
-		margin: 10px 0 0 10px;
-		text-align: center;
-		border-collapse: collapse;
-	}
-	
-	table.list th {
-		padding: 3px 10px;
-		border: 1px dashed rgba(0, 0, 0, 0.25);
-		border-bottom: 2px solid black;
-	}
-	
-	table.list td {
-		padding: 5px;
-		border: 1px solid rgba(0, 0, 0, 0.25);
-	}
-	
-</style>
-	<style>
-	
-	.box {
-		padding: 8px;
-		box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
-		border-radius: 3px;
-		border: 1px solid rgba(0, 0, 0, 0.1);
-	}
-	
-	.example {
-		padding: 8px;
-		box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
-		border-radius: 3px;
-		border: 1px solid rgba(0, 0, 0, 0.1);
-	}
-	
-	.example h4 {
-		display: inline;
-		font-weight: normal;
-	}
-	
-	.example table {
-		width: 100%;
-		border-spacing: 10px;
-	}
-	
-	.example table td {
-		width: 50%;
-		vertical-align: top;
-	}
-	
-	.example table td.code span[title]:hover {
-		font-weight: bold;
-	}
-	
-</style>
-	<style>
-	
-	main {
-		max-width: 1200px;
-		padding: 1em;
-		margin: auto;
-		font-family: sans-serif;
-	}
-	
-	main > h1 {
-		text-align: center;
-	}
-	
-	main .version {
-		text-align: center;
-	}
-	
-	main > .details {
-		display: flex;
-		flex-direction: row;
-		flex-wrap: wrap;
-		
-		margin-bottom: 0.4em;
-		font-size: 0.8em;
-		gap: 5px;
-		
-	}
-	
-	main > .details a {
-		color: inherit;
-	}
-	
-	main h2 {
-		margin-bottom: 5px;
-		padding: 0.2em 0.5em;
-		
-		border-top: 5px solid rgb(127, 0, 0);
-		border-radius: 2px;
-		background: rgba(127, 0, 0, 0.1);
-		background: linear-gradient(to bottom, rgba(127, 0, 0, 0.05) 0%, transparent 100%);
-	}
-	
-	main h3 {
-		margin-bottom: 5px;
-		padding: 0.2em 0.5em;
-		
-		border-radius: 2px;
-		border-top: 3px solid rgb(201, 108, 0);
-		background: linear-gradient(to bottom, rgba(240, 128, 0, 0.05) 0%, transparent 100%);
-	}
-	
-	main h1 a,
-	main h2 a,
-	main h3 a,
-	main h4 a {
-		text-decoration: inherit;
-		color: inherit;
-	}
-	
-	main h1 a:hover,
-	main h2 a:hover,
-	main h3 a:hover,
-	main h4 a:hover {
-		text-decoration: underline;
-	}
-	
-</style>
-	<style>
-	nav {
-		margin-bottom: 2em;
-	}
-	
-	nav ol,
-	nav ul {
-		list-style: none;
-		padding: 0;
-	}
-	
-	nav .lvl-1 {
-		padding-left: 1em;
-	}
-	nav .lvl-1 > li {
-		margin-bottom: 0.7em;
-	}
-	
-	nav .lvl-2 {
-		padding-left: 0.6em;
-	}
-	nav .lvl-2 > li {
-		margin-bottom: 0.2em;
-	}
-	
-	nav .lvl-3 {
-		padding-left: 1.7em;
-	}
-	nav ul.lvl-3 {
-		list-style-type: disc;
-	}
-	
-	nav a {
-		text-decoration: inherit;
-	} nav a:hover {
-		font-weight: bold;
-	}
-	
-	
-	@media screen and (min-width: 800px) {
-		body {
-			margin-left: 210px;
-		}
-		
-		nav {
-			position: fixed;
-			top: 0;
-			left: 0;
-			
-			height: 100%;
-			width: 210px;
-			
-			overflow-y: auto;
-			
-			color: white;
-			font-family: sans-serif;
-			background: rgb(50, 0, 0);
-		}
-		
-		nav h2 {
+		* {
 			margin: 0;
-			padding: 0;
-			border: none;
-			
-			margin: 8px;
-			font-size: 1.4em;
-			text-align: center;
-			border-bottom: 1px solid rgba(255, 255, 255, 0.75);
+		}
+		html {
+			width: 100%;
+			height: 100vh;
+			overflow: hidden;
+		}
+		body {
+			max-width: 100%;
+			height: 100%;
+			overflow: auto;
+			scroll-behavior: smooth;
+		}
+	</style>
+	<style>
+		.TD-0    { text-decoration: none; }
+		.TD-U    { text-decoration: underline; }
+		.TA-J    { text-align: justify; }
+		.FF-MONO { font-family: monospace; }
+		.FF-SANS { font-family: sans-serif; }
+	</style>
+	<style>
+		
+		code, .code {
+			background-color: rgb(240, 240, 240);
+			padding-left: 0.3em;
+			padding-right: 0.3em;
+			font-family: monospace;
+			border: 1px solid rgba(128, 128, 128, 0.2);
+			border-radius: 2px;
 		}
 		
-		nav * {
+		.code a:not(:hover) {
+			color: blue;
+			text-decoration: none;
+		} .code a:hover {
+			font-weight: bold;
+		}
+		
+	</style>
+	<style>
+		
+		table.list {
+			margin: 10px 0 0 10px;
+			text-align: center;
+			border-collapse: collapse;
+		}
+		
+		table.list th {
+			padding: 3px 10px;
+			border: 1px dashed rgba(0, 0, 0, 0.25);
+			border-bottom: 2px solid black;
+		}
+		
+		table.list td {
+			padding: 5px;
+			border: 1px solid rgba(0, 0, 0, 0.25);
+		}
+		
+	</style>
+	<style>
+		
+		.box {
+			padding: 8px;
+			box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+			border-radius: 3px;
+			border: 1px solid rgba(0, 0, 0, 0.1);
+		}
+		
+		.example {
+			padding: 8px;
+			box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+			border-radius: 3px;
+			border: 1px solid rgba(0, 0, 0, 0.1);
+		}
+		
+		.example h4 {
+			display: inline;
+			font-weight: normal;
+		}
+		
+		.example table {
+			width: 100%;
+			border-spacing: 10px;
+		}
+		
+		.example table td {
+			width: 50%;
+			vertical-align: top;
+		}
+		
+		.example table td.code span[title]:hover {
+			font-weight: bold;
+		}
+		
+	</style>
+	<style>
+		
+		main {
+			max-width: 1200px;
+			padding: 1em;
+			margin: auto;
+			font-family: sans-serif;
+		}
+		
+		main > h1 {
+			text-align: center;
+		}
+		
+		main .version {
+			text-align: center;
+		}
+		
+		main > .details {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: wrap;
+			
+			margin-bottom: 0.4em;
+			font-size: 0.8em;
+			gap: 5px;
+			
+		}
+		
+		main > .details a {
 			color: inherit;
 		}
 		
-		nav li:not(:hover) {
-			color: rgba(255, 255, 255, 0.8);
+		main h2 {
+			margin-bottom: 5px;
+			padding: 0.2em 0.5em;
+			
+			border-top: 5px solid rgb(127, 0, 0);
+			border-radius: 2px;
+			background: rgba(127, 0, 0, 0.1);
+			background: linear-gradient(to bottom, rgba(127, 0, 0, 0.05) 0%, transparent 100%);
+		}
+		
+		main h3 {
+			margin-bottom: 5px;
+			padding: 0.2em 0.5em;
+			
+			border-radius: 2px;
+			border-top: 3px solid rgb(201, 108, 0);
+			background: linear-gradient(to bottom, rgba(240, 128, 0, 0.05) 0%, transparent 100%);
+		}
+		
+		main h1 a,
+		main h2 a,
+		main h3 a,
+		main h4 a {
+			text-decoration: inherit;
+			color: inherit;
+		}
+		
+		main h1 a:hover,
+		main h2 a:hover,
+		main h3 a:hover,
+		main h4 a:hover {
+			text-decoration: underline;
+		}
+		
+	</style>
+	<style>
+		nav {
+			margin-bottom: 2em;
+		}
+		
+		nav ol,
+		nav ul {
+			list-style: none;
+			padding: 0;
 		}
 		
 		nav .lvl-1 {
-			padding-left: 10px;
-			padding-right: 2px;
+			padding-left: 1em;
+		}
+		nav .lvl-1 > li {
+			margin-bottom: 0.7em;
 		}
 		
-	}
-	
-</style>
+		nav .lvl-2 {
+			padding-left: 0.6em;
+		}
+		nav .lvl-2 > li {
+			margin-bottom: 0.2em;
+		}
+		
+		nav .lvl-3 {
+			padding-left: 1.7em;
+		}
+		nav ul.lvl-3 {
+			list-style-type: disc;
+		}
+		
+		nav a {
+			text-decoration: inherit;
+		} nav a:hover {
+			font-weight: bold;
+		}
+		
+		
+		@media screen and (min-width: 800px) {
+			body {
+				margin-left: 210px;
+			}
+			
+			nav {
+				position: fixed;
+				top: 0;
+				left: 0;
+				
+				height: 100%;
+				width: 210px;
+				
+				overflow-y: auto;
+				
+				color: white;
+				font-family: sans-serif;
+				background: rgb(50, 0, 0);
+			}
+			
+			nav h2 {
+				margin: 0;
+				padding: 0;
+				border: none;
+				
+				margin: 8px;
+				font-size: 1.4em;
+				text-align: center;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.75);
+			}
+			
+			nav * {
+				color: inherit;
+			}
+			
+			nav li:not(:hover) {
+				color: rgba(255, 255, 255, 0.8);
+			}
+			
+			nav .lvl-1 {
+				padding-left: 10px;
+				padding-right: 2px;
+			}
+			
+		}
+		
+	</style>
 	<body>
 		<main id="top">
 			<h1>HTML-Macro</h1>
@@ -263,10 +263,10 @@
 			<br/>
 			<div class="details">
 				<p>Author &ndash; <a href="https://hurkus.dev" style="font-weight: bold;">Hurkus</a></p>
-			&bull;
-			<p>Date &ndash; <span class="date TD-U">28/10/2025</span></p>
-			&bull;
-			<p>Repository &ndash; <a href="https://github.com/Hurkus/html-macro/">github.com/Hurkus/html-macro/</a></p>
+				&bull;
+				<p>Date &ndash; <span class="date TD-U">28/10/2025</span></p>
+				&bull;
+				<p>Repository &ndash; <a href="https://github.com/Hurkus/html-macro/">github.com/Hurkus/html-macro/</a></p>
 			</div>
 			<nav>
 				<h2><a href="#top">Table of contents</a></h2>
@@ -327,9 +327,9 @@
 				<h2><a href="#introduction">1. Introduction</a></h2>
 				<p>
 					<b>HTML-Macro</b> is a <a href="https://en.wikipedia.org/wiki/Source-to-source_compiler">transpiler</a> for HTML documents.
-		It's main focus is to aid in the development of static websites.
-		The main benefits of <b>HTML-Macro</b> are:
-		<ol>
+					It's main focus is to aid in the development of static websites.
+					The main benefits of <b>HTML-Macro</b> are:
+					<ol>
 						<li style="margin-top: 5px;">Splitting large documents into smaller, more managable files.</li>
 						<li style="margin-top: 5px;">Generating table or grid entries based on templates.</li>
 						<li style="margin-top: 5px;">Easier generation of language variants of the document.</li>
@@ -337,9 +337,9 @@
 				</p>
 				<br/>
 				<p>
-		The program is implemented in <b>C++</b>, can be compiled with <a href="https://gcc.gnu.org/">GCC</a> (g++) and is used as a command-line tool.
-		It synergises well with <a href="https://www.gnu.org/software/make/make.html"><i>make</i></a>.
-	</p>
+					The program is implemented in <b>C++</b>, can be compiled with <a href="https://gcc.gnu.org/">GCC</a> (g++) and is used as a command-line tool.
+					It synergises well with <a href="https://www.gnu.org/software/make/make.html"><i>make</i></a>.
+				</p>
 			</section>
 			<br/>
 			<br/>
@@ -347,37 +347,37 @@
 			<section id="cli" class="chapter">
 				<h2><a href="#cli">2. Command-line interface</a></h2>
 				<p>
-		The program requires a path to <b>one</b> input file, which will be parsed, processed and then piped via <a href="https://en.wikipedia.org/wiki/Standard_streams">stdout</a>.<br/>
+					The program requires a path to <b>one</b> input file, which will be parsed, processed and then piped via <a href="https://en.wikipedia.org/wiki/Standard_streams">stdout</a>.<br/>
 				</p>
 				<br/>
 				<p>
-		General usage would be: <code>html-macro [options] [variables] &lt;path&gt;</code>, where:
-		<ul>
+					General usage would be: <code>html-macro [options] [variables] &lt;path&gt;</code>, where:
+					<ul>
 						<li>
 							<code><a href="#cli-options" class="TD-0">[options]</a></code> represents the optional list of program options described <a href="#cli-options">below</a>.
-			</li>
+						</li>
 						<li>
 							<code>[variables]</code> represents the list of predefined variables used in <a href="#expressions">expressions</a>.
-				They are written in the form of <code>[name]=[value]</code>.
-			</li>
+							They are written in the form of <code>[name]=[value]</code>.
+						</li>
 						<li>
 							<code>&lt;path&gt;</code> represents the mandatory path to the input file (typically a <code>.html</code> file).
-				The <code>path</code> cannot contain an <code>=</code> character, as that would be considered a variable assignment.
-			</li>
+							The <code>path</code> cannot contain an <code>=</code> character, as that would be considered a variable assignment.
+						</li>
 					</ul>
 				</p>
 				<br/>
 				<style>
-		#cli-options table td {
-			text-align: justify;
-			padding: 10px;
-		}
-		
-		#cli-options table tr > *:nth-child(1),
-		#cli-options table tr > *:nth-child(2) {
-			white-space: nowrap;
-		}
-	</style>
+					#cli-options table td {
+						text-align: justify;
+						padding: 10px;
+					}
+					
+					#cli-options table tr > *:nth-child(1),
+					#cli-options table tr > *:nth-child(2) {
+						white-space: nowrap;
+					}
+				</style>
 				<div id="cli-options">
 					<p>List of program <code>[options]</code>:</p>
 					<table class="list">
@@ -395,25 +395,25 @@
 							<td><code>--include &lt;path&gt;</code></td>
 							<td><code>-i &lt;path&gt;</code></td>
 							<td>
-					Add <code>path</code> to the list of paths that are searched when including files using a relative path with the <a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a> element macro.
-					The <code>path</code> must lead to an existing <b>directory</b>.
-				</td>
+								Add <code>path</code> to the list of paths that are searched when including files using a relative path with the <a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a> element macro.
+								The <code>path</code> must lead to an existing <b>directory</b>.
+							</td>
 						</tr>
 						<tr>
 							<td><code>--output &lt;path&gt;</code></td>
 							<td><code>-o &lt;path&gt;</code></td>
 							<td>
-					Write output directly to a file instead of <i>stdout</i>.
-					Errors, warnings and general information are still piped to <i>stderr</i>.
-				</td>
+								Write output directly to a file instead of <i>stdout</i>.
+								Errors, warnings and general information are still piped to <i>stderr</i>.
+							</td>
 						</tr>
 						<tr>
 							<td></td>
 							<td><code>-x</code></td>
 							<td>
-					Discard the <i>stdout</i> stream and/or do not write any output to a file.
-					This option can be used to check for errors without generating any output.
-				</td>
+								Discard the <i>stdout</i> stream and/or do not write any output to a file.
+								This option can be used to check for errors without generating any output.
+							</td>
 						</tr>
 					</table>
 				</div>
@@ -422,42 +422,42 @@
 			<br/>
 			<br/>
 			<style>
-	#macros .macro {
-		padding: 12px;
-	}
-	#macros .macro h4 {
-		font-family: monospace;
-		font-size: 1.4em;
-		margin-right: 0.4em;
-		display: inline;
-	}
-	#macros .macro p:first-of-type {
-		display: inline;
-	}
-	#macros .macro x-line {
-		display: block;
-		height: 1px;
-		margin-top: 6px;
-		margin-bottom: 7px;
-		background: rgba(0, 0, 0, 0.5);
-	}
-	
-	#macros .macro .example table {
-		margin-top: -1em;
-	}
-	
-	#macros .macro .example {
-		box-shadow: none;
-		border: none;
-	}
-	
-</style>
+				#macros .macro {
+					padding: 12px;
+				}
+				#macros .macro h4 {
+					font-family: monospace;
+					font-size: 1.4em;
+					margin-right: 0.4em;
+					display: inline;
+				}
+				#macros .macro p:first-of-type {
+					display: inline;
+				}
+				#macros .macro x-line {
+					display: block;
+					height: 1px;
+					margin-top: 6px;
+					margin-bottom: 7px;
+					background: rgba(0, 0, 0, 0.5);
+				}
+				
+				#macros .macro .example table {
+					margin-top: -1em;
+				}
+				
+				#macros .macro .example {
+					box-shadow: none;
+					border: none;
+				}
+				
+			</style>
 			<section id="macros" class="chapter">
 				<h2><a href="#macros">3. Macros</a></h2>
 				<p>
-		While most content from source files is coppied to the final document, <b>macros</b> can invoke special functionality for generating or excluding content.
-		While the user can define custom macros (with limited functionality), there are two sets of predefined macros:
-		<ul>
+					While most content from source files is coppied to the final document, <b>macros</b> can invoke special functionality for generating or excluding content.
+					While the user can define custom macros (with limited functionality), there are two sets of predefined macros:
+					<ul>
 						<li><a href="#element-macros">Element macros</a></li>
 						<li><a href="#attribute-macros">Attribute macros</a></li>
 					</ul>
@@ -467,16 +467,16 @@
 				<section id="element-macros">
 					<h3><a href="#element-macros">3.1. Element macros</a></h3>
 					<p>
-			Some HTML elements act as macros, and are not coppied to the final document.
-			Instead they perform other functions such as deciding what content to include or generate.
-			They are called <b>element macros</b> and their tags are written in <b>uppercase</b>.
-			Parameters for their functionality are passed with HTML attributes, which are <i>usually</i> also in written uppercase.
-		</p>
+						Some HTML elements act as macros, and are not coppied to the final document.
+						Instead they perform other functions such as deciding what content to include or generate.
+						They are called <b>element macros</b> and their tags are written in <b>uppercase</b>.
+						Parameters for their functionality are passed with HTML attributes, which are <i>usually</i> also in written uppercase.
+					</p>
 					<br/>
 					<p>
-			What happens with child elements depends on the specific macro in question.
-			While some copy/evaluate their children, others remove them and some only affect the execution environment.
-		</p>
+						What happens with child elements depends on the specific macro in question.
+						While some copy/evaluate their children, others remove them and some only affect the execution environment.
+					</p>
 					<br/>
 					<div class="example">
 						<h4><b>Example:</b> Macro demonstration for language-specific text.</h4>
@@ -487,38 +487,38 @@
 							</tr>
 							<tr>
 								<td class="code">
-						&lt;div&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#IF" title="Conditionally includes child elements.">IF</a>
+									&lt;div&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#IF" title="Conditionally includes child elements.">IF</a>
 									<span title="Check if variable lang is equal to string &quot;de&quot;">lang="de"</span>&gt;<br/>
-								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Deutsch&lt;/p&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#IF" title="Conditionally includes child elements.">/IF</a>&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#ELSE" title="Includes child elements if previous condition macros fail.">ELSE</a>&gt;<br/>
-								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#ELSE" title="Includes child elements if previous condition macros fail.">/ELSE</a>&gt;<br/>
-						&lt;/div&gt;
-					</td>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Deutsch&lt;/p&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#IF" title="Conditionally includes child elements.">/IF</a>&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#ELSE" title="Includes child elements if previous condition macros fail.">ELSE</a>&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#ELSE" title="Includes child elements if previous condition macros fail.">/ELSE</a>&gt;<br/>
+									&lt;/div&gt;
+								</td>
 								<td class="code">
-						&lt;div&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
-						&lt;/div&gt;
-					</td>
+									&lt;div&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
+									&lt;/div&gt;
+								</td>
 							</tr>
 						</table>
 						<p>
-				Here we decide language-specific text for the final document.
-				The decision, which text to include, is done by the flow controll <code>IF</code> and <code>ELSE</code> macros,
-				which depend on a variable <code>lang</code>.
-			</p>
+							Here we decide language-specific text for the final document.
+							The decision, which text to include, is done by the flow controll <code>IF</code> and <code>ELSE</code> macros,
+							which depend on a variable <code>lang</code>.
+						</p>
 					</div>
 					<br/>
 					<style>
-			#element-macros > .list {
-				column-width: 400px;
-			}
-		</style>
+						#element-macros > .list {
+							column-width: 400px;
+						}
+					</style>
 					<p>
-			List of predefined element macros:
-			<ul class="list">
+						List of predefined element macros:
+						<ul class="list">
 							<li><a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> &mdash; Defines a new macro.</li>
 							<li><a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a>  &mdash; Invokes a <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a>.</li>
 							<li><a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a> &mdash; Includes contents of another file.</li>
@@ -545,28 +545,28 @@
 						<p>Defines a new macro.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;MACR NAME="[name]"&gt;</code>, where:
-		<ul>
+							Must be in the form of <code>&lt;MACR NAME="[name]"&gt;</code>, where:
+							<ul>
 								<li>
 									<code>[name]</code> represents the name of the new macro, which will be used to invoke it.
-				Only the latest macro with the same name is cached.
-			</li>
+									Only the latest macro with the same name is cached.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		Macro elements serve as <em>templates</em> for instantiating/evaluating the same HTML element tree multiple times.
-		All <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> elements are referenced globally, i.e. cached and removed from the source document right after the document is parsed and before any instantiation occurs.
-		This means their position in the document doesn't matter.
-	</p>
+							Macro elements serve as <em>templates</em> for instantiating/evaluating the same HTML element tree multiple times.
+							All <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> elements are referenced globally, i.e. cached and removed from the source document right after the document is parsed and before any instantiation occurs.
+							This means their position in the document doesn't matter.
+						</p>
 						<br/>
 						<p>
-		All files have an anonymous <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> root element.
-	</p>
+							All files have an anonymous <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> root element.
+						</p>
 						<br/>
 						<p>
-		When instantiated, all child elements are (recursively) coppied and evaluated:
-		<ul>
+							When instantiated, all child elements are (recursively) coppied and evaluated:
+							<ul>
 								<li>Macro elements are evaluated.</li>
 								<li>Regular HTML elements are coppied.</li>
 								<li>Attributes are coppied and evaluated for any expressions or attribute macros.</li>
@@ -575,9 +575,9 @@
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a>,
-		<a href="#ATTR-CALL" title="Invoke a user-defined macro inside the current element.">attribute CALL</a>,
-		<a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a>
+							<a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a>,
+							<a href="#ATTR-CALL" title="Invoke a user-defined macro inside the current element.">attribute CALL</a>,
+							<a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -589,32 +589,32 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#MACRO" title="Defines a new macro.">MACRO</a>
+										&lt;<a href="#MACRO" title="Defines a new macro.">MACRO</a>
 										<span title="Macro is named &apos;func&apos;">NAME="func"</span>&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 										<span title="Set variable named &apos;col&apos; using a condition function in the expression.">col='<a href="#function-if">if(i == 1, "red", "green")</a>'</span>
-						/&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;li <span title="Insert previously computed variable into the style attribute.">style="color:{col};"</span>&gt;Line #<span title="Insert variable i">{i}</span>&lt;/li&gt;<br/>
-					&lt;<a href="#MACRO" title="Defines a new macro.">/MACRO</a>&gt;<br/>
+										/&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;li <span title="Insert previously computed variable into the style attribute.">style="color:{col};"</span>&gt;Line #<span title="Insert variable i">{i}</span>&lt;/li&gt;<br/>
+										&lt;<a href="#MACRO" title="Defines a new macro.">/MACRO</a>&gt;<br/>
 										<br/>
-					&lt;ul&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#FOR" title="Evaluates child elements for a set amount of times.">FOR</a>
+										&lt;ul&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#FOR" title="Evaluates child elements for a set amount of times.">FOR</a>
 										<span title="Initialize variable i to 0">i='0'</span>
 										<span title="Repeat while variable i is less than 3">TRUE='i&lt;3'</span>
 										<span title="Increment variable i by 1 after each iteration">i='i+1'</span>
-						&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#CALL" title="Invokes a user-defined macro.">CALL</a>
+										&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#CALL" title="Invokes a user-defined macro.">CALL</a>
 										<span title="Invoke macro named &apos;func&apos; defined above">NAME="func"</span>/&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#FOR" title="Evaluates child elements for a set amount of times.">/FOR</a>&gt;<br/>
-					&lt;/ul&gt;
-				</td>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#FOR" title="Evaluates child elements for a set amount of times.">/FOR</a>&gt;<br/>
+										&lt;/ul&gt;
+									</td>
 									<td class="code">
-					&lt;ul&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;li style="color:green;"&gt;Line #0&lt;/li&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;li style="color:red;"&gt;Line #1&lt;/li&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;li style="color:green;"&gt;Line #2&lt;/li&gt;<br/>
-					&lt;/ul&gt;
-				</td>
+										&lt;ul&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;li style="color:green;"&gt;Line #0&lt;/li&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;li style="color:red;"&gt;Line #1&lt;/li&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;li style="color:green;"&gt;Line #2&lt;/li&gt;<br/>
+										&lt;/ul&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -625,37 +625,37 @@
 						<p>Invokes a user-defined macro.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;CALL NAME="[name]"&gt;</code>, where:
-		<ul>
+							Must be in the form of <code>&lt;CALL NAME="[name]"&gt;</code>, where:
+							<ul>
 								<li>
 									<code>[name]</code> represents the name of a <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a>.
-			</li>
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore if a conditional on a previous element evaluated passed.
-</li>
+									Ignore if a conditional on a previous element evaluated passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#ATTR-CALL" title="Invoke a user-defined macro inside the current element.">attribute CALL</a>,
-		<a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a>,
-		<a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a>
+							<a href="#ATTR-CALL" title="Invoke a user-defined macro inside the current element.">attribute CALL</a>,
+							<a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a>,
+							<a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a>
 						</p>
 					</div>
 					<br/><br/>
@@ -664,73 +664,73 @@
 						<p>Includes contents of another file.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;INCLUDE SRC="[path]"/&gt;</code>, where:
-		<ul>
+							Must be in the form of <code>&lt;INCLUDE SRC="[path]"/&gt;</code>, where:
+							<ul>
 								<li>
 									<code>[path]</code> represents the path of the new file relative to the current file.
-			</li>
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<style>
-		#INCLUDE.macro ul.file-types li {
-			padding-top: 7px;
-		}
-	</style>
+							#INCLUDE.macro ul.file-types li {
+								padding-top: 7px;
+							}
+						</style>
 						<p>
-		Parsing of the included file depends on the file type, which is determined from the file extension.
-		If the file type is ambiguous, it can be forced with a specialised <code>&lt;INCLUDE-[type]&gt;</code> macros:
-		<ul class="file-types">
+							Parsing of the included file depends on the file type, which is determined from the file extension.
+							If the file type is ambiguous, it can be forced with a specialised <code>&lt;INCLUDE-[type]&gt;</code> macros:
+							<ul class="file-types">
 								<li id="INCLUDE-HTML">
 									<code>&lt;INCLUDE-HTML/&gt;</code> for <em>.html</em> files.<br/>
-				The file is parsed as an HTML macro, i.e. the root element is invoked as a macro after parsing.<br/>
-				All <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> elements are added to the global list of defined macros (overwriting existing ones).
-			</li>
+									The file is parsed as an HTML macro, i.e. the root element is invoked as a macro after parsing.<br/>
+									All <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> elements are added to the global list of defined macros (overwriting existing ones).
+								</li>
 								<li id="INCLUDE-CSS">
 									<code>&lt;INCLUDE-CSS/&gt;</code> for style <em>.css</em> files.<br/>
-				The file is processed for any CSS expressions.<br/>
+									The file is processed for any CSS expressions.<br/>
 									<span style="color:hsl(0, 100%, 30%);">The <a href="#ATTR-INCLUDE" title="Include contents of another file as child elements of the current element.">attribute</a> version of this macro is more usefull, as it allows wrapping the content in <code>&lt;style&gt;&lt;/style&gt;</code> tags.</span><br/>
-				May be subjected to optimizations in future versions.
-			</li>
+									May be subjected to optimizations in future versions.
+								</li>
 								<li id="INCLUDE-JS">
 									<code>&lt;INCLUDE-JS/&gt;</code> for JavaScript <em>.js</em> files.<br/>
-				Mainly untouched; handled as plain text.<br/>
+									Mainly untouched; handled as plain text.<br/>
 									<span style="color:hsl(0, 100%, 30%);">The <a href="#ATTR-INCLUDE" title="Include contents of another file as child elements of the current element.">attribute</a> version of this macro is more usefull, as it allows wrapping the content in <code>&lt;script&gt;&lt;/script&gt;</code> tags.</span><br/>
-				May be subjected to optimizations in future versions.
-			</li>
+									May be subjected to optimizations in future versions.
+								</li>
 								<li id="INCLUDE-TXT">
 									<code>&lt;INCLUDE-TXT/&gt;</code> for plain text files.<br/>
-				Untouched and coppied to the final document.
-			</li>
+									Untouched and coppied to the final document.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		Every included file is cached which means that parsing is done only once per file.<br/>
-		The same file can be included multiple times which means that the user must prevent infinitely recursive includes.
-	</p>
+							Every included file is cached which means that parsing is done only once per file.<br/>
+							The same file can be included multiple times which means that the user must prevent infinitely recursive includes.
+						</p>
 						<br/>
 						<p>See also:
-		<a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a>,
-		<a href="#ATTR-INCLUDE" title="Include contents of another file as child elements of the current element.">attribute INCLUDE</a>
+							<a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a>,
+							<a href="#ATTR-INCLUDE" title="Include contents of another file as child elements of the current element.">attribute INCLUDE</a>
 						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
+								</li>
 							</ul>
 						</p>
 						<x-line></x-line>
@@ -742,26 +742,26 @@
 								</tr>
 								<tr>
 									<td class="code" style="color: hsl(0, 60%, 40%);">
-					&lt;style&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;#header {<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;color: red;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
-					&lt;/style&gt;<br/>
-					&lt;div id="header"&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1&gt;Yet another <span title="Insert content of variable name">{name}</span>&lt;/h1&gt;<br/>
-					&lt;/div&gt;
-				</td>
+										&lt;style&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;#header {<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;color: red;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+										&lt;/style&gt;<br/>
+										&lt;div id="header"&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1&gt;Yet another <span title="Insert content of variable name">{name}</span>&lt;/h1&gt;<br/>
+										&lt;/div&gt;
+									</td>
 								</tr>
 								<tr>
 									<th>footer.html</th>
 								</tr>
 								<tr>
 									<td class="code" style="color: hsl(100, 50%, 20%);">
-					&lt;div id="footer"&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Contacts: none&lt;/p&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Last edited on: 14/10/2025&lt;/p&gt;<br/>
-					&lt;/div&gt;
-				</td>
+										&lt;div id="footer"&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Contacts: none&lt;/p&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Last edited on: 14/10/2025&lt;/p&gt;<br/>
+										&lt;/div&gt;
+									</td>
 								</tr>
 								<tr>
 									<th>input</th>
@@ -769,42 +769,42 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 										<span title="Set variable name to 'cookbook'">name="cookbook"</span>/&gt;<br/>
-					&lt;body&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#INCLUDE" title="Includes contents of another file.">INCLUDE</a>
+										&lt;body&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#INCLUDE" title="Includes contents of another file.">INCLUDE</a>
 										<span title="Path to the file is relative to the current file.">SRC="header.html"</span>/&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Amazing content!&lt;/p&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#INCLUDE" title="Includes contents of another file.">INCLUDE</a>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Amazing content!&lt;/p&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#INCLUDE" title="Includes contents of another file.">INCLUDE</a>
 										<span title="Path to the file is relative to the current file.">SRC="footer.html"</span>/&gt;<br/>
-					&lt;/body&gt;
-				</td>
+										&lt;/body&gt;
+									</td>
 									<td class="code">
 										<span title="Content from the main file">
-						&lt;body&gt;<br/>
+											&lt;body&gt;<br/>
 										</span>
 										<span style="color: hsl(0, 60%, 40%);" title="Content from header.html">
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;style&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#header {<br/>
-								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;color: red;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;/style&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;div id="header"&gt;<br/>
-								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1&gt;Yet another cookbook&lt;/h1&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&lt;style&gt;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#header {<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;color: red;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&lt;/style&gt;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&lt;div id="header"&gt;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1&gt;Yet another cookbook&lt;/h1&gt;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
 										</span>
 										<span title="Content from the main file">
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Amazing content!&lt;/p&gt;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Amazing content!&lt;/p&gt;<br/>
 										</span>
 										<span style="color: hsl(100, 50%, 20%);" title="Content from footer.html">
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;div id="footer"&gt;<br/>
-								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Contacts: none&lt;/p&gt;<br/>
-								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Last edited on: 14/10/2025&lt;/p&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&lt;div id="footer"&gt;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Contacts: none&lt;/p&gt;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Last edited on: 14/10/2025&lt;/p&gt;<br/>
+											&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br/>
 										</span>
 										<span title="Content from the main file">
-						&lt;/body&gt;
-					</span>
+											&lt;/body&gt;
+										</span>
 									</td>
 								</tr>
 							</table>
@@ -816,34 +816,34 @@
 						<p>Assigns values to variables.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;SET [name='value'] /&gt;</code>,
-		where each attribute name and value corresponds to a variable.<br/>
-		The type of the variable is same as the return type of the expression in the attribute value.
-		If the attribute value is within double quotes, it is considered to be a string.<br/>
-		All variables are <b>global</b>.
-	</p>
+							Must be in the form of <code>&lt;SET [name='value'] /&gt;</code>,
+							where each attribute name and value corresponds to a variable.<br/>
+							The type of the variable is same as the return type of the expression in the attribute value.
+							If the attribute value is within double quotes, it is considered to be a string.<br/>
+							All variables are <b>global</b>.
+						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#expressions">expressions</a>
+							<a href="#expressions">expressions</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -855,17 +855,17 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 										<span title="Set variable x to an integer 4">x='4'</span>
 										<span title="Set variable y to a float 6.5">y='6.5'</span>
 										<span title="Set variable s to a string 'apples'">s="apples"</span>/&gt;<br/>
-					&lt;p&gt;I have
-						<span title="Insert result of multiplying variable x with variable y">{int(x*y)}</span>
-						bushels of <span title="Insert variable s">{s}</span>&lt;/p&gt;
-				</td>
+										&lt;p&gt;I have
+										<span title="Insert result of multiplying variable x with variable y">{int(x*y)}</span>
+										bushels of <span title="Insert variable s">{s}</span>&lt;/p&gt;
+									</td>
 									<td class="code">
-					&lt;p&gt;I have 26 bushels of apples&lt;/p&gt;
-				</td>
+										&lt;p&gt;I have 26 bushels of apples&lt;/p&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -876,20 +876,20 @@
 						<p>Conditionally includes child elements.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;IF [cond]&gt;</code>,
-		where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
-		or direct variable comparison <code>var='value'</code>.
-		Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
-		<br/>
-		Child elements are included in the final document only if all conditionals <code>[cond]</code> are evaluated to <code>true</code>.
-	</p>
+							Must be in the form of <code>&lt;IF [cond]&gt;</code>,
+							where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
+							or direct variable comparison <code>var='value'</code>.
+							Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
+							<br/>
+							Child elements are included in the final document only if all conditionals <code>[cond]</code> are evaluated to <code>true</code>.
+						</p>
 						<br/>
 						<p>See also:
-		<a href="#ELIF" title="Includes child elements if previous condition macros fail.">&lt;ELIF&gt;</a>,
-		<a href="#ELSE" title="Includes child elements if previous condition macros fail.">&lt;ELSE&gt;</a>,
-		<a href="#SET" title="Assigns values to variables.">&lt;SET&gt;</a>,
-		<a href="#ATTR-IF" title="Conditionally include element.">attribute IF</a>,
-		<a href="#expressions">expressions</a>
+							<a href="#ELIF" title="Includes child elements if previous condition macros fail.">&lt;ELIF&gt;</a>,
+							<a href="#ELSE" title="Includes child elements if previous condition macros fail.">&lt;ELSE&gt;</a>,
+							<a href="#SET" title="Assigns values to variables.">&lt;SET&gt;</a>,
+							<a href="#ATTR-IF" title="Conditionally include element.">attribute IF</a>,
+							<a href="#expressions">expressions</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -901,26 +901,26 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#IF" title="Conditionally includes child elements.">IF</a>
+										&lt;<a href="#IF" title="Conditionally includes child elements.">IF</a>
 										<span title="Check if expression 6>3 evaluates to true.">TRUE='6>3'</span>&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;6 is greater than 3&lt;/p&gt;<br/>
-					&lt;<a href="#IF" title="Conditionally includes child elements.">/IF</a>&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;6 is greater than 3&lt;/p&gt;<br/>
+										&lt;<a href="#IF" title="Conditionally includes child elements.">/IF</a>&gt;<br/>
 									</td>
 									<td class="code">
-					&lt;p&gt;6 is greater than 3&lt;/p&gt;<br/>
+										&lt;p&gt;6 is greater than 3&lt;/p&gt;<br/>
 									</td>
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 										<span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/&gt;<br/>
-					&lt;<a href="#IF" title="Conditionally includes child elements.">IF</a>
+										&lt;<a href="#IF" title="Conditionally includes child elements.">IF</a>
 										<span title="Check if variable lang equals string &quot;en&quot;">lang="en"</span>&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
-					&lt;<a href="#IF" title="Conditionally includes child elements.">/IF</a>&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
+										&lt;<a href="#IF" title="Conditionally includes child elements.">/IF</a>&gt;<br/>
 									</td>
 									<td class="code">
-					&lt;p&gt;English&lt;/p&gt;<br/>
+										&lt;p&gt;English&lt;/p&gt;<br/>
 									</td>
 								</tr>
 							</table>
@@ -932,21 +932,21 @@
 						<p>Includes child elements if previous condition macros fail</p>
 						<x-line></x-line>
 						<p>
-		Must follow a previous <a href="#IF" title="Conditionally includes child elements."><code>&lt;IF&gt;</code></a> macro and be in the form of <code>&lt;ELIF [cond]&gt;</code>,
-		where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
-		or direct variable comparison <code>var='value'</code>.
-		Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
-		<br/>
-		Child elements are included in the final document only if a previous <a href="#IF" title="Conditionally includes child elements."><code>&lt;IF&gt;</code></a> macro failed and
-		all conditionals <code>[cond]</code> of this macro are evaluated to <code>true</code>.
-	</p>
+							Must follow a previous <a href="#IF" title="Conditionally includes child elements."><code>&lt;IF&gt;</code></a> macro and be in the form of <code>&lt;ELIF [cond]&gt;</code>,
+							where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
+							or direct variable comparison <code>var='value'</code>.
+							Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
+							<br/>
+							Child elements are included in the final document only if a previous <a href="#IF" title="Conditionally includes child elements."><code>&lt;IF&gt;</code></a> macro failed and
+							all conditionals <code>[cond]</code> of this macro are evaluated to <code>true</code>.
+						</p>
 						<br/>
 						<p>See also:
-		<a href="#IF" title="Conditionally includes child elements.">&lt;IF&gt;</a>,
-		<a href="#ELSE" title="Includes child elements if previous condition macros fail.">&lt;ELSE&gt;</a>,
-		<a href="#SET" title="Assigns values to variables.">&lt;SET&gt;</a>,
-		<a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">attribute ELIF</a>,
-		<a href="#expressions">expressions</a>
+							<a href="#IF" title="Conditionally includes child elements.">&lt;IF&gt;</a>,
+							<a href="#ELSE" title="Includes child elements if previous condition macros fail.">&lt;ELSE&gt;</a>,
+							<a href="#SET" title="Assigns values to variables.">&lt;SET&gt;</a>,
+							<a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">attribute ELIF</a>,
+							<a href="#expressions">expressions</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -958,20 +958,20 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 										<span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/&gt;<br/>
 										<br/>
-					&lt;<a href="#IF" title="Conditionally includes child elements.">IF</a>
+										&lt;<a href="#IF" title="Conditionally includes child elements.">IF</a>
 										<span title="Check if variable lang equals string &quot;de&quot;">lang="de"</span>&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Deutsch&lt;/p&gt;<br/>
-					&lt;<a href="#IF" title="Conditionally includes child elements.">/IF</a>&gt;<br/>
-					&lt;<a href="#ELIF" title="Includes child elements if previous condition macros fail.">ELIF</a>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Deutsch&lt;/p&gt;<br/>
+										&lt;<a href="#IF" title="Conditionally includes child elements.">/IF</a>&gt;<br/>
+										&lt;<a href="#ELIF" title="Includes child elements if previous condition macros fail.">ELIF</a>
 										<span title="Check if variable lang equals string &quot;en&quot;">lang="en"</span>&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
-					&lt;<a href="#ELIF" title="Includes child elements if previous condition macros fail.">/ELIF</a>&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
+										&lt;<a href="#ELIF" title="Includes child elements if previous condition macros fail.">/ELIF</a>&gt;<br/>
 									</td>
 									<td class="code">
-					&lt;p&gt;English&lt;/p&gt;<br/>
+										&lt;p&gt;English&lt;/p&gt;<br/>
 									</td>
 								</tr>
 							</table>
@@ -983,17 +983,17 @@
 						<p>Includes child elements if previous condition macros fail.</p>
 						<x-line></x-line>
 						<p>
-		Must follow a previous <a href="#IF" title="Conditionally includes child elements."><code>&lt;IF&gt;</code></a> or <a href="#ELIF" title="Includes child elements if previous condition macros fail."><code>&lt;ELIF&gt;</code></a> macro.
-		<br/>
-		Child elements are included in the final document only if a previous <a href="#IF" title="Conditionally includes child elements."><code>&lt;IF&gt;</code></a> or <a href="#ELIF" title="Includes child elements if previous condition macros fail."><code>&lt;ELIF&gt;</code></a> macro failed.
-	</p>
+							Must follow a previous <a href="#IF" title="Conditionally includes child elements."><code>&lt;IF&gt;</code></a> or <a href="#ELIF" title="Includes child elements if previous condition macros fail."><code>&lt;ELIF&gt;</code></a> macro.
+							<br/>
+							Child elements are included in the final document only if a previous <a href="#IF" title="Conditionally includes child elements."><code>&lt;IF&gt;</code></a> or <a href="#ELIF" title="Includes child elements if previous condition macros fail."><code>&lt;ELIF&gt;</code></a> macro failed.
+						</p>
 						<br/>
 						<p>See also:
-		<a href="#IF" title="Conditionally includes child elements.">&lt;IF&gt;</a>,
-		<a href="#ELSE" title="Includes child elements if previous condition macros fail.">&lt;ELIF&gt;</a>,
-		<a href="#SET" title="Assigns values to variables.">&lt;SET&gt;</a>,
-		<a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">attribute ELSE</a>,
-		<a href="#expressions">expressions</a>
+							<a href="#IF" title="Conditionally includes child elements.">&lt;IF&gt;</a>,
+							<a href="#ELSE" title="Includes child elements if previous condition macros fail.">&lt;ELIF&gt;</a>,
+							<a href="#SET" title="Assigns values to variables.">&lt;SET&gt;</a>,
+							<a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">attribute ELSE</a>,
+							<a href="#expressions">expressions</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1005,19 +1005,19 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 										<span title="Set variable lang to string &quot;en&quot;">lang="en"</span>/&gt;<br/>
 										<br/>
-					&lt;<a href="#IF" title="Conditionally includes child elements.">IF</a>
+										&lt;<a href="#IF" title="Conditionally includes child elements.">IF</a>
 										<span title="Check if variable lang equals string &quot;de&quot;">lang="de"</span>&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Deutsch&lt;/p&gt;<br/>
-					&lt;<a href="#IF" title="Conditionally includes child elements.">/IF</a>&gt;<br/>
-					&lt;<a href="#ELSE" title="Includes child elements if previous condition macros fail.">ELSE</a>&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
-					&lt;<a href="#ELSE" title="Includes child elements if previous condition macros fail.">/ELSE</a>&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Deutsch&lt;/p&gt;<br/>
+										&lt;<a href="#IF" title="Conditionally includes child elements.">/IF</a>&gt;<br/>
+										&lt;<a href="#ELSE" title="Includes child elements if previous condition macros fail.">ELSE</a>&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
+										&lt;<a href="#ELSE" title="Includes child elements if previous condition macros fail.">/ELSE</a>&gt;<br/>
 									</td>
 									<td class="code">
-					&lt;p&gt;English&lt;/p&gt;<br/>
+										&lt;p&gt;English&lt;/p&gt;<br/>
 									</td>
 								</tr>
 							</table>
@@ -1029,44 +1029,44 @@
 						<p>Evaluates child elements for a set amount of times.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;FOR [init] [cond] [inc]&gt;</code>,
-		where:
-		<ul>
+							Must be in the form of <code>&lt;FOR [init] [cond] [inc]&gt;</code>,
+							where:
+							<ul>
 								<li>
 									<code>[init]</code> represents setting a variable in the form <code>name='value'</code>, where the attribute name is the name of the variable, and the attribute value is the value of the variable.
-			</li>
+								</li>
 								<li>
 									<code>[cond]</code> represents a conditional attribute <code>TRUE='...'</code> or <code>FALSE='...'</code>.
-				The loop ends when the expression of the attribute value evaluates to <code>false</code>, or <code>true</code> respectively.
-			</li>
+									The loop ends when the expression of the attribute value evaluates to <code>false</code>, or <code>true</code> respectively.
+								</li>
 								<li>
 									<code>[inc]</code> represents setting a variable to a new value, in the form of <code>name='value'</code>, after each iteration of the loop.
-			</li>
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore if a conditional on a previous element evaluated passed.
-</li>
+									Ignore if a conditional on a previous element evaluated passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#WHILE" title="Repeatedly evaluates child elements.">&lt;WHILE&gt;</a>,
-		<a href="#expressions">expressions</a>
+							<a href="#WHILE" title="Repeatedly evaluates child elements.">&lt;WHILE&gt;</a>,
+							<a href="#expressions">expressions</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1078,17 +1078,17 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#FOR" title="Evaluates child elements for a set amount of times.">FOR</a>
+										&lt;<a href="#FOR" title="Evaluates child elements for a set amount of times.">FOR</a>
 										<span title="[init]">i='0'</span>
 										<span title="[cond]">TRUE='i &lt; 3'</span>
 										<span title="[inc]">i='i+1'</span>&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;{i}&lt;/p&gt;<br/>
-					&lt;<a href="#FOR" title="Evaluates child elements for a set amount of times.">/FOR</a>&gt;
-				</td>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;{i}&lt;/p&gt;<br/>
+										&lt;<a href="#FOR" title="Evaluates child elements for a set amount of times.">/FOR</a>&gt;
+									</td>
 									<td class="code">
-					&lt;p&gt;0&lt;/p&gt;<br/>
-					&lt;p&gt;1&lt;/p&gt;<br/>
-					&lt;p&gt;2&lt;/p&gt;<br/>
+										&lt;p&gt;0&lt;/p&gt;<br/>
+										&lt;p&gt;1&lt;/p&gt;<br/>
+										&lt;p&gt;2&lt;/p&gt;<br/>
 									</td>
 								</tr>
 							</table>
@@ -1100,37 +1100,37 @@
 						<p>Repeatedly evaluates child elements.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;WHILE [cond]&gt;</code>, where:
-		<ul>
+							Must be in the form of <code>&lt;WHILE [cond]&gt;</code>, where:
+							<ul>
 								<li>
 									<code>[cond]</code> represents a conditional attribute <code>TRUE='...'</code> or <code>FALSE='...'</code>.
-				The loop ends when the expression of the attribute value evaluates to <code>false</code>, or <code>true</code> respectively.
-			</li>
+									The loop ends when the expression of the attribute value evaluates to <code>false</code>, or <code>true</code> respectively.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore if a conditional on a previous element evaluated passed.
-</li>
+									Ignore if a conditional on a previous element evaluated passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#FOR" title="Evaluates child elements for a set amount of times.">&lt;FOR&gt;</a>,
-		<a href="#expressions">expressions</a>
+							<a href="#FOR" title="Evaluates child elements for a set amount of times.">&lt;FOR&gt;</a>,
+							<a href="#expressions">expressions</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1142,17 +1142,17 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#SET" title="Assigns values to variables.">SET</a> i='0'/&gt;<br/>
-					&lt;<a href="#WHILE" title="Repeatedly evaluates child elements.">WHILE</a>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a> i='0'/&gt;<br/>
+										&lt;<a href="#WHILE" title="Repeatedly evaluates child elements.">WHILE</a>
 										<span title="[cond]">TRUE='i &lt; 3'</span>&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;{i}&lt;/p&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET" title="Assigns values to variables.">SET</a> i='i+1'/&gt;<br/>
-					&lt;<a href="#WHILE">/WHILE</a>&gt;
-				</td>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;{i}&lt;/p&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET" title="Assigns values to variables.">SET</a> i='i+1'/&gt;<br/>
+										&lt;<a href="#WHILE">/WHILE</a>&gt;
+									</td>
 									<td class="code">
-					&lt;p&gt;0&lt;/p&gt;<br/>
-					&lt;p&gt;1&lt;/p&gt;<br/>
-					&lt;p&gt;2&lt;/p&gt;<br/>
+										&lt;p&gt;0&lt;/p&gt;<br/>
+										&lt;p&gt;1&lt;/p&gt;<br/>
+										&lt;p&gt;2&lt;/p&gt;<br/>
 									</td>
 								</tr>
 							</table>
@@ -1164,40 +1164,40 @@
 						<p>Sets tag of parent element.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;SET-TAG NAME='...' /&gt;</code> or <code>&lt;SET-TAG [name] /&gt;</code>.
-	</p>
+							Must be in the form of <code>&lt;SET-TAG NAME='...' /&gt;</code> or <code>&lt;SET-TAG [name] /&gt;</code>.
+						</p>
 						<br/>
 						<p>
-		Attributes:
-		<ul>
+							Attributes:
+							<ul>
 								<li>
 									<code>NAME='...'</code>
-				Set tag of parent element to result of the attribute value expression.
-			</li>
+									Set tag of parent element to result of the attribute value expression.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#GET-ATTR" title="Set variable to value of a parent's attribute.">&lt;GET-ATTR&gt;</a>
+							<a href="#GET-ATTR" title="Set variable to value of a parent's attribute.">&lt;GET-ATTR&gt;</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1209,17 +1209,17 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;div&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET-TAG" title="Sets tag of parent element.">SET-TAG</a>
+										&lt;div&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET-TAG" title="Sets tag of parent element.">SET-TAG</a>
 										<span title="New name for parent elemnt div">p</span>/&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;text<br/>
-					&lt;/div&gt;
-				</td>
+										&nbsp;&nbsp;&nbsp;&nbsp;text<br/>
+										&lt;/div&gt;
+									</td>
 									<td class="code">
-					&lt;p&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;text<br/>
-					&lt;/p&gt;
-				</td>
+										&lt;p&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;text<br/>
+										&lt;/p&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -1230,31 +1230,31 @@
 						<p>Set variable to parent tag name.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;GET-TAG [variable] /&gt;</code>,
-		where <code>[variable]</code> is the name of the variable that will store the parent element tag name.
-	</p>
+							Must be in the form of <code>&lt;GET-TAG [variable] /&gt;</code>,
+							where <code>[variable]</code> is the name of the variable that will store the parent element tag name.
+						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#SET-TAG" title="Sets tag of parent element.">&lt;SET-TAG&gt;</a>
+							<a href="#SET-TAG" title="Sets tag of parent element.">&lt;SET-TAG&gt;</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1266,17 +1266,17 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;div&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#GET-TAG" title="Set variable to parent tag name.">GET-TAG</a>
+										&lt;div&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#GET-TAG" title="Set variable to parent tag name.">GET-TAG</a>
 										<span title="Variable name">tag</span>/&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;This text is within a {tag} element.<br/>
-					&lt;/div&gt;
-				</td>
+										&nbsp;&nbsp;&nbsp;&nbsp;This text is within a {tag} element.<br/>
+										&lt;/div&gt;
+									</td>
 									<td class="code">
-					&lt;div&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;This text is within a div element.<br/>
-					&lt;/div&gt;
-				</td>
+										&lt;div&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;This text is within a div element.<br/>
+										&lt;/div&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -1287,40 +1287,40 @@
 						<p>Set attribute value of parent element.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;SET-ATTR [name]=[value] /&gt;</code>,
-		where:
-		<ul>
+							Must be in the form of <code>&lt;SET-ATTR [name]=[value] /&gt;</code>,
+							where:
+							<ul>
 								<li>
 									<code>[name]</code> represents the name of the attribute that will be added or overwritten on the parent element.
-			</li>
+								</li>
 								<li>
 									<code>[value]</code> represents the value or evaluatable expression of the new attribute.
-			</li>
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#GET-ATTR" title="Set variable to value of a parent's attribute.">&lt;GET-ATTR&gt;</a>,
-		<a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a>
+							<a href="#GET-ATTR" title="Set variable to value of a parent's attribute.">&lt;GET-ATTR&gt;</a>,
+							<a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1332,17 +1332,17 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;div&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET-ATTR" title="Set attribute value of parent element.">SET-ATTR</a>
+										&lt;div&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET-ATTR" title="Set attribute value of parent element.">SET-ATTR</a>
 										<span title="Add attribute title to parent element div.">title="text"</span>/&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;text<br/>
-					&lt;/div&gt;
-				</td>
+										&nbsp;&nbsp;&nbsp;&nbsp;text<br/>
+										&lt;/div&gt;
+									</td>
 									<td class="code">
-					&lt;div title="text"&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;text<br/>
-					&lt;/div&gt;
-				</td>
+										&lt;div title="text"&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;text<br/>
+										&lt;/div&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -1353,46 +1353,46 @@
 						<p>Set variable to value of a parent's attribute.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;GET-ATTR [variable]=[attribute] /&gt;</code> where:
-		<ul>
+							Must be in the form of <code>&lt;GET-ATTR [variable]=[attribute] /&gt;</code> where:
+							<ul>
 								<li>
 									<code>[variable]</code> represents the name of the variable which will hold the value of the attribute.
-			</li>
+								</li>
 								<li>
 									<code>[attribute]</code> represents the name of the parent element's attribute from which to retrieve the value.
-			</li>
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		The type of the variable <code>[variable]</code> is <i>string</i>, as attribute values are strings.
-		If the attribute is not found however, the variable is set to an integer <code>0</code>.
-		<br/>
-		If there are multiple attributes with the same name, the value of the first one is used.
-	</p>
+							The type of the variable <code>[variable]</code> is <i>string</i>, as attribute values are strings.
+							If the attribute is not found however, the variable is set to an integer <code>0</code>.
+							<br/>
+							If there are multiple attributes with the same name, the value of the first one is used.
+						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#SET-ATTR" title="Set attribute value of parent element.">&lt;SET-ATTR&gt;</a>,
-		<a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a>
+							<a href="#SET-ATTR" title="Set attribute value of parent element.">&lt;SET-ATTR&gt;</a>,
+							<a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1404,17 +1404,17 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;div id="box"&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#GET-ATTR" title="Set variable to value of a parent's attribute.">GET-ATTR</a>
+										&lt;div id="box"&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#GET-ATTR" title="Set variable to value of a parent's attribute.">GET-ATTR</a>
 										<span title="Store value of attribute &apos;id&apos; into variable x">x="id"</span>/&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET-ATTR" title="Set attribute value of parent element.">SET-ATTR</a>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET-ATTR" title="Set attribute value of parent element.">SET-ATTR</a>
 										<span title="Set attribute &apos;class&apos; to variable x">class='x'</span>/&gt;<br/>
-					&lt;/div&gt;
-				</td>
+										&lt;/div&gt;
+									</td>
 									<td class="code">
-					&lt;div id="box" class="box"&gt;<br/>
-					&lt;/div&gt;
-				</td>
+										&lt;div id="box" class="box"&gt;<br/>
+										&lt;/div&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -1425,36 +1425,36 @@
 						<p>Remove attribute from parent element.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;DEL-ATTR [name] /&gt;</code> where:
-		<ul>
+							Must be in the form of <code>&lt;DEL-ATTR [name] /&gt;</code> where:
+							<ul>
 								<li>
 									<code>[name]</code> represents the name of the attribute that will be removed from the parent element.
-			</li>
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
-</li>
+									Ignore attributes <b>after</b> this attribute, if a conditional on a previous element passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#SET-ATTR" title="Set attribute value of parent element.">&lt;SET-ATTR&gt;</a>,
-		<a href="#GET-ATTR" title="Set variable to value of a parent's attribute.">&lt;GET-ATTR&gt;</a>
+							<a href="#SET-ATTR" title="Set attribute value of parent element.">&lt;SET-ATTR&gt;</a>,
+							<a href="#GET-ATTR" title="Set variable to value of a parent's attribute.">&lt;GET-ATTR&gt;</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1466,15 +1466,15 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;div id="box"&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#DEL-ATTR" title="Remove attribute from parent element.">DEL-ATTR</a>
+										&lt;div id="box"&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#DEL-ATTR" title="Remove attribute from parent element.">DEL-ATTR</a>
 										<span title="Delete attribute &apos;id&apos;">id</span>/&gt;<br/>
-					&lt;/div&gt;
-				</td>
+										&lt;/div&gt;
+									</td>
 									<td class="code">
-					&lt;div&gt;<br/>
-					&lt;/div&gt;
-				</td>
+										&lt;div&gt;<br/>
+										&lt;/div&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -1485,69 +1485,69 @@
 						<p>Execute shell command.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;SHELL&gt;[cmd]&lt;/SHELL&gt;</code> where:
-		<ul>
+							Must be in the form of <code>&lt;SHELL&gt;[cmd]&lt;/SHELL&gt;</code> where:
+							<ul>
 								<li>
 									<code>[cmd]</code> represents the command that will be passed to a shell.
-				The command is not interpolated for any expressions.
-			</li>
+									The command is not interpolated for any expressions.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		The underlying shell for executing the command is <a href="https://www.man7.org/linux/man-pages/man1/bash.1.html">bash</a>.
-	</p>
+							The underlying shell for executing the command is <a href="https://www.man7.org/linux/man-pages/man1/bash.1.html">bash</a>.
+						</p>
 						<br/>
 						<p>
-		Attributes:
-		<ul>
+							Attributes:
+							<ul>
 								<li>
 									<code>VARS="[name,...]"</code>
-				Set shell environment variables to the comma-separated-list of variable names.
-				This is the only way to share variables, as the command <code>[cmd]</code> is not interpolated.
-				Listed variables are accessed by the <code>$[name]</code> operator.
-			</li>
+									Set shell environment variables to the comma-separated-list of variable names.
+									This is the only way to share variables, as the command <code>[cmd]</code> is not interpolated.
+									Listed variables are accessed by the <code>$[name]</code> operator.
+								</li>
 								<li>
 									<code>STDOUT="[VOID|TEXT|[variable]]"</code>
-				Determines what to do with the <i>stdout</i> stream (default <code>TEXT</code>):
-				<ul>
+									Determines what to do with the <i>stdout</i> stream (default <code>TEXT</code>):
+									<ul>
 										<li>
 											<code>VOID</code> Discards all output.
-					</li>
+										</li>
 										<li>
 											<code>TEXT</code> Insert shell output as text into the final document.
-						The last newline of the output is trimmed.
-					</li>
+											The last newline of the output is trimmed.
+										</li>
 										<li>
 											<code>[variable]</code> Store shell output into a variable named <code>[variable]</code>.
-						The last newline of the output is trimmed.
-					</li>
+											The last newline of the output is trimmed.
+										</li>
 									</ul>
 								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		Other attributes:
-		<ul>
+							Other attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore if a conditional on a previous element evaluated passed.
-</li>
+									Ignore if a conditional on a previous element evaluated passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#SET" title="Assigns values to variables.">&lt;SET&gt;</a>
+							<a href="#SET" title="Assigns values to variables.">&lt;SET&gt;</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1559,21 +1559,21 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 										<span title="Set variable t to integer 0">t='0'</span>
 										<span title="Set variable fmt to string &apos;%d/%m/%Y&apos;">fmt="%d/%m/%Y"</span> /&gt;<br/>
-					&lt;p&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;The world was created on:<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SHELL" title="Execute shell command.">SHELL</a>
+										&lt;p&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;The world was created on:<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SHELL" title="Execute shell command.">SHELL</a>
 										<span title="Set shell environment variables $t to variable t and $fmt to fmt">VARS="t,fmt"</span>&gt;<span title="date -d &quot;@0&quot; +&quot;%d/%m/%Y&quot;">date -d "@$t" +"$fmt"</span>&lt;<a href="#SHELL" title="Execute shell command.">/SHELL</a>&gt;<br/>
-					&lt;/p&gt;
-				</td>
+										&lt;/p&gt;
+									</td>
 									<td class="code">
-					&lt;p&gt;<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;The world was created on:<br/>
-					&nbsp;&nbsp;&nbsp;&nbsp;01/01/1970<br/>
-					&lt;/p&gt;
-				</td>
+										&lt;p&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;The world was created on:<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;01/01/1970<br/>
+										&lt;/p&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -1584,33 +1584,33 @@
 						<p>Log messages to stderr.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;INFO&gt;[msg]&lt;/INFO&gt;</code>,
-		where the child element <code>[msg]</code> is text that is printed to stderr.<br/>
-		The text can be interpolated with variables/expressions.
-	</p>
+							Must be in the form of <code>&lt;INFO&gt;[msg]&lt;/INFO&gt;</code>,
+							where the child element <code>[msg]</code> is text that is printed to stderr.<br/>
+							The text can be interpolated with variables/expressions.
+						</p>
 						<br/>
 						<p>
-		Attributes:
-		<ul>
+							Attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore if a conditional on a previous element evaluated passed.
-</li>
+									Ignore if a conditional on a previous element evaluated passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#WARN" title="Log warning messages to stderr.">&lt;WARN&gt;</a>,
-		<a href="#ERROR" title="Log error messages to stderr.">&lt;ERROR&gt;</a>
+							<a href="#WARN" title="Log warning messages to stderr.">&lt;WARN&gt;</a>,
+							<a href="#ERROR" title="Log error messages to stderr.">&lt;ERROR&gt;</a>
 						</p>
 					</div>
 					<br/><br/>
@@ -1619,33 +1619,33 @@
 						<p>Log warning messages to stderr.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;WARN&gt;[msg]&lt;/WARN&gt;</code>,
-		where the child element <code>[msg]</code> is text that is printed to stderr.<br/>
-		The text can be interpolated with variables/expressions.
-	</p>
+							Must be in the form of <code>&lt;WARN&gt;[msg]&lt;/WARN&gt;</code>,
+							where the child element <code>[msg]</code> is text that is printed to stderr.<br/>
+							The text can be interpolated with variables/expressions.
+						</p>
 						<br/>
 						<p>
-		Attributes:
-		<ul>
+							Attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore if a conditional on a previous element evaluated passed.
-</li>
+									Ignore if a conditional on a previous element evaluated passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#INFO" title="Log messages to stderr.">&lt;INFO&gt;</a>,
-		<a href="#ERROR" title="Log error messages to stderr.">&lt;ERROR&gt;</a>
+							<a href="#INFO" title="Log messages to stderr.">&lt;INFO&gt;</a>,
+							<a href="#ERROR" title="Log error messages to stderr.">&lt;ERROR&gt;</a>
 						</p>
 					</div>
 					<br/><br/>
@@ -1654,44 +1654,45 @@
 						<p>Log error messages to stderr.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;ERROR&gt;[msg]&lt;/ERROR&gt;</code>,
-		where the child element <code>[msg]</code> is text that is printed to stderr.<br/>
-		The text can be interpolated with variables/expressions.
-	</p>
+							Must be in the form of <code>&lt;ERROR&gt;[msg]&lt;/ERROR&gt;</code>,
+							where the child element <code>[msg]</code> is text that is printed to stderr.<br/>
+							The text can be interpolated with variables/expressions.
+						</p>
 						<br/>
 						<p>
-		Attributes:
-		<ul>
+							Attributes:
+							<ul>
 								<li>
 									<code>IF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>.
+								</li>
 								<li>
 									<code>ELIF='[expr]'</code>
-	Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
-	or a conditional on a previous element passed.
-</li>
+									Ignore if expression <code>[expr]</code> evaluates to <code>false</code>
+									or a conditional on a previous element passed.
+								</li>
 								<li>
 									<code>ELSE</code>
-	Ignore if a conditional on a previous element evaluated passed.
-</li>
+									Ignore if a conditional on a previous element evaluated passed.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#INFO" title="Log messages to stderr.">&lt;INFO&gt;</a>,
-		<a href="#WARN" title="Log warning messages to stderr.">&lt;WARN&gt;</a>
+							<a href="#INFO" title="Log messages to stderr.">&lt;INFO&gt;</a>,
+							<a href="#WARN" title="Log warning messages to stderr.">&lt;WARN&gt;</a>
 						</p>
-					</div></section>
+					</div>
+				</section>
 				<br/>
 				<br/>
 				<section id="attribute-macros">
 					<h3><a href="#attribute-macros">3.2. Attribute macros</a></h3>
 					<p>
-			Some of the attributes on regular HTML elements act as macros, and are not coppied to the final document.
-			They are called <b>attribute macros</b> and are written in <b>uppercase</b>.
-			They typically serve as short forms of <a href="element-macros">element macros</a>.
-		</p>
+						Some of the attributes on regular HTML elements act as macros, and are not coppied to the final document.
+						They are called <b>attribute macros</b> and are written in <b>uppercase</b>.
+						They typically serve as short forms of <a href="element-macros">element macros</a>.
+					</p>
 					<br/>
 					<div class="example">
 						<h4><b>Example:</b> Macro attribute demonstration for language-specific text.</h4>
@@ -1702,28 +1703,28 @@
 							</tr>
 							<tr>
 								<td class="code">
-						&lt;div&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;p <a href="#ATTR-IF" title="Conditionally include element."><span title="Include this element only if expression &apos;lang==&quot;de&quot;&apos; evaluates to true">IF='lang=="de"'</span></a>&gt;Deutsch&lt;/p&gt;<br/>
-							&nbsp;&nbsp;&nbsp;&nbsp;&lt;p <a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails."><span title="Include this element only if the previous element's flow controll macro attribute evaluates to false">ELSE</span></a>&gt;English&lt;/p&gt;<br/>
-						&lt;/div&gt;
-					</td>
+									&lt;div&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;p <a href="#ATTR-IF" title="Conditionally include element."><span title="Include this element only if expression &apos;lang==&quot;de&quot;&apos; evaluates to true">IF='lang=="de"'</span></a>&gt;Deutsch&lt;/p&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;p <a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails."><span title="Include this element only if the previous element's flow controll macro attribute evaluates to false">ELSE</span></a>&gt;English&lt;/p&gt;<br/>
+									&lt;/div&gt;
+								</td>
 								<td class="code">
-						&lt;div&gt;<br/>
-						&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
-						&lt;/div&gt;
-					</td>
+									&lt;div&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;English&lt;/p&gt;<br/>
+									&lt;/div&gt;
+								</td>
 							</tr>
 						</table>
 						<p>
-				Here we conditionally include the first <code>p</code> element,
-				but only if the expression in the <code>IF</code> macro attribute evaluates to <code>true</code>.
-				Otherwise, we include the second <code>p</code> element.
-			</p>
+							Here we conditionally include the first <code>p</code> element,
+							but only if the expression in the <code>IF</code> macro attribute evaluates to <code>true</code>.
+							Otherwise, we include the second <code>p</code> element.
+						</p>
 					</div>
 					<br/>
 					<p>
-			List of predefined attribute macros:
-			<ul>
+						List of predefined attribute macros:
+						<ul>
 							<li><a href="#ATTR-IF" title="Conditionally include element.">IF</a> &mdash; Conditionally include element.</li>
 							<li><a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">ELIF</a> &mdash; Conditionally inlude element.</li>
 							<li><a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">ELSE</a> &mdash; Conditionally inlude element.</li>
@@ -1737,29 +1738,29 @@
 						<p>Conditionally include element.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;... IF='[expr]' ...&gt;</code>, where:
-		<ul>
+							Must be in the form of <code>&lt;... IF='[expr]' ...&gt;</code>, where:
+							<ul>
 								<li>
 									<code>[expr]</code> represents the expression that is evaluated to a boolean.
-			</li>
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		If the expression <code>expr</code> evaluates to <code>true</code>, the element is included in the final document; otherwise it is discarded.
-		This attribute macro can also be found on almost all macro elements, where it performs the same function with a small caveat:
-		<ul>
+							If the expression <code>expr</code> evaluates to <code>true</code>, the element is included in the final document; otherwise it is discarded.
+							This attribute macro can also be found on almost all macro elements, where it performs the same function with a small caveat:
+							<ul>
 								<li>
-				Evaluation of an element macro is terminated only after this attribute macro is encountered and evaluated to false; any previous attributes can already have an effect on the final document.
-				If such behaviour is unwanted (for example in a <a href="#SET" title="Assigns values to variables.">&lt;SET/&gt;</a> macro), the <code>IF</code> attribute should be written before all others.
-			</li>
+									Evaluation of an element macro is terminated only after this attribute macro is encountered and evaluated to false; any previous attributes can already have an effect on the final document.
+									If such behaviour is unwanted (for example in a <a href="#SET" title="Assigns values to variables.">&lt;SET/&gt;</a> macro), the <code>IF</code> attribute should be written before all others.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">attribute ELIF</a>,
-		<a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">attribute ELSE</a>,
-		<a href="#expressions">expressions</a>
+							<a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">attribute ELIF</a>,
+							<a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">attribute ELSE</a>,
+							<a href="#expressions">expressions</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1771,15 +1772,15 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 										<span title="Set variable n to integer 1">n='1'</span>/&gt;<br/>
-					&lt;p <a href="#ATTR-IF" title="Conditionally include element.">IF='n==1'</a>&gt;one&lt;/p&gt;<br/>
-					&lt;p <a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">ELIF='n==2'</a>&gt;two&lt;/p&gt;<br/>
-					&lt;p <a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">ELSE</a>&gt;none&lt;/p&gt;
-				</td>
+										&lt;p <a href="#ATTR-IF" title="Conditionally include element.">IF='n==1'</a>&gt;one&lt;/p&gt;<br/>
+										&lt;p <a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">ELIF='n==2'</a>&gt;two&lt;/p&gt;<br/>
+										&lt;p <a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">ELSE</a>&gt;none&lt;/p&gt;
+									</td>
 									<td class="code">
-					&lt;p&gt;one&lt;/p&gt;
-				</td>
+										&lt;p&gt;one&lt;/p&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -1790,31 +1791,31 @@
 						<p>Include element if previous condition atribute macro fails.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;... ELIF='[expr]' ...&gt;</code>, where:
-		<ul>
+							Must be in the form of <code>&lt;... ELIF='[expr]' ...&gt;</code>, where:
+							<ul>
 								<li>
 									<code>[expr]</code> represents the expression that is evaluated to a boolean.
-			</li>
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		The element is included in the final document only if an attribute macro <a href="#ATTR-IF" title="Conditionally include element."><code>IF</code></a> or <code>ELIF</code> on a previous element evaluates to <code>false</code>,
-		and the expression <code>expr</code> evaluates to <code>true</code>.
-		This attribute macro can also be found on almost all macro elements, where it performs the same function with a small caveat:
-		<ul>
+							The element is included in the final document only if an attribute macro <a href="#ATTR-IF" title="Conditionally include element."><code>IF</code></a> or <code>ELIF</code> on a previous element evaluates to <code>false</code>,
+							and the expression <code>expr</code> evaluates to <code>true</code>.
+							This attribute macro can also be found on almost all macro elements, where it performs the same function with a small caveat:
+							<ul>
 								<li>
-				Evaluation of an element macro is terminated only after this attribute macro is encountered and is determined, that the element should be discarded.
-				Any previous attributes can already have an effect on the final document.
-				If such behaviour is unwanted (for example in a <a href="#SET" title="Assigns values to variables.">&lt;SET/&gt;</a> macro), the <code>ELIF</code> attribute should be written before all others.
-			</li>
+									Evaluation of an element macro is terminated only after this attribute macro is encountered and is determined, that the element should be discarded.
+									Any previous attributes can already have an effect on the final document.
+									If such behaviour is unwanted (for example in a <a href="#SET" title="Assigns values to variables.">&lt;SET/&gt;</a> macro), the <code>ELIF</code> attribute should be written before all others.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#ATTR-IF" title="Conditionally include element.">attribute IF</a>,
-		<a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">attribute ELSE</a>,
-		<a href="#expressions">expressions</a>
+							<a href="#ATTR-IF" title="Conditionally include element.">attribute IF</a>,
+							<a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">attribute ELSE</a>,
+							<a href="#expressions">expressions</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1826,15 +1827,15 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 										<span title="Set variable n to integer 2">n='2'</span>/&gt;<br/>
-					&lt;p <a href="#ATTR-IF" title="Conditionally include element.">IF='n==1'</a>&gt;one&lt;/p&gt;<br/>
-					&lt;p <a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">ELIF='n==2'</a>&gt;two&lt;/p&gt;<br/>
-					&lt;p <a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">ELSE</a>&gt;none&lt;/p&gt;
-				</td>
+										&lt;p <a href="#ATTR-IF" title="Conditionally include element.">IF='n==1'</a>&gt;one&lt;/p&gt;<br/>
+										&lt;p <a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">ELIF='n==2'</a>&gt;two&lt;/p&gt;<br/>
+										&lt;p <a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">ELSE</a>&gt;none&lt;/p&gt;
+									</td>
 									<td class="code">
-					&lt;p&gt;two&lt;/p&gt;
-				</td>
+										&lt;p&gt;two&lt;/p&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -1845,29 +1846,29 @@
 						<p>Include element if previous condition atribute macro fails.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;... ELSE ...&gt;</code>, where:
-		<ul>
+							Must be in the form of <code>&lt;... ELSE ...&gt;</code>, where:
+							<ul>
 								<li>
 									<code>[expr]</code> represents the expression that is evaluated to a boolean.
-			</li>
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		The element is included in the final document only if an attribute macro <a href="#ATTR-IF" title="Conditionally include element."><code>IF</code></a> or <a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails."><code>ELIF</code></a> on a previous element evaluates to <code>false</code>.
-		This attribute macro can also be found on almost all macro elements, where it performs the same function with a small caveat:
-		<ul>
+							The element is included in the final document only if an attribute macro <a href="#ATTR-IF" title="Conditionally include element."><code>IF</code></a> or <a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails."><code>ELIF</code></a> on a previous element evaluates to <code>false</code>.
+							This attribute macro can also be found on almost all macro elements, where it performs the same function with a small caveat:
+							<ul>
 								<li>
-				Evaluation of an element macro is terminated only after this attribute macro is encountered and is determined, that the element should be discarded.
-				Any previous attributes can already have an effect on the final document.
-				If such behaviour is unwanted (for example in a <a href="#SET" title="Assigns values to variables.">&lt;SET/&gt;</a> macro), the <code>ELSE</code> attribute should be written before all others.
-			</li>
+									Evaluation of an element macro is terminated only after this attribute macro is encountered and is determined, that the element should be discarded.
+									Any previous attributes can already have an effect on the final document.
+									If such behaviour is unwanted (for example in a <a href="#SET" title="Assigns values to variables.">&lt;SET/&gt;</a> macro), the <code>ELSE</code> attribute should be written before all others.
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>See also:
-		<a href="#ATTR-IF" title="Conditionally include element.">attribute IF</a>,
-		<a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">attribute ELSE</a>
+							<a href="#ATTR-IF" title="Conditionally include element.">attribute IF</a>,
+							<a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">attribute ELSE</a>
 						</p>
 						<x-line></x-line>
 						<div class="example">
@@ -1879,15 +1880,15 @@
 								</tr>
 								<tr>
 									<td class="code">
-					&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 										<span title="Set variable n to integer 3">n='3'</span>/&gt;<br/>
-					&lt;p <a href="#ATTR-IF" title="Conditionally include element.">IF='n==1'</a>&gt;one&lt;/p&gt;<br/>
-					&lt;p <a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">ELIF='n==2'</a>&gt;two&lt;/p&gt;<br/>
-					&lt;p <a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">ELSE</a>&gt;none&lt;/p&gt;
-				</td>
+										&lt;p <a href="#ATTR-IF" title="Conditionally include element.">IF='n==1'</a>&gt;one&lt;/p&gt;<br/>
+										&lt;p <a href="#ATTR-ELIF" title="Include element if previous condition atribute macro fails.">ELIF='n==2'</a>&gt;two&lt;/p&gt;<br/>
+										&lt;p <a href="#ATTR-ELSE" title="Include element if previous condition atribute macro fails.">ELSE</a>&gt;none&lt;/p&gt;
+									</td>
 									<td class="code">
-					&lt;p&gt;none&lt;/p&gt;
-				</td>
+										&lt;p&gt;none&lt;/p&gt;
+									</td>
 								</tr>
 							</table>
 						</div>
@@ -1898,27 +1899,27 @@
 						<p>Invoke a user-defined macro <i>inside</i> the current element.</p>
 						<x-line></x-line>
 						<p>
-		Must be in the form of <code>&lt;... CALL="[name]" ...&gt;</code>, where:
-		<ul>
+							Must be in the form of <code>&lt;... CALL="[name]" ...&gt;</code>, where:
+							<ul>
 								<li>
 									<code>[name]</code> represents the name of a <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> that will be invoked.
-			</li>
+								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		The invocation occurs immediately after encountering the attribute.
-		This means that some attributes might not have fully coppied to the final document.
-		This would affect macros such as <a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a>, as they would not be able to remove attributes that do not exist yet.
-		If such behaviour is unwanted, the attribute macro should be written after all others.
-		<br/><br/>
-		After invoking the macro, all child elements are evaluated/appended to the final document as per the standard procedure.
-		This attribute macro is esentially an attribute version of the <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a> macro.
-	</p>
+							The invocation occurs immediately after encountering the attribute.
+							This means that some attributes might not have fully coppied to the final document.
+							This would affect macros such as <a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a>, as they would not be able to remove attributes that do not exist yet.
+							If such behaviour is unwanted, the attribute macro should be written after all others.
+							<br/><br/>
+							After invoking the macro, all child elements are evaluated/appended to the final document as per the standard procedure.
+							This attribute macro is esentially an attribute version of the <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a> macro.
+						</p>
 						<br/>
 						<p>See also:
-		<a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a>,
-		<a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a>
+							<a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a>,
+							<a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a>
 						</p>
 					</div>
 					<br/><br/>
@@ -1927,60 +1928,61 @@
 						<p>Include contents of another file as child elements of the current element.</p>
 						<x-line></x-line>
 						<style>
-		#ATTR-INCLUDE.macro ul.file-types li {
-			padding-top: 5px;
-		}
-	</style>
+							#ATTR-INCLUDE.macro ul.file-types li {
+								padding-top: 5px;
+							}
+						</style>
 						<p>
-		Must be in the form of <code>&lt;... INCLUDE="[name]" ...&gt;</code> or <code>&lt;... INCLUDE-[type]="[name]" ...&gt;</code>, where:
-		<ul>
+							Must be in the form of <code>&lt;... INCLUDE="[name]" ...&gt;</code> or <code>&lt;... INCLUDE-[type]="[name]" ...&gt;</code>, where:
+							<ul>
 								<li>
 									<code>[path]</code> represents the path of the new file relative to the current file.
-			</li>
+								</li>
 								<li>
 									<code>[type]</code> represents the forced interpretation of the file being included.
-				Optional only when the type of the file can be determined from the path extension.
-				<br/>
-				Valid types are:
-				<ul class="file-types">
+									Optional only when the type of the file can be determined from the path extension.
+									<br/>
+									Valid types are:
+									<ul class="file-types">
 										<li id="INCLUDE-HTML">
 											<code>HTML</code> for <em>.html</em> files.<br/>
-						The file is parsed as an HTML macro, i.e. the root element is invoked as a macro after parsing.<br/>
-						All <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> elements are added to the global list of defined macros (overwriting existing ones).
-					</li>
+											The file is parsed as an HTML macro, i.e. the root element is invoked as a macro after parsing.<br/>
+											All <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> elements are added to the global list of defined macros (overwriting existing ones).
+										</li>
 										<li id="INCLUDE-CSS">
 											<code>CSS</code> for style <em>.css</em> files.<br/>
-						The file is processed for any CSS expressions.<br/>
-						May be subjected to optimizations in future versions.
-					</li>
+											The file is processed for any CSS expressions.<br/>
+											May be subjected to optimizations in future versions.
+										</li>
 										<li id="INCLUDE-JS">
 											<code>JS</code> for JavaScript <em>.js</em> files.<br/>
-						Mainly untouched; handled as plain text.<br/>
-						May be subjected to optimizations in future versions.
-					</li>
+											Mainly untouched; handled as plain text.<br/>
+											May be subjected to optimizations in future versions.
+										</li>
 										<li id="INCLUDE-TXT">
 											<code>TXT</code> for plain text files.<br/>
-						Untouched; coppied to the final document.
-					</li>
+											Untouched; coppied to the final document.
+										</li>
 									</ul>
 								</li>
 							</ul>
 						</p>
 						<br/>
 						<p>
-		The file is included immediately after encountering the attribute.
-		This means that some attributes might not have fully coppied to the final document.
-		This would affect macros such as <a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a>, as they would not be able to remove attributes that do not exist yet.
-		If such behaviour is unwanted, the attribute macro should be written after all others.
-		<br/><br/>
-		After including the file, all child elements are evaluated/appended to the final document as per the standard procedure.
-		This attribute macro is esentially an attribute version of the <a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a> macro.
-	</p>
+							The file is included immediately after encountering the attribute.
+							This means that some attributes might not have fully coppied to the final document.
+							This would affect macros such as <a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a>, as they would not be able to remove attributes that do not exist yet.
+							If such behaviour is unwanted, the attribute macro should be written after all others.
+							<br/><br/>
+							After including the file, all child elements are evaluated/appended to the final document as per the standard procedure.
+							This attribute macro is esentially an attribute version of the <a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a> macro.
+						</p>
 						<br/>
 						<p>See also:
-		<a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a>
+							<a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a>
 						</p>
-					</div></section>
+					</div>
+				</section>
 			</section>
 			<br/>
 			<br/>
@@ -1988,14 +1990,14 @@
 			<section id="expressions" class="chapter">
 				<h2><a href="#expressions">4. Expressions</a></h2>
 				<p>
-		In certain contexts, expressions can be used to interpolate HTML text nodes,
-		or to provide computed values to <a href="#macros">macros</a>.
-		They consist of constants, expression operators, variables and functions.
-	</p>
+					In certain contexts, expressions can be used to interpolate HTML text nodes,
+					or to provide computed values to <a href="#macros">macros</a>.
+					They consist of constants, expression operators, variables and functions.
+				</p>
 				<br/>
 				<p>
-		There are only 3 fundamental data types that can be evaluated from expressions:
-		<ul>
+					There are only 3 fundamental data types that can be evaluated from expressions:
+					<ul>
 						<li><b>int</b>eger: <i>long</i>, 64 bit,</li>
 						<li><b>float</b>ing point number: <i>double</i>, 64 bit,</li>
 						<li><b>string</b>.</li>
@@ -2003,14 +2005,14 @@
 				</p>
 				<br/>
 				<p>
-		For purposes of easier explanation and documentation, 2 implicit data types are defined:
-		<ul>
+					For purposes of easier explanation and documentation, 2 implicit data types are defined:
+					<ul>
 						<li><b>number</b>: <b>int</b> or <b>float</b>,</li>
 						<li>
 							<b>bool</b>ean: <b>int</b> where logical
-				<code>false</code> equals <code>0</code> and
-				<code>true</code> equals <code>1</code>.
-			</li>
+							<code>false</code> equals <code>0</code> and
+							<code>true</code> equals <code>1</code>.
+						</li>
 					</ul>
 				</p>
 				<br/>
@@ -2018,13 +2020,13 @@
 				<section id="expression-context">
 					<h3><a href="#expression-context">4.1. Expression context</a></h3>
 					<p>
-			Expressions can be defined and evaluated within HTML attribute values or HTML text nodes.
-			HTML attribute values, quoted with single quotes (<code>&apos;&apos;</code>),
-			are directly evaluated as expressions and then converted to text before they are appended to the final document.
-			Attribute values, quoted with double quotes (<code>&quot;&quot;</code>),
-			are evaluated as strings, which are interpolated for any expressions contained within curly brackets <code>{}</code>.
-			Similarly, HTML text nodes are also interpolated for expressions within curly brackets.
-		</p>
+						Expressions can be defined and evaluated within HTML attribute values or HTML text nodes.
+						HTML attribute values, quoted with single quotes (<code>&apos;&apos;</code>),
+						are directly evaluated as expressions and then converted to text before they are appended to the final document.
+						Attribute values, quoted with double quotes (<code>&quot;&quot;</code>),
+						are evaluated as strings, which are interpolated for any expressions contained within curly brackets <code>{}</code>.
+						Similarly, HTML text nodes are also interpolated for expressions within curly brackets.
+					</p>
 					<br/>
 					<div class="example">
 						<h4><b>Example:</b> Attribute expressions and text interpolation.</h4>
@@ -2035,15 +2037,15 @@
 							</tr>
 							<tr>
 								<td class="code">
-						&lt;p attr="text <span title="Replace this expression with its result (3)">{1 + 2}</span>"&gt;&lt;/p&gt;<br/>
-						&lt;p attr=<span title="Set attribute value to the result of this expression (4)">'2 * 2'</span>&gt;&lt;/p&gt;<br/>
-						&lt;p&gt;There are <span title="Replace this expression with its result (4.5)">{9 / 2}</span> apples.&lt;/p&gt;
-					</td>
+									&lt;p attr="text <span title="Replace this expression with its result (3)">{1 + 2}</span>"&gt;&lt;/p&gt;<br/>
+									&lt;p attr=<span title="Set attribute value to the result of this expression (4)">'2 * 2'</span>&gt;&lt;/p&gt;<br/>
+									&lt;p&gt;There are <span title="Replace this expression with its result (4.5)">{9 / 2}</span> apples.&lt;/p&gt;
+								</td>
 								<td class="code">
-						&lt;p attr="text 3"&gt;&lt;/p&gt;<br/>
-						&lt;p attr="4"&gt;&lt;/p&gt;<br/>
-						&lt;p&gt;There are 4.5 apples.&lt;/p&gt;
-					</td>
+									&lt;p attr="text 3"&gt;&lt;/p&gt;<br/>
+									&lt;p attr="4"&gt;&lt;/p&gt;<br/>
+									&lt;p&gt;There are 4.5 apples.&lt;/p&gt;
+								</td>
 							</tr>
 						</table>
 					</div>
@@ -2053,8 +2055,8 @@
 				<section id="expression-constants">
 					<h3><a href="#expression-constants">4.2. Constants</a></h3>
 					<p>
-			Regex descriptions for types of constants:
-			<ul>
+						Regex descriptions for types of constants:
+						<ul>
 							<li><b>int:</b>
 								<code>-?[0-9]+</code></li>
 							<li><b>float:</b>
@@ -2065,13 +2067,13 @@
 					</p>
 					<br/>
 					<style>
-			#expression-constants table td {
-				min-width: 6em;
-			}
-		</style>
+						#expression-constants table td {
+							min-width: 6em;
+						}
+					</style>
 					<p>
-			Some predefined <a href="#expression-variables" title="1.4 Variables">variables</a> are available for certain numeric/logical constants:
-		</p>
+						Some predefined <a href="#expression-variables" title="1.4 Variables">variables</a> are available for certain numeric/logical constants:
+					</p>
 					<table class="list">
 						<tr>
 							<th>Name</th>
@@ -2096,59 +2098,59 @@
 				<section id="expression-operators">
 					<h3><a href="#expression-operators">4.3. Operators</a></h3>
 					<p>
-			Expression operators consist of standard unary and binary operators:
-			<ul>
+						Expression operators consist of standard unary and binary operators:
+						<ul>
 							<li><b>Unary operatos:</b>
 								<code>-</code> (arithmetic negation),
-					<code>!</code> (boolean negation)
-				</li>
+								<code>!</code> (boolean negation)
+							</li>
 							<li><b>Arithmetic binary operators:</b>
 								<code>+</code>,
-					<code>-</code>,
-					<code>*</code>,
-					<code>/</code>,
-					<code>%</code>
+								<code>-</code>,
+								<code>*</code>,
+								<code>/</code>,
+								<code>%</code>
 							</li>
 							<li><b>Logical operators:</b>
 								<code>&&</code> (and),
-					<code>||</code> (or)
-				</li>
+								<code>||</code> (or)
+							</li>
 							<li><b>Comparison binary operators:</b>
 								<code>==</code>,
-					<code>!=</code>,
-					<code>&lt;</code>,
-					<code>&lt;=</code>,
-					<code>&gt;</code>,
-					<code>&gt;=</code>
+								<code>!=</code>,
+								<code>&lt;</code>,
+								<code>&lt;=</code>,
+								<code>&gt;</code>,
+								<code>&gt;=</code>
 							</li>
 						</ul>
 					</p>
 					<br/>
 					<p>
-			For some operations with operands of different types, some of the operands might get coerced/casted into other types.
-			For example, adding a number to a string results in the number being stringified and appended to the string operand.
-			Another case is coercing a string into a boolean where it evaluates to <code>true</code> when it's not empty.
-		</p>
+						For some operations with operands of different types, some of the operands might get coerced/casted into other types.
+						For example, adding a number to a string results in the number being stringified and appended to the string operand.
+						Another case is coercing a string into a boolean where it evaluates to <code>true</code> when it's not empty.
+					</p>
 					<br/>
 					<style>
-			#expression-operators table td:nth-of-type(2) {
-				max-width: 500px;
-				text-align: justify;
-				padding-left: 10px;
-				padding-right: 10px;
-			}
-			#expression-operators table tr > *:nth-of-type(1),
-			#expression-operators table tr > *:nth-of-type(3) {
-				white-space: nowrap;
-			}
-			#expression-operators table td:nth-of-type(1) {
-				font-family: monospace;
-				text-align: justify;
-			}
-		</style>
+						#expression-operators table td:nth-of-type(2) {
+							max-width: 500px;
+							text-align: justify;
+							padding-left: 10px;
+							padding-right: 10px;
+						}
+						#expression-operators table tr > *:nth-of-type(1),
+						#expression-operators table tr > *:nth-of-type(3) {
+							white-space: nowrap;
+						}
+						#expression-operators table td:nth-of-type(1) {
+							font-family: monospace;
+							text-align: justify;
+						}
+					</style>
 					<p>
-			Here is a list of notable cases of operations between different types:
-			<table class="list">
+						Here is a list of notable cases of operations between different types:
+						<table class="list">
 							<tr>
 								<th>Operation</th>
 								<th>Description</th>
@@ -2159,30 +2161,30 @@
 									<span>string <code>+</code> any</span>
 								</td>
 								<td>
-						The second operand is converted into a string and then appended to the main string operand.
-					</td>
+									The second operand is converted into a string and then appended to the main string operand.
+								</td>
 								<td>
 									<code>&quot;x is &quot; + 3</code> &rarr; <code>&quot;x is 3&quot;</code>
 								</td>
 							</tr>
 							<tr>
 								<td>
-						string <code>*</code> number
-					</td>
+									string <code>*</code> number
+								</td>
 								<td>
-						Produces a string that is appended to itself <var>n</var> times, where the number is casted into an <i>int</i>.
-					</td>
+									Produces a string that is appended to itself <var>n</var> times, where the number is casted into an <i>int</i>.
+								</td>
 								<td>
 									<code>&quot;a&quot; * 3</code> &rarr; <code>&quot;aaa&quot;</code>
 								</td>
 							</tr>
 							<tr>
 								<td>
-						string <code>-</code> number
-					</td>
+									string <code>-</code> number
+								</td>
 								<td>
-						Shortens the string by <var>n</var> characters.
-					</td>
+									Shortens the string by <var>n</var> characters.
+								</td>
 								<td>
 									<code>&quot;abc&quot; - 2</code> &rarr; <code>&quot;a&quot;</code>
 								</td>
@@ -2194,7 +2196,7 @@
 									<span>string <code>&&</code> any</span>
 								</td>
 								<td>
-						The string is converted into a <i>bool</i>, equivalent to <code>len(string) != 0</code>
+									The string is converted into a <i>bool</i>, equivalent to <code>len(string) != 0</code>
 								</td>
 								<td>
 									<code>&quot;a&quot; || &quot;&quot;</code> &rarr; <code>true || false</code> &rarr; <code>1</code>
@@ -2207,7 +2209,7 @@
 									<span>number <code>&&</code> any</span>
 								</td>
 								<td>
-						The number is converted into a <i>bool</i>, equivalent to <code>number != 0</code>
+									The number is converted into a <i>bool</i>, equivalent to <code>number != 0</code>
 								</td>
 								<td>
 									<code>!10</code> &rarr; <code>!true</code> &rarr; <code>0</code>
@@ -2218,8 +2220,8 @@
 									<span>float <code>%</code> number</span>
 								</td>
 								<td>
-						Produces a remainder the same way it is done with an <i>int</i>.
-					</td>
+									Produces a remainder the same way it is done with an <i>int</i>.
+								</td>
 								<td>
 									<code>3.6 % 1.25</code> &rarr; <code>1.1</code>
 								</td>
@@ -2228,24 +2230,24 @@
 					</p>
 					<br/>
 					<p>
-			For invalid operations between certain types, either <code>0</code> or a copy of the first operand is produced.
-		</p>
+						For invalid operations between certain types, either <code>0</code> or a copy of the first operand is produced.
+					</p>
 				</section>
 				<br/>
 				<br/>
 				<section id="expression-variables">
 					<h3><a href="#expression-variables">4.4. Variables</a></h3>
 					<p>
-			Variable identifiers comprise of alpha-numerical and underscore characters, where the first character cannot be a digit.
-			The equivalent regex would be: <code>[a-zA-Z_][a-zA-Z0-9_]+</code>.
-			They are defined/assigned with the <a href="#SET" title="Assigns values to variables.">&lt;SET/&gt;</a> macro and can be referenced globally from all expressions.
-			The types of their values are dynamic and correspond to their most recently assigned value type.
-		</p>
+						Variable identifiers comprise of alpha-numerical and underscore characters, where the first character cannot be a digit.
+						The equivalent regex would be: <code>[a-zA-Z_][a-zA-Z0-9_]+</code>.
+						They are defined/assigned with the <a href="#SET" title="Assigns values to variables.">&lt;SET/&gt;</a> macro and can be referenced globally from all expressions.
+						The types of their values are dynamic and correspond to their most recently assigned value type.
+					</p>
 					<br/>
 					<p>
-			At program start, some variables get predefined values, as explained in the chapter on <a href="#expression-constants">constants</a>.
-			The user can also provide more predefined variables through command-line options in the form of <code>name=value</code>, as explained in the <a href="#cli">command-line interface</a> chapter.
-		</p>
+						At program start, some variables get predefined values, as explained in the chapter on <a href="#expression-constants">constants</a>.
+						The user can also provide more predefined variables through command-line options in the form of <code>name=value</code>, as explained in the <a href="#cli">command-line interface</a> chapter.
+					</p>
 					<br/>
 					<div class="example">
 						<h4><b>Example:</b> Defining and using variables.</h4>
@@ -2256,19 +2258,19 @@
 							</tr>
 							<tr>
 								<td class="code">
-						&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+									&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 									<span title="Set variable s to string &quot;header&quot;">s="header"</span>/&gt;<br/>
-						&lt;p <span title="Set value of the attribute to the result of the expression, which is just the content of the variable s">class='s'</span>&gt;My title&lt;/p&gt;<br/>
+									&lt;p <span title="Set value of the attribute to the result of the expression, which is just the content of the variable s">class='s'</span>&gt;My title&lt;/p&gt;<br/>
 									<br/>
-						&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+									&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 									<span title="Set variable x to 2">x='2'</span>
 									<span title="Set variable y to 3">y='3'</span>/&gt;<br/>
-						&lt;p&gt;My text number <span title="Replace this expression with its result (8)">{x * (y + 1)}</span>&lt;/p&gt;
-					</td>
+									&lt;p&gt;My text number <span title="Replace this expression with its result (8)">{x * (y + 1)}</span>&lt;/p&gt;
+								</td>
 								<td class="code">
-						&lt;p class="header"&gt;My title&lt;/p&gt;<br/>
-						&lt;p&gt;My text number 8&lt;/p&gt;
-					</td>
+									&lt;p class="header"&gt;My title&lt;/p&gt;<br/>
+									&lt;p&gt;My text number 8&lt;/p&gt;
+								</td>
 							</tr>
 						</table>
 					</div>
@@ -2278,20 +2280,20 @@
 				<section id="expression-functions">
 					<h3><a href="#expression-functions">4.5. Functions</a></h3>
 					<p>
-			Functions are predefined and can be invoked using their name, suffixed with brackets <code>()</code> containing their arguments.
-			The maximum number of arguments for variadic functions is 8.
-		</p>
+						Functions are predefined and can be invoked using their name, suffixed with brackets <code>()</code> containing their arguments.
+						The maximum number of arguments for variadic functions is 8.
+					</p>
 					<br/>
 					<style>
-			#expression-functions table td:nth-child(3) {
-				min-width: 12em;
-				padding: 5px 1em;
-				text-align: left;
-			}
-			#expression-functions table tr.br {
-				border-top: 2px solid black;
-			}
-		</style>
+						#expression-functions table td:nth-child(3) {
+							min-width: 12em;
+							padding: 5px 1em;
+							text-align: left;
+						}
+						#expression-functions table tr.br {
+							border-top: 2px solid black;
+						}
+					</style>
 					<p>List of functions:</p>
 					<table class="list">
 						<tr>
@@ -2304,9 +2306,9 @@
 							<td><code>int(x)</code></td>
 							<td>int</td>
 							<td>
-					Converts <code>x</code> into an <i>integer</i>.
-					If <code>x</code> is a <i>string</i> and cannot be parsed as an <i>integer</i>, returns <code>0</code>.
-				</td>
+								Converts <code>x</code> into an <i>integer</i>.
+								If <code>x</code> is a <i>string</i> and cannot be parsed as an <i>integer</i>, returns <code>0</code>.
+							</td>
 							<td>
 								<code>int('7.234')</code> &rarr; <code>7</code>
 							</td>
@@ -2315,9 +2317,9 @@
 							<td><code>float(x)</code></td>
 							<td>float</td>
 							<td>
-					Converts <code>x</code> into a <i>float</i>.
-					If <code>x</code> is a <i>string</i> and cannot be parsed as a <i>float</i>, returns <code>0.0</code>.
-				</td>
+								Converts <code>x</code> into a <i>float</i>.
+								If <code>x</code> is a <i>string</i> and cannot be parsed as a <i>float</i>, returns <code>0.0</code>.
+							</td>
 							<td>
 								<code>float('122.5') + 1</code> &rarr; <code>123.5</code>
 							</td>
@@ -2334,9 +2336,9 @@
 							<td><code>len(x)</code></td>
 							<td>int</td>
 							<td>
-					If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.
-					If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
-				</td>
+								If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.
+								If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
+							</td>
 							<td>
 								<code>len('hello')</code> &rarr; <code>5</code>
 							</td>
@@ -2345,9 +2347,9 @@
 							<td><code>abs(x)</code></td>
 							<td>int</td>
 							<td>
-					If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.
-					If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
-				</td>
+								If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.
+								If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
+							</td>
 							<td>
 								<code>abs(-4.5)</code> &rarr; <code>4.5</code>
 							</td>
@@ -2390,15 +2392,15 @@
 							<td><code>substr(s, i, [len])</code></td>
 							<td>string</td>
 							<td>
-					Returns substring of <i>string</i>
+								Returns substring of <i>string</i>
 								<code>s</code>
-					beginning at character <code>i</code> and ending at character <code>i+len</code>, where default value of <code>len</code> is the length of the string <code>s</code>.
-					<br/>
-					If <code>i</code> is negative, it equals to <code>len(s)-abs(i)</code> (that is from the end backwards).
-					Length <code>len</code> can also be negative, meaning it selects characters from <code>i</code> backwards.
-					<br/>
-					Beginning and end points of the substring are clamped between <code>0</code> and <code>len(s)</code>.
-				</td>
+								beginning at character <code>i</code> and ending at character <code>i+len</code>, where default value of <code>len</code> is the length of the string <code>s</code>.
+								<br/>
+								If <code>i</code> is negative, it equals to <code>len(s)-abs(i)</code> (that is from the end backwards).
+								Length <code>len</code> can also be negative, meaning it selects characters from <code>i</code> backwards.
+								<br/>
+								Beginning and end points of the substring are clamped between <code>0</code> and <code>len(s)</code>.
+							</td>
 							<td>
 								<code>substr(&quot;green&quot;, 1)</code> &rarr; <code>&quot;reen&quot;</code><br/>
 								<code>substr(&quot;green&quot;, 1, 3)</code> &rarr; <code>&quot;ree&quot;</code><br/>
@@ -2410,10 +2412,10 @@
 							<td><code>match(s, regex)</code></td>
 							<td>bool</td>
 							<td>
-					Returns <code>true</code> if <i>string</i>
+								Returns <code>true</code> if <i>string</i>
 								<code>s</code> matches the <a href="https://en.wikipedia.org/wiki/Regular_expression" title="Wikipedia - Regular expression" target="_blank" class="TD-0">regular expression</a>
 								<code>regex</code>.
-				</td>
+							</td>
 							<td>
 								<code>match('1:5', '\d:\d')</code> &rarr; <code>1</code>
 							</td>
@@ -2422,14 +2424,14 @@
 							<td><code>replace(s, regex, rep)</code></td>
 							<td>string</td>
 							<td>
-					Replaces all occurances of substrings matched by
-					<a href="https://en.wikipedia.org/wiki/Regular_expression" title="Wikipedia - Regular expression" target="_blank" class="TD-0">regular expression</a>
+								Replaces all occurances of substrings matched by
+								<a href="https://en.wikipedia.org/wiki/Regular_expression" title="Wikipedia - Regular expression" target="_blank" class="TD-0">regular expression</a>
 								<code>regex</code>
-					with parameterised replacement <i>string</i>
+								with parameterised replacement <i>string</i>
 								<code>rep</code>.<br/>
-					To use capture groups in <code>rep</code>, use <code>$</code> and the number of the capture group.
-					The whole match is represented by capture group <code>$0</code>.
-				</td>
+								To use capture groups in <code>rep</code>, use <code>$</code> and the number of the capture group.
+								The whole match is represented by capture group <code>$0</code>.
+							</td>
 							<td>
 								<code>replace('12 apples', '(\d+)\s+(\w+)', '$1 green $2')</code> &rarr; <code>12 green apples</code>
 							</td>
@@ -2438,9 +2440,9 @@
 							<td><code>if(cond, pass, else)</code></td>
 							<td>int,<br/>float,<br/>string</td>
 							<td>
-					If <code>cond</code> evaluates to logical <code>true</code>, evaluates and returns <code>pass</code>,
-					otherwise evaluates and returns <code>else</code>.
-				</td>
+								If <code>cond</code> evaluates to logical <code>true</code>, evaluates and returns <code>pass</code>,
+								otherwise evaluates and returns <code>else</code>.
+							</td>
 							<td>
 								<code>if(3 > 2, &quot;yes&quot;, &quot;no&quot;)</code> &rarr; <code>&quot;yes&quot;</code>
 							</td>
@@ -2449,9 +2451,9 @@
 							<td><code>defined(var)</code></td>
 							<td>bool</td>
 							<td>
-					Returns <code>true</code> if variable <code>var</code> is defined.<br/>
+								Returns <code>true</code> if variable <code>var</code> is defined.<br/>
 								<code>var</code> is not a string but an identifier that reflects the name of a variable.
-				</td>
+							</td>
 							<td>
 								<code>if(defined(x),x,100)</code> &rarr; <code>100</code>
 							</td>

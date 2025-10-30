@@ -317,6 +317,7 @@ void MacroEngine::shell(const Node& op, Node& dst){
 		case Capture::TEXT: {
 			if (result.total > 0){
 				Node& txt = dst.appendChild(NodeType::TEXT);
+				txt.options |= (op.options & (NodeOptions::SPACE_BEFORE | NodeOptions::SPACE_AFTER));
 				
 				char* s = html::newStr(result.total + 1);
 				size_t n = concat(result.chunks, s, result.total);
