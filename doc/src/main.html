@@ -1,4 +1,4 @@
-<SET date="28/10/2025" />
+<SET date="30/10/2025" />
 <SET l="&lt;" r="&gt;" />
 <!--  -->
 <!DOCTYPE html>
@@ -84,6 +84,7 @@
 		box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
 		border-radius: 3px;
 		border: 1px solid rgba(0, 0, 0, 0.1);
+		background: rgba(0, 165, 180, 0.06);
 	}
 	
 	.example h4 {
@@ -103,6 +104,17 @@
 	
 	.example table td.code span[title]:hover {
 		font-weight: bold;
+	}
+	
+	.note {
+		padding: 10px;
+		border-radius: 3px;
+		background: rgba(255, 255, 0, 0.06);
+	}
+	
+	.note h4,
+	.note p {
+		display: inline;
 	}
 	
 </style>
@@ -286,6 +298,10 @@
 		<br/>
 		<br/>
 		<br/>
+		<INCLUDE SRC="chapter-parsing.html"/>
+		<br/>
+		<br/>
+		<br/>
 		<INCLUDE SRC="chapter-macros.html"/>
 		<br/>
 		<br/>
@@ -305,13 +321,26 @@
 <!--  -->
 <!--  -->
 <MACRO NAME="nav">
+	<SET ci='0'/>
 	<nav>
 		<h2><a href="#top">Table of contents</a></h2>
 		<ol class="lvl-1">
-			<li><a href="#introduction">1. Introduction</a></li>
-			<li><a href="#cli">2. Command-line interface</a></li>
+			<SET ci='ci+1'/>
+			<li><a href="#introduction">{ci}. Introduction</a></li>
+			<SET ci='ci+1'/>
+			<li><a href="#cli">{ci}. Command-line interface</a></li>
+			
+			<SET ci='ci+1'/>
 			<li>
-				<a href="#macros">3. Macros</a>
+				<a href="#document">{ci}. Parsing</a>
+				<ol class="lvl-2">
+					<li><a href="#html-files">{ci}.1. HTML files</a></li>
+				</ol>
+			</li>
+			
+			<li>
+				<SET ci='ci+1'/>
+				<a href="#macros">{ci}. Macros</a>
 				<ol class="lvl-2">
 					<li>
 						<a href="#element-macros">3.1. Element macros</a>
@@ -337,7 +366,7 @@
 						</ul>
 					</li>
 					<li>
-						<a href="#attribute-macros">3.2. Attribute macros</a>
+						<a href="#attribute-macros">{ci}.2. Attribute macros</a>
 						<ul class="lvl-3">
 							<li><a href="#ATTR-IF">IF</a></li>
 							<li><a href="#ATTR-ELIF">ELIF</a></li>
@@ -349,13 +378,14 @@
 				</ol>
 			</li>
 			<li>
-				<a href="#expressions">4. Expressions</a>
+				<SET ci='ci+1'/>
+				<a href="#expressions">{ci}. Expressions</a>
 				<ol class="lvl-2">
-					<li><a href="#expression-context">4.1. Expression context</a></li>
-					<li><a href="#expression-constants">4.2. Constants</a></li>
-					<li><a href="#expression-operators">4.3. Operators</a></li>
-					<li><a href="#expression-variables">4.4. Variables</a></li>
-					<li><a href="#expression-functions">4.5. Functions</a></li>
+					<li><a href="#expression-context">{ci}.1. Expression context</a></li>
+					<li><a href="#expression-constants">{ci}.2. Constants</a></li>
+					<li><a href="#expression-operators">{ci}.3. Operators</a></li>
+					<li><a href="#expression-variables">{ci}.4. Variables</a></li>
+					<li><a href="#expression-functions">{ci}.5. Functions</a></li>
 				</ol>
 			</li>
 		</ol>

@@ -81,6 +81,7 @@
 			box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
 			border-radius: 3px;
 			border: 1px solid rgba(0, 0, 0, 0.1);
+			background: rgba(0, 165, 180, 0.06);
 		}
 		
 		.example h4 {
@@ -100,6 +101,17 @@
 		
 		.example table td.code span[title]:hover {
 			font-weight: bold;
+		}
+		
+		.note {
+			padding: 10px;
+			border-radius: 3px;
+			background: rgba(255, 255, 0, 0.06);
+		}
+		
+		.note h4,
+		.note p {
+			display: inline;
 		}
 		
 	</style>
@@ -264,7 +276,7 @@
 			<div class="details">
 				<p>Author &ndash; <a href="https://hurkus.dev" style="font-weight: bold;">Hurkus</a></p>
 				&bull;
-				<p>Date &ndash; <span class="date TD-U">28/10/2025</span></p>
+				<p>Date &ndash; <span class="date TD-U">30/10/2025</span></p>
 				&bull;
 				<p>Repository &ndash; <a href="https://github.com/Hurkus/html-macro/">github.com/Hurkus/html-macro/</a></p>
 			</div>
@@ -274,7 +286,13 @@
 					<li><a href="#introduction">1. Introduction</a></li>
 					<li><a href="#cli">2. Command-line interface</a></li>
 					<li>
-						<a href="#macros">3. Macros</a>
+						<a href="#document">3. Parsing</a>
+						<ol class="lvl-2">
+							<li><a href="#html-files">3.1. HTML files</a></li>
+						</ol>
+					</li>
+					<li>
+						<a href="#macros">4. Macros</a>
 						<ol class="lvl-2">
 							<li>
 								<a href="#element-macros">3.1. Element macros</a>
@@ -300,7 +318,7 @@
 								</ul>
 							</li>
 							<li>
-								<a href="#attribute-macros">3.2. Attribute macros</a>
+								<a href="#attribute-macros">4.2. Attribute macros</a>
 								<ul class="lvl-3">
 									<li><a href="#ATTR-IF">IF</a></li>
 									<li><a href="#ATTR-ELIF">ELIF</a></li>
@@ -312,13 +330,13 @@
 						</ol>
 					</li>
 					<li>
-						<a href="#expressions">4. Expressions</a>
+						<a href="#expressions">5. Expressions</a>
 						<ol class="lvl-2">
-							<li><a href="#expression-context">4.1. Expression context</a></li>
-							<li><a href="#expression-constants">4.2. Constants</a></li>
-							<li><a href="#expression-operators">4.3. Operators</a></li>
-							<li><a href="#expression-variables">4.4. Variables</a></li>
-							<li><a href="#expression-functions">4.5. Functions</a></li>
+							<li><a href="#expression-context">5.1. Expression context</a></li>
+							<li><a href="#expression-constants">5.2. Constants</a></li>
+							<li><a href="#expression-operators">5.3. Operators</a></li>
+							<li><a href="#expression-variables">5.4. Variables</a></li>
+							<li><a href="#expression-functions">5.5. Functions</a></li>
 						</ol>
 					</li>
 				</ol>
@@ -421,6 +439,143 @@
 			<br/>
 			<br/>
 			<br/>
+			<section id="parsing" class="chapter">
+				<h2><a href="#parsing">3. Parsing</a></h2>
+				<p>
+					There are 4 different file types considered during parsing:
+					<ul>
+						<li>HTML files with extension <code>.html</code>,</li>
+						<li>CSS files with extension <code>.css</code>,</li>
+						<li>JavaScript files with extension <code>.js</code> and</li>
+						<li>text files with any other extension.</li>
+					</ul>
+				</p>
+				<br/>
+				<p>
+					Currently only HTML files are actually parsed, the others are considered as plain text.
+					This will change in a future version when CSS and JS compression is added.
+				</p>
+				<br/>
+				<br/>
+				<section id="html-files">
+					<h3><a href="#html-files">3.1. HTML files</a></h3>
+					<p>
+						When parsing HTML files, whitespace surrounding all HTML elements is generally modified in order for the final document to <b>aproximate</b> a canonical HTML structure.
+						Each element retains information about the <b>existance</b> of surrounding whitespace only to ensure that the resulting HTML doesn't lose/gain any unwanted whitespace.
+						The actual text nodes, containing only whitespace, are discarded during parsing.
+					</p>
+					<br/>
+					<div class="example">
+						<h4><b>Example:</b> Whitespace retention.</h4>
+						<table>
+							<tr>
+								<th>input</th>
+								<th>output</th>
+							</tr>
+							<tr>
+								<td class="code">
+									&lt;p&gt;Here&lt;u&gt; is some &lt;/u&gt;&lt;span&gt;text&lt;/span&gt;.&lt;/p&gt;<br/>
+									<br/>
+									&lt;p&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;Long text,<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;long text<br/>
+									&lt;/p&gt;<br/>
+									<br/>
+									&lt;div&gt;<br/>
+									&lt;p&gt;Weird input<br/>
+									&lt;/p&gt;<br/>
+									&lt;/div&gt;
+								</td>
+								<td class="code">
+									&lt;p&gt;Here&lt;u&gt; is some &lt;/u&gt;&lt;span&gt;text&lt;/span&gt;.&lt;/p&gt;<br/>
+									&lt;p&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;Long text,<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;long text<br/>
+									&lt;/p&gt;<br/>
+									&lt;div&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Weird input<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;/p&gt;<br/>
+									&lt;/div&gt;
+								</td>
+							</tr>
+						</table>
+						<br/>
+						<p>
+							Here we can see that only existance of whitespace is preserved.
+							This is okay because HTML is rendered in the same manner while ensuring readability of the final document.
+						</p>
+					</div>
+					<br/>
+					<p>
+						Aditionally text within multiline text nodes is properly indented to match the desired indentation level of the parent node.
+						This is achieved by examining the tab count of the first line after the first newline character <code>\n</code> and then adjusting all following lines of text accordingly.
+						<b>Only the tab character</b>
+						<code>\t</code> is regarded as the indentation character and not space.
+						It is the users responisbility to provide the proper level of indentation of multiline text.
+					</p>
+					<br/>
+					<div class="note box">
+						<h4>Note:</h4>
+						<p>
+							The sample code in all examples uses spaces for indentation because it is more reliable for displaying raw text.
+							Just imagine they are actually tabs.
+						</p>
+					</div>
+					<br/>
+					<div class="example">
+						<h4><b>Example:</b> Multiline text indentation</h4>
+						<table>
+							<tr>
+								<th>input</th>
+								<th>output</th>
+							</tr>
+							<tr>
+								<td class="code">
+									&lt;head&gt;<br/>
+									&lt;style&gt;<br/>
+									<span style="border: 2px dashed green; margin-right: 2px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>body {<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;color: red;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+									&lt;/style&gt;<br/>
+									&lt;/head&gt;
+								</td>
+								<td class="code">
+									&lt;head&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;style&gt;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;<span style="border: 1.5px dashed green; margin-right: 1px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>body {<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;<span style="border: 1.5px dashed green; margin-right: 1px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp;color: red;<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;<span style="border: 1.5px dashed green; margin-right: 1px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>}<br/>
+									&nbsp;&nbsp;&nbsp;&nbsp;&lt;/style&gt;<br/>
+									&lt;/head&gt;
+								</td>
+							</tr>
+						</table>
+						<br/>
+						<p>
+							Here we can see how the indentation level of the text within the <code>&lt;style&gt;</code> element is calculated and adjusted based on the indentation level of the first line of text (colored with <span style="border: 2px dashed rgba(0,128,0,0.6);">green</span>) after the first newline character. 
+						</p>
+					</div>
+					<br/>
+					<p>
+						While most of the HTML elements and their attributes are coppied to the final document, some of them perform special operations that programatically generate content.
+						These elements and attributes are typically written in <b>uppercase</b>.
+						Details about this mechanism can be found in the chapter about <a href="#macros">macros</a>.
+						Aditionally, plaintext can also be modified with string interpolation, as seen in the chapter on <a href="#expressions">expressions</a>.
+					</p>
+					<br/>
+					<p>
+						Special parsing cases apply for certain elements:
+						<ul>
+							<li><code>&lt;style&gt;</code> &ndash; All content is parsed as plain text untill the closing <code>&lt;/style&gt;</code> tag.</li>
+							<li><code>&lt;script&gt;</code> &ndash; All content is parsed as plain text untill the closing <code>&lt;/script&gt;</code> tag.</li>
+							<li><code>&lt;pre&gt;</code> &ndash; All content is parsed as plain text untill the closing <code>&lt;/pre&gt;</code> tag.</li>
+						</ul>
+					</p>
+				</section>
+			</section>
+			<br/>
+			<br/>
+			<br/>
 			<style>
 				#macros .macro {
 					padding: 12px;
@@ -453,7 +608,7 @@
 				
 			</style>
 			<section id="macros" class="chapter">
-				<h2><a href="#macros">3. Macros</a></h2>
+				<h2><a href="#macros">4. Macros</a></h2>
 				<p>
 					While most content from source files is coppied to the final document, <b>macros</b> can invoke special functionality for generating or excluding content.
 					While the user can define custom macros (with limited functionality), there are two sets of predefined macros:
@@ -465,7 +620,7 @@
 				<br/>
 				<br/>
 				<section id="element-macros">
-					<h3><a href="#element-macros">3.1. Element macros</a></h3>
+					<h3><a href="#element-macros">4.1. Element macros</a></h3>
 					<p>
 						Some HTML elements act as macros, and are not coppied to the final document.
 						Instead they perform other functions such as deciding what content to include or generate.
@@ -1687,7 +1842,7 @@
 				<br/>
 				<br/>
 				<section id="attribute-macros">
-					<h3><a href="#attribute-macros">3.2. Attribute macros</a></h3>
+					<h3><a href="#attribute-macros">4.2. Attribute macros</a></h3>
 					<p>
 						Some of the attributes on regular HTML elements act as macros, and are not coppied to the final document.
 						They are called <b>attribute macros</b> and are written in <b>uppercase</b>.
@@ -1988,7 +2143,7 @@
 			<br/>
 			<br/>
 			<section id="expressions" class="chapter">
-				<h2><a href="#expressions">4. Expressions</a></h2>
+				<h2><a href="#expressions">5. Expressions</a></h2>
 				<p>
 					In certain contexts, expressions can be used to interpolate HTML text nodes,
 					or to provide computed values to <a href="#macros">macros</a>.
@@ -2018,7 +2173,7 @@
 				<br/>
 				<br/>
 				<section id="expression-context">
-					<h3><a href="#expression-context">4.1. Expression context</a></h3>
+					<h3><a href="#expression-context">5.1. Expression context</a></h3>
 					<p>
 						Expressions can be defined and evaluated within HTML attribute values or HTML text nodes.
 						HTML attribute values, quoted with single quotes (<code>&apos;&apos;</code>),
@@ -2053,7 +2208,7 @@
 				<br/>
 				<br/>
 				<section id="expression-constants">
-					<h3><a href="#expression-constants">4.2. Constants</a></h3>
+					<h3><a href="#expression-constants">5.2. Constants</a></h3>
 					<p>
 						Regex descriptions for types of constants:
 						<ul>
@@ -2096,7 +2251,7 @@
 				<br/>
 				<br/>
 				<section id="expression-operators">
-					<h3><a href="#expression-operators">4.3. Operators</a></h3>
+					<h3><a href="#expression-operators">5.3. Operators</a></h3>
 					<p>
 						Expression operators consist of standard unary and binary operators:
 						<ul>
@@ -2236,7 +2391,7 @@
 				<br/>
 				<br/>
 				<section id="expression-variables">
-					<h3><a href="#expression-variables">4.4. Variables</a></h3>
+					<h3><a href="#expression-variables">5.4. Variables</a></h3>
 					<p>
 						Variable identifiers comprise of alpha-numerical and underscore characters, where the first character cannot be a digit.
 						The equivalent regex would be: <code>[a-zA-Z_][a-zA-Z0-9_]+</code>.
@@ -2278,7 +2433,7 @@
 				<br/>
 				<br/>
 				<section id="expression-functions">
-					<h3><a href="#expression-functions">4.5. Functions</a></h3>
+					<h3><a href="#expression-functions">5.5. Functions</a></h3>
 					<p>
 						Functions are predefined and can be invoked using their name, suffixed with brackets <code>()</code> containing their arguments.
 						The maximum number of arguments for variadic functions is 8.

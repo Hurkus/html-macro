@@ -1,0 +1,154 @@
+<SET ci='ci + 1' cii='0'/>
+<SET l="&lt;" r="&gt;" s="&nbsp;" t='s*4'></SET>
+<!--  -->
+<section id="parsing" class="chapter">
+	<h2><a href="#parsing">{ci}. Parsing</a></h2>
+	
+	<p>
+		There are 4 different file types considered during parsing:
+		<ul>
+			<li>HTML files with extension <code>.html</code>,</li>
+			<li>CSS files with extension <code>.css</code>,</li>
+			<li>JavaScript files with extension <code>.js</code> and</li>
+			<li>text files with any other extension.</li>
+		</ul>
+	</p>
+	
+	<br/>
+	<p>
+		Currently only HTML files are actually parsed, the others are considered as plain text.
+		This will change in a future version when CSS and JS compression is added.
+	</p>
+	
+	
+	
+	<br/>
+	<br/>
+	<section id="html-files">
+		<SET cii='cii + 1'/>
+		<h3><a href="#html-files">{ci}.{cii}. HTML files</a></h3>
+		
+		<p>
+			When parsing HTML files, whitespace surrounding all HTML elements is generally modified in order for the final document to <b>aproximate</b> a canonical HTML structure.
+			Each element retains information about the <b>existance</b> of surrounding whitespace only to ensure that the resulting HTML doesn't lose/gain any unwanted whitespace.
+			The actual text nodes, containing only whitespace, are discarded during parsing.
+		</p>
+		
+		<br/>
+		<div class="example">
+			<h4><b>Example:</b> Whitespace retention.</h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}p{r}Here{l}u{r} is some {l}/u{r}{l}span{r}text{l}/span{r}.{l}/p{r}<br/>
+						<br/>
+						{l}p{r}<br/>
+							{t}Long text,<br/>
+							{t}long text<br/>
+						{l}/p{r}<br/>
+						<br/>
+						{l}div{r}<br/>
+						{l}p{r}Weird input<br/>
+						{l}/p{r}<br/>
+						{l}/div{r}
+					</td>
+					<td class="code">
+						{l}p{r}Here{l}u{r} is some {l}/u{r}{l}span{r}text{l}/span{r}.{l}/p{r}<br/>
+						{l}p{r}<br/>
+							{t}Long text,<br/>
+							{t}long text<br/>
+						{l}/p{r}<br/>
+						{l}div{r}<br/>
+							{t}{l}p{r}Weird input<br/>
+							{t}{l}/p{r}<br/>
+						{l}/div{r}
+					</td>
+				</tr>
+			</table>
+			<br/>
+			<p>
+				Here we can see that only existance of whitespace is preserved.
+				This is okay because HTML is rendered in the same manner while ensuring readability of the final document.
+			</p>
+		</div>
+		
+		<br/>
+		<p>
+			Aditionally text within multiline text nodes is properly indented to match the desired indentation level of the parent node.
+			This is achieved by examining the tab count of the first line after the first newline character <code>\n</code> and then adjusting all following lines of text accordingly.
+			<b>Only the tab character</b> <code>\t</code> is regarded as the indentation character and not space.
+			It is the users responisbility to provide the proper level of indentation of multiline text.
+		</p>
+		
+		<br/>
+		<div class="note box">
+			<h4>Note:</h4>
+			<p>
+				The sample code in all examples uses spaces for indentation because it is more reliable for displaying raw text.
+				Just imagine they are actually tabs.
+			</p>
+		</div>
+		
+		<br/>
+		<div class="example">
+			<h4><b>Example:</b> Multiline text indentation</h4>
+			<table>
+				<tr>
+					<th>input</th>
+					<th>output</th>
+				</tr>
+				<tr>
+					<td class="code">
+						{l}head{r}<br/>
+						{l}style{r}<br/>
+						<span style="border: 2px dashed green; margin-right: 2px;">{t}</span>body \{<br/>
+								{t*2}color: red;<br/>
+							{t}}<br/>
+						{l}/style{r}<br/>
+						{l}/head{r}
+					</td>
+					<td class="code">
+						{l}head{r}<br/>
+							{t}{l}style{r}<br/>
+							{t}<span style="border: 1.5px dashed green; margin-right: 1px;">{t}</span>body \{<br/>
+									{t}<span style="border: 1.5px dashed green; margin-right: 1px;">{t}</span>{t}color: red;<br/>
+								{t}<span style="border: 1.5px dashed green; margin-right: 1px;">{t}</span>}<br/>
+							{t}{l}/style{r}<br/>
+						{l}/head{r}
+					</td>
+				</tr>
+			</table>
+			<br/>
+			<p>
+				Here we can see how the indentation level of the text within the <code>{l}style{r}</code> element is calculated and adjusted based on the indentation level of the first line of text (colored with <span style="border: 2px dashed rgba(0,128,0,0.6);">green</span>) after the first newline character. 
+			</p>
+		</div>
+		
+		<br/>
+		<p>
+			While most of the HTML elements and their attributes are coppied to the final document, some of them perform special operations that programatically generate content.
+			These elements and attributes are typically written in <b>uppercase</b>.
+			Details about this mechanism can be found in the chapter about <a href="#macros">macros</a>.
+			Aditionally, plaintext can also be modified with string interpolation, as seen in the chapter on <a href="#expressions">expressions</a>.
+		</p>
+		
+		<br/>
+		<p>
+			Special parsing cases apply for certain elements:
+			<ul>
+				<li><code>{l}style{r}</code> &ndash; All content is parsed as plain text untill the closing <code>{l}/style{r}</code> tag.</li>
+				<li><code>{l}script{r}</code> &ndash; All content is parsed as plain text untill the closing <code>{l}/script{r}</code> tag.</li>
+				<li><code>{l}pre{r}</code> &ndash; All content is parsed as plain text untill the closing <code>{l}/pre{r}</code> tag.</li>
+			</ul>
+		</p>
+		
+		
+	</section>
+	
+	
+	
+</section>
