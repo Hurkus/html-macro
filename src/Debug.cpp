@@ -126,29 +126,35 @@ void info_node(const Node& node, string_view msg){
 void error_missing_attr(const Node& node, const char* attr_name){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_error_pfx(pos);
-	LOG_STDERR("Tag <%.*s> missing attribute " PURPLE("`%s`") ".\n", int(node.value_len), node.value_p, attr_name);
+	LOG_STDERR("Tag " PURPLE("<%.*s>") " missing attribute " PURPLE("`%s`") ".\n", int(node.value_len), node.value_p, attr_name);
 	printCodeView(pos, node.name(), ANSI_RED);
 }
 
 void warn_missing_attr(const Node& node, const char* attr_name){
 	linepos pos = findLine(node.root(), node.value_p);
 	print_warn_pfx(pos);
-	LOG_STDERR("Tag <%.*s> missing attribute " PURPLE("`%s`") ".\n", int(node.value_len), node.value_p, attr_name);
+	LOG_STDERR("Tag " PURPLE("<%.*s>") " missing attribute " PURPLE("`%s`") ".\n", int(node.value_len), node.value_p, attr_name);
 	printCodeView(pos, node.name(), ANSI_YELLOW);
 }
 
 
 void error_missing_attr_value(const Node& node, const Attr& attr){
+	assert(attr.name_p != nullptr);
 	const Document& doc = node.root();
-	linepos pos = findLine(doc, attr.name_p);
 	
-	print_error_pfx(pos);
-	LOG_STDERR("Attribute " PURPLE("`%.*s`") " missing value.\n", int(attr.name_len), attr.name_p);
-	
+	// Point to empty attribute value
 	if (attr.value_p != nullptr){
-		pos = findLine(doc, attr.value_p);
+		linepos pos = findLine(doc, attr.value_p);
+		print_error_pfx(pos);
+		LOG_STDERR("Attribute " PURPLE("`%.*s`") " missing value.\n", int(attr.name_len), attr.name_p);
 		printCodeView(pos, inclusiveValue(attr), ANSI_RED);
-	} else {
+	}
+	
+	// Point to attribute name
+	else {
+		linepos pos = findLine(doc, attr.name_p);
+		print_error_pfx(pos);
+		LOG_STDERR("Attribute " PURPLE("`%.*s`") " missing value.\n", int(attr.name_len), attr.name_p);
 		printCodeView(pos, attr.name(), ANSI_RED);
 	}
 	
@@ -278,11 +284,20 @@ void warn_ignored_attr_value(const Node& node, const Attr& attr){
 }
 
 
+void warn_attr_single_quote(const Node& node, const Attr& attr){
+	assert(attr.name_p != nullptr && attr.value_p != nullptr);
+	linepos pos = findLine(node.root(), attr.value_p);
+	print_warn_pfx(pos);
+	LOG_STDERR("Attribute " PURPLE("`%.*s`") " expected double quotes (\"\"). Value is always interpreted as a string.\n", int(attr.name_len), attr.name_p);
+	printCodeView(pos, inclusiveValue(attr), ANSI_YELLOW);
+}
+
+
 void warn_attr_double_quote(const Node& node, const Attr& attr){
 	assert(attr.value_p != nullptr);
 	linepos pos = findLine(node.root(), attr.value_p);
 	print_warn_pfx(pos);
-	LOG_STDERR("Attribute " PURPLE("`%.*s`") " expected single quotes. Value is always interpreted as an expression.\n", int(attr.name_len), attr.name_p);
+	LOG_STDERR("Attribute " PURPLE("`%.*s`") " expected single quotes (''). Value is always interpreted as an expression.\n", int(attr.name_len), attr.name_p);
 	printCodeView(pos, inclusiveValue(attr), ANSI_YELLOW);
 }
 

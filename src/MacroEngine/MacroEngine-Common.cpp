@@ -110,6 +110,42 @@ bool MacroEngine::eval_attr_false(const Node& op, const Attr& attr){
 }
 
 
+bool MacroEngine::eval_attr_value(const html::Node& op, const html::Attr& attr, Value& out_result){
+	if (attr.value_p == nullptr){
+		return false;
+	}
+	
+	// Evaluate expression
+	else if (attr.options % NodeOptions::SINGLE_QUOTE){
+		const NodeDebugger dbg = NodeDebugger(op);
+		
+		Expression expr = Expression::parse(attr.value(), dbg);
+		if (expr == nullptr){
+			return false;
+		}
+		
+		out_result = expr.eval(MacroEngine::variables, dbg);
+	}
+	
+	// Interpolate
+	else if (attr.options % NodeOptions::INTERPOLATE){
+		string buff;
+		if (!eval_string_interpolate(op, attr.value(), buff)){
+			return false;
+		}
+		
+		out_result = Value(buff);
+	}
+	
+	// Plain text
+	else {
+		out_result = Value(attr.value());
+	}
+	
+	return true;
+}
+
+
 bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff, string_view& result){
 	if (attr.value_p == nullptr){
 		result = {};

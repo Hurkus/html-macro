@@ -105,14 +105,14 @@ void attribute(const html::Node& op, const html::Attr& op_attr, html::Node& dst)
 
 
 /**
- * @brief Invoke defined macro using information from the calling node.
+ * @brief Element macro for invoking a macro.
  * @param op Calling operation node from which to extract call information.
  * @param dst Destination parent node for any created nodes.
  */
 void call(const html::Node& op, html::Node& dst);
 
 /**
- * @brief Invoke defined macro using the name from calling operation node attribute 'CALL'.
+ * @brief Macro attribute for invoking a macro.
  * @param op Calling operation node from which `opAttr` originates.
  * @param opAttr Attribute invoking the macro call.
  * @param dst Destination parent node for any created nodes.
@@ -173,6 +173,7 @@ void error(const html::Node& op);
 Branch check_attr_if(const html::Node& op, const html::Attr& attr);
 bool eval_attr_true(const html::Node& op, const html::Attr& attr);
 bool eval_attr_false(const html::Node& op, const html::Attr& attr);
+bool eval_attr_value(const html::Node& op, const html::Attr& attr, Value& out_result);
 bool eval_attr_value(const html::Node& op, const html::Attr& attr, std::string& result_buff, std::string_view& result);
 Interpolate eval_attr_interp(const html::Node& op, const html::Attr& attr);
 

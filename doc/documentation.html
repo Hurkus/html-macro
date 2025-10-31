@@ -276,7 +276,7 @@
 			<div class="details">
 				<p>Author &ndash; <a href="https://hurkus.dev" style="font-weight: bold;">Hurkus</a></p>
 				&bull;
-				<p>Date &ndash; <span class="date TD-U">30/10/2025</span></p>
+				<p>Date &ndash; <span class="date TD-U">01/11/2025</span></p>
 				&bull;
 				<p>Repository &ndash; <a href="https://github.com/Hurkus/html-macro/">github.com/Hurkus/html-macro/</a></p>
 			</div>
@@ -700,11 +700,22 @@
 						<p>Defines a new macro.</p>
 						<x-line></x-line>
 						<p>
-							Must be in the form of <code>&lt;MACR NAME="[name]"&gt;</code>, where:
+							Must be in the form of <code>&lt;MACRO NAME="[name]" [variable]=[default_value]&gt;</code>, where:
 							<ul>
 								<li>
 									<code>[name]</code> represents the name of the new macro, which will be used to invoke it.
-									Only the latest macro with the same name is cached.
+									Only the latest macro with that name is cached.
+									All previous macros are discarded.
+								</li>
+								<li>
+									<code>[variable]</code> represents the name of a variable that is local during the execution of the macro.
+									Variables not listed here or at the calling site (for example in the <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a> macro), are considered global and any modifications to those variables remain after the end of the macro execution.<br/>
+									These attributes also serve as a semantic list of parameters of the macro.
+								</li>
+								<li>
+									<code>[default_value]</code> represents the (optional) initial value of the local variable <code>[variable]</code>.
+									This value can be overwritten by the calling site (for example by the <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a> macro).
+									If this value is missing, the (possibly existing) global variable of the same name is coppied into the local variable.
 								</li>
 							</ul>
 						</p>
@@ -713,6 +724,11 @@
 							Macro elements serve as <em>templates</em> for instantiating/evaluating the same HTML element tree multiple times.
 							All <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> elements are referenced globally, i.e. cached and removed from the source document right after the document is parsed and before any instantiation occurs.
 							This means their position in the document doesn't matter.
+						</p>
+						<br/>
+						<p>
+							Expression variables within macros are typically global (their modifications carry over after the end of the macro execution), except the list of local variables declared in the attribute list of the element.
+							If the user wishes to use a macro only for computation, they can return the result through a global variable.
 						</p>
 						<br/>
 						<p>
@@ -736,8 +752,9 @@
 						</p>
 						<x-line></x-line>
 						<div class="example">
-							<h4><b>Example</b></h4>
-							<table>
+							<h4><b>Example:</b></h4>
+							<p>Basic usecase for a custom macro.</p>
+							<table style="margin-top: 0;">
 								<tr>
 									<th>input</th>
 									<th>output</th>
@@ -772,6 +789,59 @@
 									</td>
 								</tr>
 							</table>
+							<br/>
+							<p>
+								Here we can see how with the help of a <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a> macro, a list of elements is generated with special cases depending on the global variable <code>i</code>.
+								The variable is global, becausse it is not listed in neither the <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> nor <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a> macros.
+							</p>
+						</div>
+						<div class="example">
+							<h4><b>Example:</b></h4>
+							<p>Behaviours of local and global variables.</p>
+							<table style="margin-top: 0;">
+								<tr>
+									<th>input</th>
+									<th>output</th>
+								</tr>
+								<tr>
+									<td class="code">
+										&lt;<a href="#MACRO" title="Defines a new macro.">MACRO</a>
+										<span title="Macro is named &quot;func&quot;">NAME="func"</span>
+										<span title="Declare a local variable x, which will be initialised with the global variable x">x</span>
+										<span title="Declare a local variable y with a default value of 0">y='0'</span>&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										<span title="Add 2 to variable x">x='x+2'</span>
+										<span title="Add 2 to variable y">y='y+2'</span>
+										<span title="Add 2 to variable z">z='z+2'</span>/&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;A: (x,y,z) is
+											(<span title="Insert value of variable x">{x}</span>,
+										<span title="Insert value of variable y">{y}</span>,
+										<span title="Insert value of variable z">{z}</span>)&lt;/p&gt;<br/>
+										&lt;<a href="#MACRO" title="Defines a new macro.">/MACRO</a>&gt;<br/>
+										<br/>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										<span title="Set variable x to 10">x='10'</span>
+										<span title="Set variable y to 20">y='20'</span>
+										<span title="Set variable z to 30">z='30'</span>/&gt;<br/>
+										&lt;<a href="#CALL" title="Invokes a user-defined macro.">CALL</a>
+										<span title="Call macro named &quot;func&quot;">NAME="func"</span>/&gt;<br/>
+										&lt;p&gt;B: (x,y,z) is
+											(<span title="Insert value of variable x">{x}</span>,
+										<span title="Insert value of variable y">{y}</span>,
+										<span title="Insert value of variable z">{z}</span>)&lt;/p&gt;<br/>
+									</td>
+									<td class="code">
+										&lt;p&gt;A: (x,y,z) is (12, 2, 32)&lt;/p&gt;<br/>
+										&lt;p&gt;B: (x,y,z) is (10, 20, 32)&lt;/p&gt;
+									</td>
+								</tr>
+							</table>
+							<br/>
+							<p>
+								Here we can see how local variables <code>x</code> and <code>y</code> are initialised when calling the macro <code>func</code> and then modified (adding <code>2</code>).
+								Their modifications are not carried outside of the macro after execution.
+								On the other hand, variable <code>z</code> remains global and its modification remains after the end of the macro.
+							</p>
 						</div>
 					</div>
 					<br/><br/>
@@ -780,10 +850,20 @@
 						<p>Invokes a user-defined macro.</p>
 						<x-line></x-line>
 						<p>
-							Must be in the form of <code>&lt;CALL NAME="[name]"&gt;</code>, where:
+							Must be in the form of <code>&lt;CALL NAME=[name] [variable]=[value]/&gt;</code>, where:
 							<ul>
 								<li>
 									<code>[name]</code> represents the name of a <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a>.
+									It can be an expression.
+								</li>
+								<li>
+									<code>[variable]</code> represents a variable name that is local durring the execution of the macro.
+									After the macro finishes, the global (original) variable remains unchanged.<br/>
+									The set of local variables shadows macro parameters from the called <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a>.
+								</li>
+								<li>
+									<code>[value]</code> represents the value of the local variable <code>[variable]</code>.
+									If <code>[value]</code> is not supplied, the variable is cloned from its global counterpart only when the default value of the macro parameter from <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> is also missing.
 								</li>
 							</ul>
 						</p>
@@ -812,6 +892,118 @@
 							<a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a>,
 							<a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a>
 						</p>
+						<x-line></x-line>
+						<div class="example">
+							<h4><b>Example:</b></h4>
+							<p>Copying global variable into local variable.</p>
+							<table style="margin-top: 0;">
+								<tr>
+									<th>input</th>
+									<th>output</th>
+								</tr>
+								<tr>
+									<td class="code">
+										&lt;<a href="#CALL" title="Invokes a user-defined macro.">MACRO</a>
+										<span title="Name of the macro that will be using by CALL">NAME="f"</span>&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										<span title="Add 2 to variable x">x='x+2'</span>/&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;x1 is <span title="Insert value of variable x">{x}</span>&lt;/p&gt;<br/>
+										&lt;/<a href="#CALL" title="Invokes a user-defined macro.">MACRO</a>&gt;<br/>
+										<br/>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										<span title="Set variable x to 10">x='10'</span>/&gt;<br/>
+										&lt;<a href="#CALL" title="Invokes a user-defined macro.">CALL</a>
+										<span title="Call macro named &quot;f&quot;">NAME="f"</span>
+										<span title="When calling, create local variable x by copying the global variable x">x</span>/&gt;<br/>
+										&lt;p&gt;x2 is <span title="Insert value of variable x">{x}</span>&lt;/p&gt;<br/>
+									</td>
+									<td class="code">
+										&lt;p&gt;x1 is 12&lt;/p&gt;<br/>
+										&lt;p&gt;x2 is 10&lt;/p&gt;<br/>
+									</td>
+								</tr>
+							</table>
+							<br/>
+							<p>
+								Variable <code>x</code> is initialized to <code>10</code> and in the <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a> macro it is coppied into its local counterpart.
+								Local <code>x</code> is then modified (<code>12</code>) and inserted into the first <code>&lt;p&gt;</code> element.
+								After the macro concludes, global <code>x</code> remains unchanged (<code>10</code>).
+							</p>
+						</div>
+						<div class="example">
+							<h4><b>Example:</b></h4>
+							<p>Creating local variable automatically, with a default value.</p>
+							<table style="margin-top: 0;">
+								<tr>
+									<th>input</th>
+									<th>output</th>
+								</tr>
+								<tr>
+									<td class="code">
+										&lt;<a href="#CALL" title="Invokes a user-defined macro.">MACRO</a>
+										<span title="Name of the macro that will be using by CALL">NAME="f"</span>
+										<span title="When calling, create local variable y and set it to 200">y='200'</span>&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										<span title="Add 2 to variable y">y='y+2'</span>/&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;y1 is <span title="Insert value of variable y">{y}</span>&lt;/p&gt;<br/>
+										&lt;/<a href="#CALL" title="Invokes a user-defined macro.">MACRO</a>&gt;<br/>
+										<br/>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										<span title="Set variable y to 20">y='20'</span>/&gt;<br/>
+										&lt;<a href="#CALL" title="Invokes a user-defined macro.">CALL</a>
+										<span title="Call macro named &quot;f&quot;">NAME="f"</span>/&gt;<br/>
+										&lt;p&gt;y2 is <span title="Insert value of variable y">{y}</span>&lt;/p&gt;<br/>
+									</td>
+									<td class="code">
+										&lt;p&gt;y1 is 202&lt;/p&gt;<br/>
+										&lt;p&gt;y2 is 20&lt;/p&gt;<br/>
+									</td>
+								</tr>
+							</table>
+							<br/>
+							<p>
+								Variable <code>y</code> is initialized to <code>20</code> and since it is not mentioned in the <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a> macro, the <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> macro initializes its own local variable <code>y=200</code>.
+								Local <code>y</code> is then modified (<code>202</code>) and inserted into the first <code>&lt;p&gt;</code> element.
+								After the macro concludes, global <code>y</code> remains unchanged (<code>20</code>).
+							</p>
+						</div>
+						<div class="example">
+							<h4><b>Example:</b></h4>
+							<p>Creating local variable with a value.</p>
+							<table style="margin-top: 0;">
+								<tr>
+									<th>input</th>
+									<th>output</th>
+								</tr>
+								<tr>
+									<td class="code">
+										&lt;<a href="#CALL" title="Invokes a user-defined macro.">MACRO</a>
+										<span title="Name of the macro that will be using by CALL">NAME="f"</span>&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										<span title="Add 2 to variable z">z='z+2'</span>/&gt;<br/>
+										&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;z1 is <span title="Insert value of variable z">{z}</span>&lt;/p&gt;<br/>
+										&lt;/<a href="#CALL" title="Invokes a user-defined macro.">MACRO</a>&gt;<br/>
+										<br/>
+										&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+										<span title="Set variable z to 30">z='30'</span>/&gt;<br/>
+										&lt;<a href="#CALL" title="Invokes a user-defined macro.">CALL</a>
+										<span title="Call macro named &quot;f&quot;">NAME="f"</span>
+										<span title="When calling, create local variable z and set it to 300">z='300'</span>/&gt;<br/>
+										&lt;p&gt;z2 is <span title="Insert value of variable z">{z}</span>&lt;/p&gt;<br/>
+									</td>
+									<td class="code">
+										&lt;p&gt;z1 is 302&lt;/p&gt;<br/>
+										&lt;p&gt;z2 is 30&lt;/p&gt;<br/>
+									</td>
+								</tr>
+							</table>
+							<br/>
+							<p>
+								Variable <code>z</code> is initialized to <code>30</code> however, the <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a> macro initializes a new local variable <code>z=300</code>.
+								It is then modified (<code>302</code>) and inserted into the first <code>&lt;p&gt;</code> element.
+								After the macro concludes, global <code>z</code> remains unchanged (<code>30</code>).
+							</p>
+						</div>
 					</div>
 					<br/><br/>
 					<div id="INCLUDE" class="macro box">
@@ -2054,10 +2246,11 @@
 						<p>Invoke a user-defined macro <i>inside</i> the current element.</p>
 						<x-line></x-line>
 						<p>
-							Must be in the form of <code>&lt;... CALL="[name]" ...&gt;</code>, where:
+							Must be in the form of <code>&lt;... CALL=[name] ...&gt;</code>, where:
 							<ul>
 								<li>
 									<code>[name]</code> represents the name of a <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> that will be invoked.
+									It can be an expression.
 								</li>
 							</ul>
 						</p>
@@ -2067,9 +2260,12 @@
 							This means that some attributes might not have fully coppied to the final document.
 							This would affect macros such as <a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a>, as they would not be able to remove attributes that do not exist yet.
 							If such behaviour is unwanted, the attribute macro should be written after all others.
-							<br/><br/>
+						</p>
+						<br/>
+						<p>
 							After invoking the macro, all child elements are evaluated/appended to the final document as per the standard procedure.
 							This attribute macro is esentially an attribute version of the <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a> macro.
+							A big shortcoming of this attribute macro is the inability to pass any arguments to the macro.
 						</p>
 						<br/>
 						<p>See also:
@@ -2194,7 +2390,7 @@
 								<td class="code">
 									&lt;p attr="text <span title="Replace this expression with its result (3)">{1 + 2}</span>"&gt;&lt;/p&gt;<br/>
 									&lt;p attr=<span title="Set attribute value to the result of this expression (4)">'2 * 2'</span>&gt;&lt;/p&gt;<br/>
-									&lt;p&gt;There are <span title="Replace this expression with its result (4.5)">{9 / 2}</span> apples.&lt;/p&gt;
+									&lt;p&gt;There are <span title="Replace this expression with its result (4.5)">{9.0 / 2}</span> apples.&lt;/p&gt;
 								</td>
 								<td class="code">
 									&lt;p attr="text 3"&gt;&lt;/p&gt;<br/>

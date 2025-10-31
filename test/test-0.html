@@ -1,16 +1,9 @@
-<div>
-<style> /*comment*/
-	div {
-		color: red;
-	}
- </style>
-</div>
+<MACRO NAME="f" x>
+	<SET x='x+2'/>
+	<p>x1 is {x}</p>
+</MACRO>
 
-
-<div>
-	<p>here<span> is </span> my <span>house</span>.</p>
-	<p>
-		The world was created on:
-		<SHELL>date -d "@0" +"%d/%m/%Y"</SHELL>
-	</p>
+<SET x='10'/>
+<div CALL="f">
+	<p>x2 is {x}</p>
 </div>

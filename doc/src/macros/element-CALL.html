@@ -8,14 +8,26 @@
 	<h4><a href="#CALL" class="code">{l}CALL/{r}</a></h4>
 	<p>Invokes a user-defined macro.</p>
 	<x-line></x-line>
+	
 	<p>
-		Must be in the form of <code>{l}CALL NAME="[name]"{r}</code>, where:
+		Must be in the form of <code>{l}CALL NAME=[name] [variable]=[value]/{r}</code>, where:
 		<ul>
 			<li>
 				<code>[name]</code> represents the name of a <a CALL="link-em-MACRO">{l}MACRO{r}</a>.
+				It can be an expression.
+			</li>
+			<li>
+				<code>[variable]</code> represents a variable name that is local durring the execution of the macro.
+				After the macro finishes, the global (original) variable remains unchanged.<br/>
+				The set of local variables shadows macro parameters from the called <a CALL="link-em-MACRO">{l}MACRO{r}</a>.
+			</li>
+			<li>
+				<code>[value]</code> represents the value of the local variable <code>[variable]</code>.
+				If <code>[value]</code> is not supplied, the variable is cloned from its global counterpart only when the default value of the macro parameter from <a CALL="link-em-MACRO">{l}MACRO{r}</a> is also missing.
 			</li>
 		</ul>
 	</p>
+	
 	<br/>
 	<p>
 		Other attributes:
@@ -31,4 +43,111 @@
 		<a CALL="link-em-MACRO">{l}MACRO{r}</a>,
 		<a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a>
 	</p>
+	
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example:</b></h4>
+		<p>Copying global variable into local variable.</p>
+		<table style="margin-top: 0;">
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="link-em-CALL">MACRO</a>
+						<span title="Name of the macro that will be using by CALL">NAME="f"</span>{r}<br/>
+						{t}{l}<a CALL="link-em-SET">SET</a> <span title="Add 2 to variable x">x='x+2'</span>/{r}<br/>
+						{t}{l}p{r}x1 is <span title="Insert value of variable x">\{x}</span>{l}/p{r}<br/>
+					{l}/<a CALL="link-em-CALL">MACRO</a>{r}<br/>
+					<br/>
+					{l}<a CALL="link-em-SET">SET</a> <span title="Set variable x to 10">x='10'</span>/{r}<br/>
+					{l}<a CALL="link-em-CALL">CALL</a>
+						<span title="Call macro named &quot;f&quot;">NAME="f"</span>
+						<span title="When calling, create local variable x by copying the global variable x">x</span>/{r}<br/>
+					{l}p{r}x2 is <span title="Insert value of variable x">\{x}</span>{l}/p{r}<br/>
+				</td>
+				<td class="code">
+					{l}p{r}x1 is 12{l}/p{r}<br/>
+					{l}p{r}x2 is 10{l}/p{r}<br/>
+				</td>
+			</tr>
+		</table>
+		<br/>
+		<p>
+			Variable <code>x</code> is initialized to <code>10</code> and in the <a CALL="link-em-CALL">{l}CALL{r}</a> macro it is coppied into its local counterpart.
+			Local <code>x</code> is then modified (<code>12</code>) and inserted into the first <code>{l}p{r}</code> element.
+			After the macro concludes, global <code>x</code> remains unchanged (<code>10</code>).
+		</p>
+	</div>
+	<div class="example">
+		<h4><b>Example:</b></h4>
+		<p>Creating local variable automatically, with a default value.</p>
+		<table style="margin-top: 0;">
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="link-em-CALL">MACRO</a>
+						<span title="Name of the macro that will be using by CALL">NAME="f"</span>
+						<span title="When calling, create local variable y and set it to 200">y='200'</span>{r}<br/>
+						{t}{l}<a CALL="link-em-SET">SET</a> <span title="Add 2 to variable y">y='y+2'</span>/{r}<br/>
+						{t}{l}p{r}y1 is <span title="Insert value of variable y">\{y}</span>{l}/p{r}<br/>
+					{l}/<a CALL="link-em-CALL">MACRO</a>{r}<br/>
+					<br/>
+					{l}<a CALL="link-em-SET">SET</a> <span title="Set variable y to 20">y='20'</span>/{r}<br/>
+					{l}<a CALL="link-em-CALL">CALL</a>
+						<span title="Call macro named &quot;f&quot;">NAME="f"</span>/{r}<br/>
+					{l}p{r}y2 is <span title="Insert value of variable y">\{y}</span>{l}/p{r}<br/>
+				</td>
+				<td class="code">
+					{l}p{r}y1 is 202{l}/p{r}<br/>
+					{l}p{r}y2 is 20{l}/p{r}<br/>
+				</td>
+			</tr>
+		</table>
+		<br/>
+		<p>
+			Variable <code>y</code> is initialized to <code>20</code> and since it is not mentioned in the <a CALL="link-em-CALL">{l}CALL{r}</a> macro, the <a CALL="link-em-MACRO">{l}MACRO{r}</a> macro initializes its own local variable <code>y=200</code>.
+			Local <code>y</code> is then modified (<code>202</code>) and inserted into the first <code>{l}p{r}</code> element.
+			After the macro concludes, global <code>y</code> remains unchanged (<code>20</code>).
+		</p>
+	</div>
+	<div class="example">
+		<h4><b>Example:</b></h4>
+		<p>Creating local variable with a value.</p>
+		<table style="margin-top: 0;">
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="link-em-CALL">MACRO</a> <span title="Name of the macro that will be using by CALL">NAME="f"</span>{r}<br/>
+						{t}{l}<a CALL="link-em-SET">SET</a> <span title="Add 2 to variable z">z='z+2'</span>/{r}<br/>
+						{t}{l}p{r}z1 is <span title="Insert value of variable z">\{z}</span>{l}/p{r}<br/>
+					{l}/<a CALL="link-em-CALL">MACRO</a>{r}<br/>
+					<br/>
+					{l}<a CALL="link-em-SET">SET</a> <span title="Set variable z to 30">z='30'</span>/{r}<br/>
+					{l}<a CALL="link-em-CALL">CALL</a>
+						<span title="Call macro named &quot;f&quot;">NAME="f"</span>
+						<span title="When calling, create local variable z and set it to 300">z='300'</span>/{r}<br/>
+					{l}p{r}z2 is <span title="Insert value of variable z">\{z}</span>{l}/p{r}<br/>
+				</td>
+				<td class="code">
+					{l}p{r}z1 is 302{l}/p{r}<br/>
+					{l}p{r}z2 is 30{l}/p{r}<br/>
+				</td>
+			</tr>
+		</table>
+		<br/>
+		<p>
+			Variable <code>z</code> is initialized to <code>30</code> however, the <a CALL="link-em-CALL">{l}CALL{r}</a> macro initializes a new local variable <code>z=300</code>.
+			It is then modified (<code>302</code>) and inserted into the first <code>{l}p{r}</code> element.
+			After the macro concludes, global <code>z</code> remains unchanged (<code>30</code>).
+		</p>
+	</div>
+	
 </div>

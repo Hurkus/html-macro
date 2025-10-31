@@ -8,8 +8,8 @@ using namespace std;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-REGISTER2(doc_macro_MACRO);
-bool test_doc_macro_MACRO(){
+REGISTER2(doc_macro_MACRO_1);
+bool test_doc_macro_MACRO_1(){
 	TmpFile in = TmpFile(
 		"<ul>" NL
 		"	<FOR i='0' TRUE='i<3' i='i+1' >" NL
@@ -28,6 +28,27 @@ bool test_doc_macro_MACRO(){
 		"	<li style=\"color:red;\">Line #1</li>" NL
 		"	<li style=\"color:green;\">Line #2</li>" NL
 		"</ul>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_MACRO_2);
+bool test_doc_macro_MACRO_2(){
+	TmpFile in = TmpFile(
+		"<MACRO NAME=\"func\" x y='0'>" NL
+		"	<SET x='x+2' y='y+2' z='z+2'/>" NL
+		"	<p>A: (x,y,z) is ({x}, {y}, {z})</p>" NL
+		"</MACRO>" NL
+		"" NL
+		"<SET x='10' y='20' z='30'/>" NL
+		"<CALL NAME=\"func\"/>" NL
+		"<p>B: (x,y,z) is ({x}, {y}, {z})</p>" NL
+	);
+	string_view out = (
+		NL
+		"<p>A: (x,y,z) is (12, 2, 32)</p>" NL
+		"<p>B: (x,y,z) is (10, 20, 32)</p>" NL
 	);
 	return run({in}, out, "", 0);
 }
@@ -79,6 +100,72 @@ bool test_doc_macro_INCLUDE(){
 		"		<p>Last edited on: 14/10/2025</p>" NL
 		"	</div>" NL
 		"</body>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+REGISTER2(doc_macro_CALL_1);
+bool test_doc_macro_CALL_1(){
+	TmpFile in = TmpFile(
+		"<MACRO NAME=\"f\">" NL
+		"	<SET x='x+2'/>" NL
+		"	<p>x1 is {x}</p>" NL
+		"</MACRO>" NL
+		"" NL
+		"<SET x='10'/>" NL
+		"<CALL NAME=\"f\" x/>" NL
+		"<p>x2 is {x}</p>" NL
+	);
+	string_view out = (
+		"" NL
+		"<p>x1 is 12</p>" NL
+		"<p>x2 is 10</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_CALL_2);
+bool test_doc_macro_CALL_2(){
+	TmpFile in = TmpFile(
+		"<MACRO NAME=\"f\" y='200'>" NL
+		"	<SET y='y+2'/>" NL
+		"	<p>y1 is {y}</p>" NL
+		"</MACRO>" NL
+		"" NL
+		"<SET y='20'/>" NL
+		"<CALL NAME=\"f\"/>" NL
+		"<p>y2 is {y}</p>" NL
+	);
+	string_view out = (
+		NL
+		"<p>y1 is 202</p>" NL
+		"<p>y2 is 20</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_macro_CALL_3);
+bool test_doc_macro_CALL_3(){
+	TmpFile in = TmpFile(
+		"<MACRO NAME=\"f\">" NL
+		"	<SET z='z+2'/>" NL
+		"	<p>z1 is {z}</p>" NL
+		"</MACRO>" NL
+		"" NL
+		"<SET z='30'/>" NL
+		"<CALL NAME=\"f\" z='300'/>" NL
+		"<p>z2 is {z}</p>" NL
+	);
+	string_view out = (
+		NL
+		"<p>z1 is 302</p>" NL
+		"<p>z2 is 30</p>" NL
 	);
 	return run({in}, out, "", 0);
 }

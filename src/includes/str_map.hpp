@@ -92,6 +92,11 @@ public:
 	}
 	
 public:
+	bool remove(const key_type& key){
+		return map.erase(key) != 0;
+	}
+	
+public:
 	void clear(){
 		map.clear();
 	}

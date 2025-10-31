@@ -36,20 +36,33 @@ static linepos findLine(const Document& doc, const char* p){
 
 
 static bool registerMacro(const Macro& parent, Node&& macro){
+	const Attr* name_attr;
+	
 	// Find name
-	Attr* a = macro.attribute;
-	while (a != nullptr && a->name() != "NAME"){
-		a = a->next;
+	for (name_attr = macro.attribute ; name_attr != nullptr ; name_attr = name_attr->next){
+		if (name_attr->name() == "NAME"sv)
+			goto found;
 	}
 	
-	if (a == nullptr){
-		warn_missing_attr(macro, "NAME");
+	HERE(warn_missing_attr(macro, "NAME"));
+	return false;
+	
+	found:
+	if (name_attr->value_p == nullptr){
+		HERE(warn_missing_attr_value(macro, *name_attr));
+		return false;
+	}
+	
+	if (name_attr->options % NodeOptions::SINGLE_QUOTE)
+		HERE(warn_attr_single_quote(macro, *name_attr));
+	if (name_attr->value_len <= 0){
+		HERE(error_missing_attr_value(macro, *name_attr));
 		return false;
 	}
 	
 	// Create new macro by moving <MACRO> node to new document.
 	unique_ptr<Macro> m = make_unique<Macro>();
-	m->name = a->value();
+	m->name = name_attr->value();
 	m->srcDir = parent.srcDir;
 	Node& root = m->doc;
 	

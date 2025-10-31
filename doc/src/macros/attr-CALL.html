@@ -10,10 +10,11 @@
 	<x-line></x-line>
 	
 	<p>
-		Must be in the form of <code>{l}... CALL="[name]" ...{r}</code>, where:
+		Must be in the form of <code>{l}... CALL=[name] ...{r}</code>, where:
 		<ul>
 			<li>
 				<code>[name]</code> represents the name of a <a CALL="link-em-MACRO">{l}MACRO{r}</a> that will be invoked.
+				It can be an expression.
 			</li>
 		</ul>
 	</p>
@@ -23,11 +24,14 @@
 		This means that some attributes might not have fully coppied to the final document.
 		This would affect macros such as <a CALL="link-em-DEL-ATTR">{l}DEL-ATTR{r}</a>, as they would not be able to remove attributes that do not exist yet.
 		If such behaviour is unwanted, the attribute macro should be written after all others.
-		<br/><br/>
+	</p>
+	<br/>
+	<p>
 		After invoking the macro, all child elements are evaluated/appended to the final document as per the standard procedure.
 		This attribute macro is esentially an attribute version of the <a CALL="link-em-CALL">{l}CALL{r}</a> macro.
+		A big shortcoming of this attribute macro is the inability to pass any arguments to the macro.
 	</p>
-	
+		
 	<br/>
 	<p>See also:
 		<a CALL="link-em-CALL">{l}CALL{r}</a>,
