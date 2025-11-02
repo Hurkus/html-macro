@@ -4,50 +4,21 @@
 </MACRO>
 
 
+<style IF='!header'>
+	#ATTR-INCLUDE.macro .example .color-1 {
+		color: hsl(100, 50%, 20%);
+	}
+</style>
+
+
 <div id="ATTR-INCLUDE" class="macro box" IF='!header'>
-	<h4><a href="#ATTR-INCLUDE" class="code">INCLUDE=...</a></h4>
+	<h4><a href="#ATTR-INCLUDE" class="code">INCLUDE=[path]</a></h4>
 	<p>Include contents of another file as child elements of the current element.</p>
 	<x-line></x-line>
 	
-	<style>
-		#ATTR-INCLUDE.macro ul.file-types li {
-			padding-top: 5px;
-		}
-	</style>
+	
 	<p>
-		Must be in the form of <code>{l}... INCLUDE="[name]" ...{r}</code> or <code>{l}... INCLUDE-[type]="[name]" ...{r}</code>, where:
-		<ul>
-			<li>
-				<code>[path]</code> represents the path of the new file relative to the current file.
-			</li>
-			<li>
-				<code>[type]</code> represents the forced interpretation of the file being included.
-				Optional only when the type of the file can be determined from the path extension.
-				<br/>
-				Valid types are:
-				<ul class="file-types">
-					<li id="INCLUDE-HTML">
-						<code>HTML</code> for <em>.html</em> files.<br/>
-						The file is parsed as an HTML macro, i.e. the root element is invoked as a macro after parsing.<br/>
-						All <a CALL="link-em-MACRO">{l}MACRO{r}</a> elements are added to the global list of defined macros (overwriting existing ones).
-					</li>
-					<li id="INCLUDE-CSS">
-						<code>CSS</code> for style <em>.css</em> files.<br/>
-						The file is processed for any CSS expressions.<br/>
-						May be subjected to optimizations in future versions.
-					</li>
-					<li id="INCLUDE-JS">
-						<code>JS</code> for JavaScript <em>.js</em> files.<br/>
-						Mainly untouched; handled as plain text.<br/>
-						May be subjected to optimizations in future versions.
-					</li>
-					<li id="INCLUDE-TXT">
-						<code>TXT</code> for plain text files.<br/>
-						Untouched; coppied to the final document.
-					</li>
-				</ul>
-			</li>
-		</ul>
+		Works in the same way as the element macro <a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a>, with the exception that included content is never wrapped (<code>NO-WRAP</code>) and the user cannot declare any local variables.
 	</p>
 	
 	
@@ -56,15 +27,87 @@
 		The file is included immediately after encountering the attribute.
 		This means that some attributes might not have fully coppied to the final document.
 		This would affect macros such as <a CALL="link-em-DEL-ATTR">{l}DEL-ATTR{r}</a>, as they would not be able to remove attributes that do not exist yet.
-		If such behaviour is unwanted, the attribute macro should be written after all others.
-		<br/><br/>
-		After including the file, all child elements are evaluated/appended to the final document as per the standard procedure.
-		This attribute macro is esentially an attribute version of the <a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a> macro.
+		If such behaviour is unwanted, this macro should be written after all others.
 	</p>
+	
 	
 	<br/>
 	<p>See also:
 		<a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a>
 	</p>
+	
+	
+	<x-line></x-line>
+	<div class="example">
+		<h4><b>Example</b></h4>
+		<table>
+			<tr>
+				<th>content.html</th>
+			</tr>
+			<tr>
+				<td class="code color-1">
+					{l}<a CALL="link-em-IF">IF</a> <span title="Include child elements if variable lang is equal to &quot;de&quot;">lang="de"</span>{r}<br/>
+						{t}{l}p <a CALL="link-am-IF">IF='i==1'</a>{r}Ein{l}/p{r}<br/>
+						{t}{l}p <a CALL="link-am-ELIF">ELIF='i==2'</a>{r}Zwei{l}/p{r}<br/>
+						{t}{l}p <a CALL="link-am-ELIF">ELIF='i==3'</a>{r}Drei{l}/p{r}<br/>
+					{l}<a CALL="link-em-IF">/IF</a>{r}<br/>
+					{l}<a CALL="link-em-ELSE">ELSE</a>{r}<br/>
+						{t}{l}p <a CALL="link-am-IF">IF='i==1'</a>{r}One{l}/p{r}<br/>
+						{t}{l}p <a CALL="link-am-ELIF">ELIF='i==2'</a>{r}Two{l}/p{r}<br/>
+						{t}{l}p <a CALL="link-am-ELIF">ELIF='i==3'</a>{r}Three{l}/p{r}<br/>
+					{l}<a CALL="link-em-ELSE">/ELSE</a>{r}<br/>
+				</td>
+			</tr>
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="link-em-SET">SET</a> <span title="Set variable lang to &quot;en&quot;">lang="en"</span>/{r}<br/>
+					{l}body <span title="Set value of attribute lang to the value of variable lang">lang="\{lang}"</span>{r}<br/>
+						{t}{l}ol{r}<br/>
+							{t*2}{l}<a CALL="link-em-FOR">FOR</a>
+								<span title="Initialize variable i to 0">i='1'</span>
+								<span title="Loop while i is less or equal to 3">TRUE='i{l}=3'</span>
+								<span title="Increment variable i after each iteration">i='i+1'</span>{r}<br/>
+								{t*3}{l}li <a CALL="link-am-INCLUDE">INCLUDE="content.html"</a>/{r}<br/>
+							{t*2}{l}<a CALL="link-em-FOR">/FOR</a>{r}<br/>
+						{t}{l}/ol{r}<br/>
+					{l}/body{r}
+				</td>
+				<td class="code">
+					<span title="Content from the main file">
+						{l}body lang="en"{r}<br/>
+							{t}{l}ol{r}<br/>
+								{t*2}{l}li{r}<br/>
+					</span>
+					<span class="color-1" title="Content from content.html">
+									{t*3}{l}p{r}One{l}/p{r}<br/>
+					</span>
+					<span title="Content from the main file">
+								{t*2}{l}/li{r}<br/>
+								{t*2}{l}li{r}<br/>
+					</span>
+					<span class="color-1" title="Content from content.html">
+									{t*3}{l}p{r}Two{l}/p{r}<br/>
+					</span>
+					<span title="Content from the main file">
+								{t*2}{l}/li{r}<br/>
+								{t*2}{l}li{r}<br/>
+					</span>
+					<span class="color-1" title="Content from content.html">
+									{t*3}{l}p{r}Three{l}/p{r}<br/>
+					</span>
+					<span title="Content from the main file">
+								{t*2}{l}/li{r}<br/>
+							{t}{l}/ol{r}<br/>
+						{l}/body{r}
+					</span>
+				</td>
+			</tr>
+		</table>
+	</div>
+	
 	
 </div>

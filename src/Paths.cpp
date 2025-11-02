@@ -1,44 +1,53 @@
 #include "Paths.hpp"
+#include "fs.hpp"
 #include <cassert>
 
 using namespace std;
-using namespace MacroEngine;
 
 
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 
-shared_ptr<const filepath> MacroEngine::cwd = make_unique<filepath>(filesystem::current_path());
-vector<filepath> MacroEngine::paths;
+shared_ptr<const filepath> Paths::cwd = make_unique<filepath>(".");
+vector<filepath> Paths::includeDirs;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-filepath MacroEngine::resolve(const filepath& path){
+bool Paths::resolve(filepath& path) noexcept {
 	try {
 		if (path.is_absolute()){
-			return filesystem::canonical(path);
+			path = filesystem::canonical(path);
+			return true;
 		}
 		
-		// Check cwd
 		assert(cwd != nullptr);
+		
+		// Check cwd
 		filepath p1 = *cwd / path;
-		if (filesystem::exists(p1)){
-			return filesystem::relative(p1);
+		if (fs::exists(p1)){
+			path = filesystem::relative(p1);
+			return true;
 		}
 		
 		// Check include paths
 		filepath p2;
-		for (const filepath& sp : paths){
+		for (const filepath& sp : includeDirs){
 			p2 = sp / path;
-			if (filesystem::exists(p2))
-				return filesystem::relative(p2);
+			
+			if (fs::exists(p2)){
+				path = filesystem::relative(p2);
+				return true;
+			}
+			
 		}
 		
-		return filesystem::proximate(p1);
+		path = filesystem::proximate(p1);
+		return fs::exists(path);
 	} catch (...){}
-	return {};
+	
+	return false;
 }
 
 

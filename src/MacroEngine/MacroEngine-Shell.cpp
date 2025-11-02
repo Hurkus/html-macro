@@ -136,8 +136,8 @@ static void _setEnv(const VariableMap& vars, const vector<string_view>& env){
 
 
 static int _shell(const ShellCmd& cmd) noexcept {
-	assert(MacroEngine::cwd != nullptr);
-	assert(filesystem::is_directory(*MacroEngine::cwd));
+	assert(Paths::cwd != nullptr);
+	assert(filesystem::is_directory(*Paths::cwd));
 	assert(!cmd.cmd.empty());
 	
 	if (cmd.cmd.empty()){
@@ -166,7 +166,7 @@ static int _shell(const ShellCmd& cmd) noexcept {
 		
 		// Set current directory
 		try {
-			filesystem::current_path(*MacroEngine::cwd);
+			filesystem::current_path(*Paths::cwd);
 		} catch (const exception&) {
 			exit(102);
 		}

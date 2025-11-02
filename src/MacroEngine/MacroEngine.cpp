@@ -15,7 +15,6 @@ VariableMap MacroEngine::variables;
 
 Branch MacroEngine::currentBranch_block = Branch::NONE;
 Branch MacroEngine::currentBranch_inline = Branch::NONE;
-Interpolate MacroEngine::currentInterpolation = Interpolate::ALL;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -164,26 +163,31 @@ void MacroEngine::runChildren(const Node& macroParent, Node& dst){
 
 
 void MacroEngine::exec(const Macro& macro, Node& dst){
+	if (macro.html == nullptr){
+		assert(macro.html != nullptr);
+		return;
+	}
+	
+	// Backup state
 	auto _branch_1 = MacroEngine::currentBranch_block;
 	auto _branch_2 = MacroEngine::currentBranch_inline;
-	auto _interp = MacroEngine::currentInterpolation;
-	auto _cwd = move(MacroEngine::cwd);
+	auto _cwd = move(Paths::cwd);
+	
+	// Set new state
+	if (macro.srcDir != nullptr){
+		Paths::cwd = macro.srcDir;
+	} else {
+		assert(macro.srcDir != nullptr);
+		Paths::cwd = _cwd;
+	}
 	
 	MacroEngine::currentBranch_block = Branch::NONE;
 	MacroEngine::currentBranch_inline = Branch::NONE;
-	MacroEngine::currentInterpolation = Interpolate::ALL;
 	
-	if (macro.srcDir != nullptr){
-		MacroEngine::cwd = macro.srcDir;
-	} else {
-		assert(macro.srcDir != nullptr);
-		MacroEngine::cwd = _cwd;
-	}
+	runChildren(*macro.html, dst);
 	
-	runChildren(macro.doc, dst);
-	
-	MacroEngine::cwd = move(_cwd);
-	MacroEngine::currentInterpolation = _interp;
+	// Restore state
+	Paths::cwd = move(_cwd);
 	MacroEngine::currentBranch_inline = _branch_2;
 	MacroEngine::currentBranch_block = _branch_1;
 }

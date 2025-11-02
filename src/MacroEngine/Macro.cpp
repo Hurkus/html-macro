@@ -7,7 +7,18 @@
 
 using namespace std;
 using namespace html;
-using namespace MacroEngine;
+
+/*
+Disaster *almost* occurs with <INCLUDE/> macros, since they trigger macro shadowing.
+
+The main `html::Document` generally references bits of text from other macros using raw pointers.
+Overwritten macros release their share of the buffer, thus (likely) invalidating `html::Node`s from the main document.
+
+This currently isn't a problem, because all macros from the `macroNameCache` originate from a root macro in `macroFileCache`.
+Root macros cannot get shadowed (they are unique to their file path).
+Name macros (`macroNameCache`) originate from root macros (`macroFileCache`) and share the buffer (`shared_ptr<string>`).
+This means that all raw pointers remain valid, since at least 1 macro (root) keeps the buffer alive untill the end of the process.
+*/
 
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
@@ -19,134 +30,186 @@ static unordered_map<string_view,shared_ptr<Macro>> macroNameCache;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static linepos findLine(const Document& doc, const char* p){
-	linepos l = {};
-	
-	if (doc.buffer != nullptr){
-		string_view buff = string_view(*doc.buffer);
-		l = findLine(buff.begin(), buff.end(), p);
-	}
-	
-	l.file = (doc.srcFile != nullptr) ? doc.srcFile->c_str() : nullptr;
-	return l;
+Macro::Type Macro::getType(const filepath& path){
+	const filepath ext = path.extension();
+	if (ext == ".html"sv)
+		return Type::HTML;
+	else if (ext == ".css"sv)
+		return Type::CSS;
+	else if (ext == ".js"sv)
+		return Type::JS;
+	else
+		return Type::TXT;
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool registerMacro(const Macro& parent, Node&& macro){
-	const Attr* name_attr;
+static bool registerChildMacro(const Macro& parent, Node&& macroNode){
+	const Attr* name_attr = nullptr;
 	
 	// Find name
-	for (name_attr = macro.attribute ; name_attr != nullptr ; name_attr = name_attr->next){
-		if (name_attr->name() == "NAME"sv)
-			goto found;
+	for (const Attr* attr = macroNode.attribute ; attr != nullptr ; attr = attr->next){
+		if (attr->name() == "NAME"sv){
+			if (name_attr == nullptr)
+				name_attr = attr;
+			else
+				HERE(warn_duplicate_attr(macroNode, *name_attr, *attr));
+			continue;
+		}
 	}
 	
-	HERE(warn_missing_attr(macro, "NAME"));
-	return false;
-	
-	found:
-	if (name_attr->value_p == nullptr){
-		HERE(warn_missing_attr_value(macro, *name_attr));
+	if (name_attr == nullptr){
+		HERE(warn_missing_attr(macroNode, "NAME"));
 		return false;
-	}
-	
-	if (name_attr->options % NodeOptions::SINGLE_QUOTE)
-		HERE(warn_attr_single_quote(macro, *name_attr));
-	if (name_attr->value_len <= 0){
-		HERE(error_missing_attr_value(macro, *name_attr));
+	} else if (name_attr->value_len <= 0){
+		HERE(error_missing_attr_value(macroNode, *name_attr));
 		return false;
+	} else if (name_attr->options % NodeOptions::SINGLE_QUOTE){
+		HERE(warn_attr_single_quote(macroNode, *name_attr));
 	}
 	
-	// Create new macro by moving <MACRO> node to new document.
+	// Transfer node to root of new document
+	unique_ptr<Document> newDoc = make_unique<Document>();
+	{
+		assert(parent.html != nullptr);
+		newDoc->buffer = shared_ptr(parent.html->buffer);
+		newDoc->srcFile = shared_ptr(parent.html->srcFile);
+		
+		Node& root = *newDoc;
+		swap(macroNode.options,   root.options);
+		swap(macroNode.value_len, root.value_len);
+		swap(macroNode.value_p,   root.value_p);
+		swap(macroNode.attribute, root.attribute);
+		swap(macroNode.child,     root.child);
+		
+		for (Node* child = root.child ; child != nullptr ; child = child->next){
+			child->parent = &root;
+		}
+		
+		assert(macroNode.child == nullptr);
+	}
+	
 	unique_ptr<Macro> m = make_unique<Macro>();
 	m->name = name_attr->value();
-	m->srcDir = parent.srcDir;
-	Node& root = m->doc;
-	
-	// Transfer node
-	m->doc.buffer = parent.doc.buffer;
-	m->doc.srcFile = parent.doc.srcFile;
-	swap(macro.options, root.options);
-	swap(macro.value_len, root.value_len);
-	swap(macro.value_p, root.value_p);
-	swap(macro.attribute, root.attribute);
-	swap(macro.child, root.child);
-	
-	for (Node* child = root.child ; child != nullptr ; child = child->next){
-		child->parent = &root;
-	}
+	m->srcFile = shared_ptr(parent.srcFile);
+	m->srcDir = shared_ptr(parent.srcDir);
+	m->type = Macro::Type::HTML;
+	m->html = move(newDoc);
 	
 	// Register new macro
-	macroNameCache[m->name] = move(m);
+	macroNameCache.emplace(m->name, move(m));
 	return true;
 }
 
 
-static void err(const Document& doc, const ParseResult& res){
-	const char* msg = html::errstr(res.status);
-	
-	switch (res.status){
-		case ParseStatus::IO:
-		case ParseStatus::MEMORY:
-			ERROR("%s", msg);
-			break;
-		default:
-			linepos pos = findLine(doc, res.pos.begin());
-			HERE(print(pos));
-			printErrTag();
-			LOG_STDERR("%s\n", msg);
-			printCodeView(pos, res.pos, ANSI_RED);
-			break;
+bool Macro::parseHTML(){
+	if (this->html != nullptr){
+		return true;
+	} else if (this->txt == nullptr){
+		return false;
 	}
 	
-}
-
-
-static Macro* parseFile(string&& path){
-	unique_ptr<Macro> macro = make_unique<Macro>();
+	unique_ptr<html::Document> doc = make_unique<html::Document>();
+	ParseResult res = doc->parseBuff(this->txt);
 	
-	// Parse
-	ParseResult res = macro->doc.parseFile(move(path));
+	// Report parsing error
 	switch (res.status){
 		case ParseStatus::OK:
 			break;
+
 		case ParseStatus::IO:
-			if (!filesystem::exists(path)){
-				ERROR("Failed to read file '%s'. No such file exists.", path.c_str());
-			} else {
-				ERROR("Failed to read file '%s'.", path.c_str());
-			}
-			return nullptr;
-		default:
-			err(macro->doc, res);
-			return nullptr;
+		case ParseStatus::MEMORY:
+			ERROR("%s", html::errstr(res.status));
+			break;
+		
+		default: {
+			string_view buff = string_view(*doc->buffer);
+			linepos pos = findLine(buff.begin(), buff.end(), res.pos.data());
+			pos.file = (this->srcFile != nullptr) ? this->srcFile->c_str() : "-";
+			
+			HERE(print(pos));
+			printErrTag();
+			LOG_STDERR("%s\n", html::errstr(res.status));
+			printCodeView(pos, res.pos, ANSI_RED);
+			return false;
+		}
+		
 	}
 	
-	assert(macro->doc.srcFile != nullptr);
-	filepath filePath = filepath(*macro->doc.srcFile);
-	macro->srcDir = make_shared<filepath>(move(filePath.remove_filename()));
+	doc->srcFile = this->srcFile;
+	this->html = move(doc);
 	
-	// Extract all <MACRO> nodes.
+	// Extract and register all child <MACRO> nodes.
 	for (Node* m : res.macros){
 		assert(m != nullptr && m->parent != nullptr);
-		registerMacro(*macro, move(*m));
+		registerChildMacro(*this, move(*m));
 		Node::del(m);
 	}
 	
-	// Store macro
-	string_view key = string_view(*macro->doc.srcFile);
-	const auto& p = macroFileCache.emplace(key, move(macro));
-	return p.first->second.get();
+	return true;
 };
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-const Macro* Macro::get(string_view name){
+bool Macro::parse(){
+	switch (type){
+		case Type::HTML:
+			return parseHTML();
+		default:
+			return this->txt != nullptr;
+	}
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static bool readFile(const filepath& path, string& buff){
+	ifstream in = ifstream(path);
+	if (!in){
+		return false;
+	}
+	
+	if (!in.seekg(0, ios_base::end)){
+		return false;
+	}
+	
+	const streampos pos = in.tellg();
+	if (pos < 0 || !in.seekg(0, ios_base::beg)){
+		return false;
+	}
+	
+	assert(pos >= 0);
+	const size_t size = size_t(pos);
+	buff.resize(size);
+	size_t count = 0;
+	
+	while (count < size && in.read(&buff[count], size - count)){
+		const streamsize n = in.gcount();
+		
+		if (n < 0){
+			return false;
+		} else if (n == 0){
+			break;
+		}
+		
+		assert(n >= 0);
+		count += size_t(n);
+	}
+	
+	buff.resize(count);
+	return true;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+Macro* MacroCache::get(string_view name) noexcept {
 	auto p = macroNameCache.find(name);
 	if (p != macroNameCache.end())
 		return p->second.get();
@@ -154,76 +217,43 @@ const Macro* Macro::get(string_view name){
 }
 
 
-const Macro* Macro::loadFile(const filepath& path, bool resolve){
-	if (resolve){
-		filepath _path = MacroEngine::resolve(path);
-		string_view file_view = _path.c_str();
-		
-		// Check if cached files.
-		auto p = macroFileCache.find(file_view);
-		if (p != macroFileCache.end()){
-			return p->second.get();
-		}
-		
-		// Parse new file
-		return parseFile(move(_path).string());
+Macro* MacroCache::load(filepath& path){
+	if (!Paths::resolve(path)){
+		return nullptr;
 	}
-	else {
-		string_view file_view = path.c_str();
-		
-		// Check if cached files.
-		auto p = macroFileCache.find(file_view);
-		if (p != macroFileCache.end()){
-			return p->second.get();
-		}
-		
-		return parseFile(path.string());
+	
+	const string_view path_sv = path.c_str();
+	
+	// Check if cached files.
+	auto p = macroFileCache.find(path_sv);
+	if (p != macroFileCache.end()){
+		return p->second.get();
 	}
+	
+	// Load new file
+	unique_ptr<string> txt = make_unique<string>();
+	if (!readFile(path, *txt)){
+		return nullptr;
+	}
+	
+	shared_ptr<Macro> macro = make_shared<Macro>();
+	macro->name = path.filename().string();
+	macro->srcFile = make_shared<filepath>(path);
+	macro->srcDir = make_shared<filepath>(path.remove_filename());
+	macro->type = Macro::getType(*macro->srcFile);
+	macro->txt = move(txt);
+	
+	// Store macro
+	string_view key = string_view(macro->srcFile->c_str());
+	const auto& x = macroFileCache.emplace(key, move(macro));
+	return x.first->second.get();
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-char* Macro::loadRawFile(const filepath& path, size_t& out_len){
-	ifstream in = ifstream(path);
-	if (!in){
-		return nullptr;
-	}
-	
-	if (!in.seekg(0, ios_base::end)){
-		return nullptr;
-	}
-	
-	const streampos pos = in.tellg();
-	if (pos < 0 || !in.seekg(0, ios_base::beg)){
-		return nullptr;
-	}
-	
-	const size_t size = size_t(pos);
-	char* buff = html::newStr(size + 1);
-	size_t total = 0;
-	
-	while (total < size && in.read(buff + total, size - total)){
-		const streamsize n = in.gcount();
-		if (n <= 0){
-			html::del(buff);
-			return nullptr;
-		}
-		
-		total += size_t(n);
-	}
-	
-	buff[total] = 0;
-	out_len = total;
-	return buff;
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-void Macro::clearCache(){
+void MacroCache::clear(){
 	macroFileCache.clear();
 	macroNameCache.clear();
 }

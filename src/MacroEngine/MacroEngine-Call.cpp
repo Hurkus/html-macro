@@ -1,4 +1,5 @@
 #include "MacroEngine.hpp"
+#include "fs.hpp"
 #include "stack_vector.hpp"
 #include "Debug.hpp"
 
@@ -7,16 +8,25 @@ using namespace html;
 using namespace MacroEngine;
 
 
+// ----------------------------------- [ Structures ] --------------------------------------- //
+
+
+struct var_copy {
+	string_view name;
+	Value value;
+	bool defined = false;
+};
+
+
+enum class IncludeType {
+	AUTO, HTML, CSS, JS, TXT
+};
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
 void MacroEngine::call(const Node& op, Node& dst){
-	struct var_copy {
-		string_view name;
-		Value value;
-		bool defined = false;
-	};
-	
 	const Attr* name_attr = nullptr;
 	stack_vector<var_copy,2> backup;
 	
@@ -68,14 +78,14 @@ void MacroEngine::call(const Node& op, Node& dst){
 		return;
 	}
 	
-	const Macro* macro = Macro::get(macro_name);
-	if (macro == nullptr){
+	const Macro* macro = MacroCache::get(macro_name);
+	if (macro == nullptr || macro->html == nullptr){
 		HERE(error_macro_not_found(op, name_attr->value(), name_attr->value()));
 		return;
 	}
 	
 	// Evaluate default parameters
-	for (const Attr* param = macro->doc.attribute ; param != nullptr ; param = param->next){
+	for (const Attr* param = macro->html->attribute ; param != nullptr ; param = param->next){
 		string_view name = param->name();
 		if (name.empty() || name == "NAME"sv){
 			continue;
@@ -146,22 +156,17 @@ void MacroEngine::call(const Node& op, const Attr& attr, Node& dst){
 		return;
 	}
 	
-	const Macro* macro = Macro::get(macro_name);
-	if (macro == nullptr){
+	const Macro* macro = MacroCache::get(macro_name);
+	if (macro == nullptr || macro->html == nullptr){
 		HERE(error_macro_not_found(op, attr.value(), macro_name));
 		return;
 	}
 	
 	// Global variable backup, local variables shadow global
-	struct var_copy {
-		string_view name;
-		Value value;
-		bool defined = false;
-	};
 	stack_vector<var_copy,2> backup;
 	
 	// Evaluate default parameters
-	for (const Attr* param = macro->doc.attribute ; param != nullptr ; param = param->next){
+	for (const Attr* param = macro->html->attribute ; param != nullptr ; param = param->next){
 		string_view name = param->name();
 		if (name.empty() || name == "NAME"sv){
 			continue;
@@ -218,152 +223,196 @@ void MacroEngine::call(const Node& op, const Attr& attr, Node& dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-enum class IncludeType {
-	AUTO, HTML, TXT, CSS, JS
-};
-
-static bool getIncludeType(const Node& op, std::string_view mark, std::string_view sfx, IncludeType& type){
-	if (sfx == "")
-		type = IncludeType::AUTO;
-	else if (sfx == "-HTML")
-		type = IncludeType::HTML;
-	else if (sfx == "-TXT")
-		type = IncludeType::TXT;
-	else if (sfx == "-CSS")
-		type = IncludeType::CSS;
-	else if (sfx == "-JS")
-		type = IncludeType::JS;
-	else {
-		HERE(error_invalid_include_type(op, mark));
-		return false;
+/**
+ * @brief Transfer leading and trailing whitespace.
+ * @param dst Node with new child elements (reversed list).
+ * @param dst_original_last Original first child before include added more child elements.
+ */
+static void _include_transfer_space(const Node& op, Node& dst, Node* dst_original_last){
+	if (dst.child == nullptr){
+		return;
 	}
-	return true;
+	
+	// Transfer trailing space to last new child
+	if (dst.child != dst_original_last){
+		dst.child->options |= (op.options & NodeOptions::SPACE_AFTER);
+	}
+	
+	// Find first new child and transfer leading space
+	for (Node* child = dst.child ; child != nullptr ; child = child->next){
+		if (child->next == dst_original_last){
+			child->options |= (op.options & NodeOptions::SPACE_BEFORE);
+			break;
+		}
+	}
+	
 }
 
 
+static void _include_macro(const Node& op, const Attr& src, stack_vector<var_copy,2>& args, bool wrap, Node& dst){
+	// Evaluate src path
+	filepath path;
+	{
+		string path_sv_buff;
+		string_view path_sv;
+		
+		if (src.value_len <= 0){
+			HERE(error_missing_attr_value(op, src));
+			return;
+		} else if (!eval_attr_value(op, src, path_sv_buff, path_sv)){
+			return;
+		}
+		
+		path = path_sv;
+	}
+	
+	Macro* macro = MacroCache::load(path);
+	if (macro == nullptr){
+		if (!fs::exists(path))
+			HERE(error_file_not_found(op, src.value(), path.c_str()))
+		else
+			HERE(error_include_fail(op, src.value(), path.c_str()))
+		return;
+	}
+	
+	Node* const original_first = dst.child;
+	
+	// Execute as HTML macro
+	if (macro->type == Macro::Type::HTML){
+		if (macro->html == nullptr && !macro->parseHTML()){
+			HERE(error_include_fail(op, src.value(), path.c_str()));
+			return;
+		}
+		
+		// Apply arguments to variable list
+		for (var_copy& arg : args){
+			Value* var = MacroEngine::variables.get(arg.name);
+			
+			if (var != nullptr){
+				swap(arg.value, *var);
+				arg.defined = true;
+			} else {
+				MacroEngine::variables.insert(arg.name, move(arg.value));
+			}
+			
+		}
+
+		exec(*macro, dst);
+
+		// Restore argument list
+		for (var_copy& arg : args){
+			if (arg.defined)
+				MacroEngine::variables.insert(arg.name, move(arg.value));
+			else
+				MacroEngine::variables.remove(arg.name);
+		}
+		
+	}
+	
+	// Execute as CSS
+	else if (macro->type == Macro::Type::CSS){
+		if (macro->txt == nullptr){
+			HERE(error_include_fail(op, src.value(), path.c_str()));
+			return;
+		}
+		
+		Node* parent = &dst;
+		if (wrap){
+			parent = &dst.appendChild(NodeType::TAG);
+			parent->name("style");
+		}
+		
+		Node& txt = parent->appendChild(NodeType::TEXT);
+		txt.value(*macro->txt);
+	}
+	
+	// Execute as JS
+	else if (macro->type == Macro::Type::JS){
+		if (macro->txt == nullptr){
+			HERE(error_include_fail(op, src.value(), path.c_str()));
+			return;
+		}
+		
+		Node* parent = &dst;
+		if (wrap){
+			parent = &dst.appendChild(NodeType::TAG);
+			parent->name("script");
+		}
+		
+		Node& txt = parent->appendChild(NodeType::TEXT);
+		txt.value(*macro->txt);
+	}
+	
+	
+	// Text
+	else if (macro->txt == nullptr){
+		HERE(error_include_fail(op, src.value(), path.c_str()));
+		return;
+	} else {
+		Node& txt = dst.appendChild(NodeType::TEXT);
+		txt.value(*macro->txt);
+	}
+	
+	_include_transfer_space(op, dst, original_first);
+}
+
+
+
 void MacroEngine::include(const Node& op, Node& dst){
-	bool one_src = false;
+	stack_vector<var_copy,2> args;
+	const Attr* src_attr = nullptr;
+	bool wrap = true;
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
 		
-		if (name.starts_with("SRC")){
-			one_src = true;
-			include(op, *attr, dst);
+		if (name == "SRC"){
+			if (src_attr == nullptr)
+				src_attr = attr;
+			else
+				HERE(warn_duplicate_attr(op, *src_attr, *attr));
 			continue;
-		} 
+		}
+		
+		else if (name == "NO-WRAP"){
+			if (attr->value_p != nullptr)
+				HERE(warn_ignored_attr_value(op, *attr));
+			wrap = false;
+			continue;
+		}
 		
 		// Check IF, ELIF, ELSE
 		switch (check_attr_if(op, *attr)){
 			case Branch::FAILED: return;
 			case Branch::PASSED: continue;
-			case Branch::NONE:
-				HERE(warn_ignored_attribute(op, *attr));
-				break;
+			case Branch::NONE: break;
+		}
+		
+		// Push argument
+		var_copy& var = args.emplace_back(name);
+		
+		if (attr->value_p == nullptr){
+			Value* gvar = MacroEngine::variables.get(name);
+			if (gvar != nullptr)
+				var.value = *gvar;
+		} else if (!eval_attr_value(op, *attr, var.value)){
+			return;
 		}
 		
 	}
 	
-	if (!one_src){
+	if (src_attr == nullptr){
 		HERE(warn_missing_attr(op, "SRC"));
 		return;
 	}
 	
+	_include_macro(op, *src_attr, args, wrap, dst);
 }
 
 
-bool MacroEngine::include(const Node& op, const Attr& attr, Node& dst){
-	// Evaluate source path
-	string src_buff;
-	string_view src;
-	
-	if (attr.value_len <= 0){
-		HERE(error_missing_attr_value(op, attr));
-		return false;
-	} else if (!eval_attr_value(op, attr, src_buff, src)){
-		return false;
-	}
-	
-	// Get include type
-	string_view incSuffix = attr.name();
-	if (incSuffix.starts_with("INCLUDE")){
-		incSuffix.remove_prefix(string_view("INCLUDE").length());
-	} else if (incSuffix.starts_with("SRC")){
-		incSuffix.remove_prefix(string_view("SRC").length());
-	} else {
-		HERE(error_invalid_include_type(op, incSuffix));
-		return false;
-	}
-	
-	IncludeType incType;
-	if (!getIncludeType(op, attr.name(), incSuffix, incType)){
-		return false;
-	}
-	
-	// Resolve path
-	filepath path = MacroEngine::resolve(src);
-	if (!filesystem::exists(path)){
-		HERE(error_file_not_found(op, attr.value(), path.c_str()));
-		return false;
-	}
-	
-	// Resolve unspecified include type
-	if (incType == IncludeType::AUTO){
-		if (src.ends_with(".html"))
-			incType = IncludeType::HTML;
-	}
-	
-	Node* const original_first = dst.child;
-	
-	// Include HTML as macro
-	if (incType == IncludeType::HTML){
-		const Macro* macro = Macro::loadFile(path, false);
-		if (macro == nullptr){
-			HERE(error_include_fail(op, attr.value(), path.c_str()));
-			return false;
-		}
-		
-		exec(*macro, dst);
-	}
-	
-	// Raw text include
-	else {
-		size_t len;
-		char* str = Macro::loadRawFile(path, len);
-		
-		if (str == nullptr){
-			HERE(error_include_fail(op, attr.value(), path.c_str()));
-			return false;
-		}
-		
-		Node& txt = dst.appendChild(NodeType::TEXT);
-		txt.value(str, len);
-	}
-	
-	// Transfer leading and trailing whitespace
-	if (dst.child != nullptr){
-		
-		// Transfer trailing space to last new child
-		if (dst.child != original_first){
-			dst.child->options |= (op.options & NodeOptions::SPACE_AFTER);
-		}
-		
-		// Transfer leading space to first new child
-		if (original_first != nullptr){
-			if (original_first->next != nullptr)
-				original_first->next->options |= (op.options & NodeOptions::SPACE_BEFORE);
-		} else {
-			// Find first child
-			Node* first = dst.child;
-			while (first->next != nullptr)
-				first = first->next;
-			
-			first->options |= (op.options & NodeOptions::SPACE_BEFORE);
-		}
-		
-	}
-	
-	return true;
+void MacroEngine::include(const Node& op, const Attr& attr, Node& dst){
+	stack_vector<var_copy,2> args;
+	_include_macro(op, attr, args, false, dst);
 }
 
 

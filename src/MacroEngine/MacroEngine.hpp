@@ -13,13 +13,6 @@ enum class Branch {
 	FAILED
 };
 
-enum class Interpolate {
-	NONE      = 0,
-	CONTENT   = 1 << 0,
-	ATTRIBUTE = 1 << 1,
-	ALL       = CONTENT | ATTRIBUTE,
-};
-
 
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
@@ -28,7 +21,6 @@ extern VariableMap variables;
 
 extern Branch currentBranch_block;
 extern Branch currentBranch_inline;
-extern Interpolate currentInterpolation;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -37,10 +29,9 @@ extern Interpolate currentInterpolation;
 void setVariableConstants();
 
 inline void reset(){
-	variables.clear();
 	currentBranch_block = Branch::NONE;
 	currentBranch_inline = Branch::NONE;
-	currentInterpolation = Interpolate::ALL;
+	variables.clear();
 	setVariableConstants();
 }
 
@@ -48,9 +39,6 @@ inline void reset(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-/**
- * @brief Evaluate macro and store results into global `html::Document doc`.
- */
 void exec(const Macro& macro, html::Node& dst);
 
 
@@ -133,7 +121,7 @@ void include(const html::Node& op, html::Node& dst);
  * @param opAttr Attribute invoking the include call.
  * @param dst Destination parent node for any created nodes.
  */
-bool include(const html::Node& op, const html::Attr& opAttr, html::Node& dst);
+void include(const html::Node& op, const html::Attr& opAttr, html::Node& dst);
 
 /**
  * @brief Execute content of operation node as a shell command and
@@ -171,17 +159,23 @@ void error(const html::Node& op);
 
 
 Branch check_attr_if(const html::Node& op, const html::Attr& attr);
+
+/**
+ * @brief Evaluate attribute value as an expression to determine bool value.
+ * @param op Parent node of `attr`.
+ * @param attr Attribute containing the expression in the `.value()`.
+ * @param result Output for evaluated bool. Valid only when function returns `true`.
+ * @return `true` if evaluation was successfull.
+ */
+bool eval_attr_bool(const html::Node& op, const html::Attr& attr, bool& result);
 bool eval_attr_true(const html::Node& op, const html::Attr& attr);
 bool eval_attr_false(const html::Node& op, const html::Attr& attr);
+
 bool eval_attr_value(const html::Node& op, const html::Attr& attr, Value& out_result);
 bool eval_attr_value(const html::Node& op, const html::Attr& attr, std::string& result_buff, std::string_view& result);
-Interpolate eval_attr_interp(const html::Node& op, const html::Attr& attr);
 
 bool eval_string_interpolate(const html::Node& op, std::string_view str, std::string& buff);
 
 
 // ------------------------------------------------------------------------------------------ //
-};
-
-
-template<> inline constexpr bool has_enum_operators<MacroEngine::Interpolate> = true;
+}

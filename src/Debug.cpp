@@ -7,7 +7,6 @@
 
 using namespace std;
 using namespace html;
-using namespace MacroEngine;
 
 
 // ---------------------------------- [ Definitions ] --------------------------------------- //
@@ -226,12 +225,12 @@ void error_file_not_found(const Node& node, string_view mark, const char* file){
 }
 
 
-void error_invalid_include_type(const Node& node, string_view mark){
-	linepos pos = findLine(node.root(), mark.data());
-	print_error_pfx(pos);
-	LOG_STDERR("Invalid include type " PURPLE("`%.*s`") ".\n", int(mark.length()), mark.data());
-	printCodeView(pos, mark, ANSI_RED);
-}
+// void error_invalid_include_type(const Node& node, string_view mark, string_view type){
+// 	linepos pos = findLine(node.root(), mark.data());
+// 	print_error_pfx(pos);
+// 	LOG_STDERR("Invalid include type " PURPLE("`%.*s`") ".\n", int(type.length()), type.data());
+// 	printCodeView(pos, mark, ANSI_RED);
+// }
 
 
 void error_include_fail(const Node& node, string_view mark, const char* file){

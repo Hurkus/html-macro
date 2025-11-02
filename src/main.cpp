@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 
+#include "fs.hpp"
 #include "cli.hpp"
 #include "MacroEngine.hpp"
 #include "Paths.hpp"
@@ -80,10 +81,10 @@ static bool setDefinedVariables(const vector<const char*>& defines){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool run(const char* file){
+static bool run(){
 	MacroEngine::reset();
-	MacroEngine::cwd = make_unique<filepath>(filesystem::current_path());
-	Macro::clearCache();
+	MacroCache::clear();
+	Paths::cwd = make_unique<filepath>(fs::current_path());
 	
 	// Open output file
 	ofstream outf;
@@ -95,9 +96,9 @@ static bool run(const char* file){
 		}
 	}
 	
-	// Parse input file
-	const Macro* m = Macro::loadFile(file);
-	if (m == nullptr){
+	filepath src_path = opt.inFilePath;
+	if (!fs::exists(src_path)){
+		ERROR("Input file `%s` not found.", src_path.c_str());
 		return false;
 	}
 	
@@ -105,23 +106,36 @@ static bool run(const char* file){
 		return false;
 	}
 	
-	// Run
-	html::Document doc = {};
-	MacroEngine::exec(*m, doc);
+	// Load input file
+	Macro* root_macro = MacroCache::load(src_path);
+	if (root_macro == nullptr){
+		ERROR("Failed to read file `%s`.", src_path.c_str());
+		return false;
+	}
 	
-	// Select output stream and write
+	// Parse input file
+	if (!root_macro->parseHTML()){
+		return false;
+	}
+	
+	// Run
 	bool ret = true;
-	if (opt.outFilePath != nullptr){
-		ostream& out = (outf.is_open()) ? outf : cout;
-		ret = write(out, doc);
-		out.flush();
+	{
+		html::Document doc = {};
+		MacroEngine::exec(*root_macro, doc);
+		
+		// Select output stream and write
+		if (opt.outFilePath != nullptr){
+			ostream& out = (outf.is_open()) ? outf : cout;
+			ret = write(out, doc);
+			out.flush();
+		}
+		
 	}
 	
 	// Cleanup
-	doc.clear();
-	Macro::clearCache();
+	MacroCache::clear();
 	assert(html::assertDeallocations());
-	
 	return ret;
 }
 
@@ -164,12 +178,12 @@ int main(int argc, char const* const* argv){
 	}
 	
 	for (const char* file : opt.includes){
-		filepath& inc = MacroEngine::paths.emplace_back(file);
+		filepath& inc = Paths::includeDirs.emplace_back(file);
 		if (inc.empty())
-			MacroEngine::paths.pop_back();
+			Paths::includeDirs.pop_back();
 	}
 	
-	if (!run(opt.inFilePath)){
+	if (!run()){
 		return 2;
 	}
 	

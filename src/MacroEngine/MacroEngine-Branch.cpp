@@ -127,8 +127,6 @@ static MacroEngine::Branch attr_equals_variable(const Node& op, const Attr& attr
 
 
 void MacroEngine::branch_if(const Node& op, Node& dst){
-	auto _interp = MacroEngine::currentInterpolation;
-	
 	// Chain of `&&` statements
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
@@ -147,9 +145,6 @@ void MacroEngine::branch_if(const Node& op, Node& dst){
 			if (!eval_attr_false(op, *attr))
 				goto fail;
 			continue;
-		} else if (name == "INTERPOLATE"){
-			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
-			continue;
 		}
 		
 		// Compare attribute to variable
@@ -166,12 +161,10 @@ void MacroEngine::branch_if(const Node& op, Node& dst){
 	
 	// pass:
 	runChildren(op, dst);
-	MacroEngine::currentInterpolation = _interp;
 	MacroEngine::currentBranch_block = Branch::PASSED;
 	return;
 	
 	fail:
-	MacroEngine::currentInterpolation = _interp;
 	MacroEngine::currentBranch_block = Branch::FAILED;
 }
 
@@ -199,19 +192,12 @@ void MacroEngine::branch_else(const Node& op, Node& dst){
 			break;
 	}
 	
-	auto _interp = MacroEngine::currentInterpolation;
-	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		if (attr->name() == "INTERPOLATE"){
-			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
-		} else {
-			HERE(warn_ignored_attribute(op, *attr));
-		}
+		HERE(warn_ignored_attribute(op, *attr));
 	}
 	
 	// Run
 	runChildren(op, dst);
-	MacroEngine::currentInterpolation = _interp;
 	MacroEngine::currentBranch_block = Branch::NONE;
 }
 
@@ -220,8 +206,6 @@ void MacroEngine::branch_else(const Node& op, Node& dst){
 
 
 long MacroEngine::loop_for(const Node& op, Node& dst){
-	const auto _interp = MacroEngine::currentInterpolation;
-	
 	bool cond_expected = true;
 	const Attr* attr_setup = nullptr;
 	const Attr* attr_cond = nullptr;
@@ -237,13 +221,8 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 			case Branch::NONE: break;
 		}
 		
-		if (name == "INTERPOLATE"){
-			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
-			continue;
-		}
-		
 		// Second argument: condition
-		else if (name == "TRUE" || name == "FALSE"){
+		if (name == "TRUE" || name == "FALSE"){
 			cond_expected = (name[0] != 'F');
 			
 			if (attr_cond != nullptr){
@@ -325,12 +304,9 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	}
 	
 	// Run loop
-	const auto _interp_2 = MacroEngine::currentInterpolation; 
 	long i = 0;
-	
 	assert(expr_cond != nullptr);
 	while (expr_cond.eval(variables, dbg).toBool() == cond_expected){
-		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		
 		// Increment
@@ -341,16 +317,12 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 		i++;
 	}
 	
-	
 	// Restore state
-	MacroEngine::currentInterpolation = _interp;
 	return i;
 }
 
 
 long MacroEngine::loop_while(const Node& op, Node& dst){
-	const auto _interp = MacroEngine::currentInterpolation;
-	
 	bool cond_expected = true;
 	const Attr* attr_cond = nullptr;
 	
@@ -365,12 +337,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 			case Branch::NONE: break;
 		}
 		
-		if (name == "INTERPOLATE"){
-			MacroEngine::currentInterpolation = eval_attr_interp(op, *attr);
-			continue;
-		}
-		
-		else if (name == "TRUE" || name == "FALSE"){
+		if (name == "TRUE" || name == "FALSE"){
 			cond_expected = (name[0] == 'T');
 			
 			if (attr_cond != nullptr){
@@ -408,18 +375,14 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	}
 	
 	// Run
-	assert(expr_cond != nullptr);
-	const auto _interp_2 = MacroEngine::currentInterpolation;
 	long i = 0;
-	
+	assert(expr_cond != nullptr);
 	while (expr_cond.eval(variables, dbg).toBool() == cond_expected){
-		MacroEngine::currentInterpolation = _interp_2;
 		runChildren(op, dst);
 		i++;
 	}
 	
 	// Restore state
-	MacroEngine::currentInterpolation = _interp;
 	return i;
 }
 

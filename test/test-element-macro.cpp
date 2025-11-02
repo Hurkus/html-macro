@@ -22,12 +22,9 @@ bool test_macro_MACRO_name(){
 		"/tmp/html-macro-test/file.html:1:2: warn: Tag <MACRO> missing attribute `NAME`." NL
 		"    1 | <MACRO/>" NL
 		"      |  ^~~~~" NL
-		"/tmp/html-macro-test/file.html:2:8: warn: Attribute `NAME` missing value." NL
+		"/tmp/html-macro-test/file.html:2:8: error: Attribute `NAME` missing value." NL
 		"    2 | <MACRO NAME/>" NL
 		"      |        ^~~~" NL
-		"/tmp/html-macro-test/file.html:3:14: warn: Attribute `NAME` expected double quotes (\"\"). Value is always interpreted as a string." NL
-		"    3 | <MACRO NAME=''/>" NL
-		"      |             ^~" NL
 		"/tmp/html-macro-test/file.html:3:14: error: Attribute `NAME` missing value." NL
 		"    3 | <MACRO NAME=''/>" NL
 		"      |             ^~" NL
@@ -162,6 +159,59 @@ bool test_macro_parameters_4(){
 		NL
 		"<p>30</p>" NL
 		"<p>10</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+REGISTER2(macro_INCLUDE_wrap);
+bool test_macro_INCLUDE_wrap(){
+	TmpFile txt = TmpFile("text.txt",
+		"Lorem ipsum, etc."
+	);
+	TmpFile css = TmpFile("style.css",
+		"div { color: red; }"
+	);
+	TmpFile js = TmpFile("script.js",
+		"function f(){ return 10; }"
+	);
+	TmpFile in = TmpFile(
+		"<INCLUDE SRC=\"text.txt\"/>" NL
+		"<INCLUDE SRC=\"style.css\"/>" NL
+		"<INCLUDE SRC=\"script.js\"/>" NL
+	);
+	string_view out = (
+		"Lorem ipsum, etc." NL
+		"<style>div { color: red; }</style>" NL
+		"<script>function f(){ return 10; }</script>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(macro_INCLUDE_nowrap);
+bool test_macro_INCLUDE_nowrap(){
+	TmpFile txt = TmpFile("text.txt",
+		"Lorem ipsum, etc." NL
+	);
+	TmpFile css = TmpFile("style.css",
+		"div { color: red; }"
+	);
+	TmpFile js = TmpFile("script.js",
+		"function f(){ return 10; }" NL
+	);
+	TmpFile in = TmpFile(
+		"<INCLUDE NO-WRAP SRC=\"text.txt\"/>" NL
+		"<INCLUDE NO-WRAP SRC=\"style.css\"/>" NL
+		"<INCLUDE NO-WRAP SRC=\"script.js\"/>" NL
+	);
+	string_view out = (
+		"Lorem ipsum, etc." NL
+		"div { color: red; }" NL
+		"function f(){ return 10; }" NL
 	);
 	return run({in}, out, "", 0);
 }

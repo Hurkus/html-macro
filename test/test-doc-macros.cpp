@@ -54,6 +54,9 @@ bool test_doc_macro_MACRO_2(){
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 REGISTER2(doc_macro_INCLUDE);
 bool test_doc_macro_INCLUDE(){
 	TmpFile in = TmpFile(
@@ -99,6 +102,52 @@ bool test_doc_macro_INCLUDE(){
 		"		<p>Contacts: none</p>" NL
 		"		<p>Last edited on: 14/10/2025</p>" NL
 		"	</div>" NL
+		"</body>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(doc_attr_macro_INCLUDE);
+bool test_doc_attr_macro_INCLUDE(){
+	TmpFile content = TmpFile("content.html",
+		"<IF lang=\"de\">" NL
+		"	<p IF='i==1'>Ein</p>" NL
+		"	<p ELIF='i==2'>Zwei</p>" NL
+		"	<p ELIF='i==3'>Drei</p>" NL
+		"</IF>" NL
+		"<ELSE>" NL
+		"	<p IF='i==1'>One</p>" NL
+		"	<p ELIF='i==2'>Two</p>" NL
+		"	<p ELIF='i==3'>Three</p>" NL
+		"</ELSE>" NL
+	);
+	
+	TmpFile in = TmpFile(
+		"<SET lang=\"en\"/>" NL
+		"<body lang=\"{lang}\">" NL
+		"	<ol>" NL
+		"		<FOR i='1' TRUE='i<=3' i='i+1'>" NL
+		"			<li INCLUDE=\"content.html\"/>" NL
+		"		</FOR>" NL
+		"	</ol>" NL
+		"</body>" NL
+	);
+	
+	string_view out = (
+		NL
+		"<body lang=\"en\">" NL
+		"	<ol>" NL
+		"		<li>" NL
+		"			<p>One</p>" NL
+		"		</li>" NL
+		"		<li>" NL
+		"			<p>Two</p>" NL
+		"		</li>" NL
+		"		<li>" NL
+		"			<p>Three</p>" NL
+		"		</li>" NL
+		"	</ol>" NL
 		"</body>" NL
 	);
 	return run({in}, out, "", 0);

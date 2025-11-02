@@ -106,7 +106,7 @@ void warn_attr_double_quote(const html::Node& node, const html::Attr& attr);
 // CALL and INCLUDE
 void error_macro_not_found(const html::Node& node, std::string_view mark, std::string_view name);
 void error_file_not_found(const html::Node& node, std::string_view mark, const char* file);
-void error_invalid_include_type(const html::Node& node, std::string_view mark);
+// void error_invalid_include_type(const html::Node& node, std::string_view mark, std::string_view type);
 void error_include_fail(const html::Node& node, std::string_view mark, const char* file);
 
 void error_unsupported_type(const html::Node& node);

@@ -82,7 +82,7 @@ Branch MacroEngine::check_attr_if(const Node& op, const Attr& attr){
 }
 
 
-static bool eval_attr_bool(const Node& op, const Attr& attr, bool value){
+bool MacroEngine::eval_attr_bool(const Node& op, const Attr& attr, bool& value){
 	string_view expr_str = attr.value();
 	
 	if (expr_str.empty()){
@@ -97,16 +97,22 @@ static bool eval_attr_bool(const Node& op, const Attr& attr, bool value){
 		return false;
 	}
 	
-	Value val = expr.eval(MacroEngine::variables, NodeDebugger(op));
-	return val.toBool() == value;
+	value = expr.eval(MacroEngine::variables, NodeDebugger(op)).toBool();
+	return true;
 }
 
 bool MacroEngine::eval_attr_true(const Node& op, const Attr& attr){
-	return eval_attr_bool(op, attr, true);
+	bool b;
+	if (!eval_attr_bool(op, attr, b))
+		return false;
+	return b;
 }
 
 bool MacroEngine::eval_attr_false(const Node& op, const Attr& attr){
-	return eval_attr_bool(op, attr, false);
+	bool b;
+	if (!eval_attr_bool(op, attr, b))
+		return false;
+	return !b;
 }
 
 
@@ -177,26 +183,6 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff
 	}
 	
 	return true;
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-Interpolate MacroEngine::eval_attr_interp(const Node& op, const Attr& attr){
-	string_view expr_str = attr.value();
-	if (expr_str.empty()){
-		HERE(warn_missing_attr_value(op, attr));
-		return Interpolate::NONE;
-	}
-	
-	Expression expr = Expression::parse(expr_str, NodeDebugger(op));
-	if (expr == nullptr){
-		return Interpolate::NONE;
-	}
-		
-	Value res = expr.eval(MacroEngine::variables, NodeDebugger(op));
-	return res.toBool() ? Interpolate::ALL : Interpolate::NONE;
 }
 
 

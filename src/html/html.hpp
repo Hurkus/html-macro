@@ -1,10 +1,9 @@
 #pragma once
 #include <cassert>
-#include <cstddef>
-#include <cstdint>
 #include <string>
 #include <vector>
 #include <memory>
+#include <filesystem>
 
 #include "html-allocator.hpp"
 #include "EnumOperators.hpp"
@@ -241,8 +240,8 @@ public:
 class html::Document : public Node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	std::shared_ptr<const std::string> buffer;
-	std::shared_ptr<const std::string> srcFile;			// Path to source file.
+	std::shared_ptr<const std::string> buffer;				// Source text.
+	std::shared_ptr<const std::filesystem::path> srcFile;	// Path to source file.
 	
 // ---------------------------------- [ Constructors ] -------------------------------------- //
 public:
@@ -267,18 +266,17 @@ public:
 public:
 	/**
 	 * @brief Parse HTML from string.
-	 * @param buff String buffer.
+	 * @param buff String buffer. Must not change while `this` object is valid.
 	 * @return `parse_result` containing parsing status.
 	 */
-	ParseResult parseBuff(std::shared_ptr<const std::string>&& buff);
+	ParseResult parseBuff(std::shared_ptr<const std::string> buff);
 	
 	/**
 	 * @brief Open file from `path` and parse HTML.
-	 *        Content buffer is owned by `this` object.
 	 * @param path Path to file.
 	 * @return `parse_result` containing parsing status.
 	 */
-	ParseResult parseFile(std::string&& path);
+	ParseResult parseFile(std::shared_ptr<const std::filesystem::path> path);
 	
 public:
 	/**

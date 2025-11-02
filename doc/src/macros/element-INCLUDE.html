@@ -20,74 +20,100 @@
 </MACRO>
 
 
+<style IF='!header'>
+	#INCLUDE.macro ul.lvl-1 > li {
+		padding-bottom: 5px;
+	}
+</style>
+
+
 <div id="INCLUDE" class="macro box" IF='!header'>
 	<h4><a href="#INCLUDE" class="code">{l}INCLUDE/{r}</a></h4>
 	<p>Includes contents of another file.</p>
 	<x-line></x-line>
 	
+	
 	<p>
-		Must be in the form of <code>{l}INCLUDE SRC="[path]"/{r}</code>, where:
-		<ul>
+		Files can be included in place of this element macro, thus allowing splitting large files into smaller more managble ones.
+		Each included file is parsed, cached and coupled with its canonical path.
+		The final result of inclusion depends on the type of the file.
+		Content of some files is wrapped with their respective HTML element, thus resulting in valid HTML.
+	</p>
+	
+	
+	<br/>
+	<div class="note box">
+		<h4>Note:</h4>
+		<p>With <code>.html</code> files, infinitely recursive includes are possible.</p>
+	</div>
+	
+	
+	<br/>
+	<p>
+		File types:
+		<ul class="lvl-1">
 			<li>
-				<code>[path]</code> represents the path of the new file relative to the current file.
+				Files with <code>.html</code> extensions are treated as file macros.
+				This means that, after parsing, all <a CALL="link-em-MACRO">{l}MACRO{r}</a> elements are extracted from the HTML element tree and added to the list of defined user macros, shadowing any existing ones with the same names.
+				The root macro is then executed and all generated HTML elements are appended to the final document.
+			</li>
+			<li>
+				Files with <code>.css</code> extensions are coppied as plain text and appended to the final document.<br/>
+				Depending on the <code>NO-WRAP</code> attribute, the appended text is wrapped with <code>{l}style{r}{l}/style{r}</code> tags.
+			</li>
+			<li>
+				Files with <code>.js</code> extensions are coppied as plain text and appended to the final document.<br/>
+				Depending on the <code>NO-WRAP</code> attribute, the appended text is wrapped with <code>{l}script{r}{l}/script{r}</code> tags.
+			</li>
+			<li>
+				All other files are treated as plain text and appended to the final document.
 			</li>
 		</ul>
 	</p>
 	
+	
 	<br/>
-	<style>
-		#INCLUDE.macro ul.file-types li {
-			padding-top: 7px;
-		}
-	</style>
 	<p>
-		Parsing of the included file depends on the file type, which is determined from the file extension.
-		If the file type is ambiguous, it can be forced with a specialised <code>{l}INCLUDE-[type]{r}</code> macros:
-		<ul class="file-types">
-			<li id="INCLUDE-HTML">
-				<code>{l}INCLUDE-HTML/{r}</code> for <em>.html</em> files.<br/>
-				The file is parsed as an HTML macro, i.e. the root element is invoked as a macro after parsing.<br/>
-				All <a CALL="link-em-MACRO">{l}MACRO{r}</a> elements are added to the global list of defined macros (overwriting existing ones).
+		Attributes:
+		<ul class="lvl-1">
+			<li>
+				<code>SRC=[path]</code> Path of the new file relative to the current file.
+				It can be an expression.
 			</li>
-			<li id="INCLUDE-CSS">
-				<code>{l}INCLUDE-CSS/{r}</code> for style <em>.css</em> files.<br/>
-				The file is processed for any CSS expressions.<br/>
-				<span style="color:hsl(0, 100%, 30%);">The <a CALL="link-am-INCLUDE">attribute</a> version of this macro is more usefull, as it allows wrapping the content in <code>{l}style{r}{l}/style{r}</code> tags.</span><br/>
-				May be subjected to optimizations in future versions.
+			<li>
+				<code>NO-WRAP</code>
+				Do not wrap contents of certain file types within their respective HTML element:
+				<ul>
+					<li><code>.css</code> files are not wrapped with <code>{l}style{r}{l}/style{r}</code>.</li>
+					<li><code>.js</code> files are not wrapped with <code>{l}script{r}{l}/script{r}</code>.</li>
+					<li>Others aren't even wrapped.</li>
+				</ul>
 			</li>
-			<li id="INCLUDE-JS">
-				<code>{l}INCLUDE-JS/{r}</code> for JavaScript <em>.js</em> files.<br/>
-				Mainly untouched; handled as plain text.<br/>
-				<span style="color:hsl(0, 100%, 30%);">The <a CALL="link-am-INCLUDE">attribute</a> version of this macro is more usefull, as it allows wrapping the content in <code>{l}script{r}{l}/script{r}</code> tags.</span><br/>
-				May be subjected to optimizations in future versions.
-			</li>
-			<li id="INCLUDE-TXT">
-				<code>{l}INCLUDE-TXT/{r}</code> for plain text files.<br/>
-				Untouched and coppied to the final document.
+			<li>
+				<code>[variable]=[value]</code> represents a variable name that is local durring execution of the root macro of the included file.
+				After the file is included, the global (original) variable remains unchanged.
+				If <code>[value]</code> is not supplied, the variable is cloned from its global counterpart.
 			</li>
 		</ul>
-	</p>
-	
-	<br/>
-	<p>
-		Every included file is cached which means that parsing is done only once per file.<br/>
-		The same file can be included multiple times which means that the user must prevent infinitely recursive includes.
-	</p>
-	
-	<br/>
-	<p>See also:
-		<a CALL="link-em-CALL">{l}CALL{r}</a>,
-		<a CALL="link-am-INCLUDE">attribute INCLUDE</a>
 	</p>
 	<br/>
 	<p>
 		Other attributes:
-		<ul>
-			<li CALL="common-IF-after"></li>
-			<li CALL="common-ELIF-after"></li>
-			<li CALL="common-ELSE-after"></li>
+		<ul class="lvl-1">
+			<li CALL="common-IF"></li>
+			<li CALL="common-ELIF"></li>
+			<li CALL="common-ELSE"></li>
 		</ul>
 	</p>
+	
+	
+	<br/>
+	<p>See also:
+		<a CALL="link-em-MACRO">{l}MACRO{r}</a>,
+		<a CALL="link-em-CALL">{l}CALL{r}</a>,
+		<a CALL="link-am-INCLUDE">attribute INCLUDE</a>
+	</p>
+	
 	
 	<x-line></x-line>
 	<div class="example">
@@ -162,4 +188,6 @@
 			</tr>
 		</table>
 	</div>
+	
+	
 </div>
