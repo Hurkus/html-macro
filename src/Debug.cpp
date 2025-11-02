@@ -137,6 +137,7 @@ void warn_missing_attr(const Node& node, const char* attr_name){
 }
 
 
+// Attribute <attr> missing value.
 void error_missing_attr_value(const Node& node, const Attr& attr){
 	assert(attr.name_p != nullptr);
 	const Document& doc = node.root();
@@ -217,6 +218,7 @@ void error_macro_not_found(const Node& node, string_view mark, string_view macro
 }
 
 
+// File <file> not found.
 void error_file_not_found(const Node& node, string_view mark, const char* file){
 	linepos pos = findLine(node.root(), mark.data());
 	print_error_pfx(pos);
@@ -225,14 +227,7 @@ void error_file_not_found(const Node& node, string_view mark, const char* file){
 }
 
 
-// void error_invalid_include_type(const Node& node, string_view mark, string_view type){
-// 	linepos pos = findLine(node.root(), mark.data());
-// 	print_error_pfx(pos);
-// 	LOG_STDERR("Invalid include type " PURPLE("`%.*s`") ".\n", int(type.length()), type.data());
-// 	printCodeView(pos, mark, ANSI_RED);
-// }
-
-
+// Failed to include file <file>.
 void error_include_fail(const Node& node, string_view mark, const char* file){
 	linepos pos = findLine(node.root(), mark.data());
 	print_error_pfx(pos);

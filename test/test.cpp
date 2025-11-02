@@ -13,6 +13,8 @@ using namespace std;
 
 
 #define R(s)	ANSI_RED s ANSI_RESET
+#define G(s)	ANSI_GREEN s ANSI_RESET
+#define Y(s)	ANSI_YELLOW s ANSI_RESET
 #define P(s)	ANSI_PURPLE s ANSI_RESET
 #define B(s)	ANSI_BOLD s ANSI_RESET
 #define RB(s)	ANSI_BOLD ANSI_RED s ANSI_RESET
@@ -362,11 +364,10 @@ static bool run(){
 	}
 	
 	printf("--------------------------------\n");
-	if (passed == total){
-		printf("Passed " ANSI_GREEN "%ld" ANSI_RESET "/" ANSI_GREEN "%ld" ANSI_RESET " tests.\n", passed, total);
-	} else {
-		printf("Passed " ANSI_YELLOW "%ld" ANSI_RESET "/" ANSI_GREEN "%ld" ANSI_RESET " tests.\n", passed, total);
-	}
+	if (passed == total)
+		printf("Passed " G("%ld") "/" G("%ld") " ~ " G("%.0f%%") " of tests.\n", passed, total, 100.0f*passed/total);
+	else
+		printf("Passed " Y("%ld") "/" G("%ld") " ~ " Y("%.0f%%") " of tests.\n", passed, total, 100.0f*passed/total);
 	printf("--------------------------------\n");
 	
 	return passed == total;

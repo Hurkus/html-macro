@@ -123,6 +123,10 @@ void include(const html::Node& op, html::Node& dst);
  */
 void include(const html::Node& op, const html::Attr& opAttr, html::Node& dst);
 
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 /**
  * @brief Execute content of operation node as a shell command and
  *         include results in the document.

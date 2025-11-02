@@ -90,6 +90,11 @@
 				</ul>
 			</li>
 			<li>
+				<code>HEADER</code>
+				Only load and cache the file; do not append any content to the final document.<br/>
+				It is usefull for loading <a CALL="link-em-MACRO">{l}MACRO{r}</a> macros at the beginning of the file and later including the file again without the <code>HEADER</code> attribute to include the non <a CALL="link-em-MACRO">{l}MACRO{r}</a> content.
+			</li>
+			<li>
 				<code>[variable]=[value]</code> represents a variable name that is local durring execution of the root macro of the included file.
 				After the file is included, the global (original) variable remains unchanged.
 				If <code>[value]</code> is not supplied, the variable is cloned from its global counterpart.

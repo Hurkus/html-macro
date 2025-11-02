@@ -217,4 +217,30 @@ bool test_macro_INCLUDE_nowrap(){
 }
 
 
+REGISTER2(macro_INCLUDE_header);
+bool test_macro_INCLUDE_header(){
+	TmpFile txt = TmpFile("other.html",
+		"<MACRO NAME=\"title\">" NL
+		"	<h1>Title</h1>" NL
+		"</MACRO>" NL
+		"" NL
+		"<p>Lorem ipsum, etc.</p>" NL
+	);
+	TmpFile in = TmpFile(
+		"<body>" NL
+		"	<INCLUDE HEADER SRC=\"other.html\"/>" NL
+		"	<CALL NAME=\"title\"/>" NL
+		"	<INCLUDE SRC=\"other.html\"/>" NL
+		"</body>" NL
+	);
+	string_view out = (
+		"<body>" NL
+		"	<h1>Title</h1>" NL
+		"	<p>Lorem ipsum, etc.</p>" NL
+		"</body>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
 // ------------------------------------------------------------------------------------------ //

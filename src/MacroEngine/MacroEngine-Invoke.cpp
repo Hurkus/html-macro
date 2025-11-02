@@ -223,6 +223,48 @@ void MacroEngine::call(const Node& op, const Attr& attr, Node& dst){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+static void _include_header(const Node& op, const Attr& src){
+	// Evaluate src path
+	filepath path;
+	{
+		string path_sv_buff;
+		string_view path_sv;
+		
+		if (src.value_len <= 0){
+			HERE(error_missing_attr_value(op, src));
+			return;
+		} else if (!eval_attr_value(op, src, path_sv_buff, path_sv)){
+			return;
+		}
+		
+		path = path_sv;
+	}
+	
+	Macro* macro = MacroCache::load(path);
+	if (macro == nullptr){
+		if (!fs::exists(path))
+			HERE(error_file_not_found(op, src.value(), path.c_str()))
+		else
+			HERE(error_include_fail(op, src.value(), path.c_str()))
+		return;
+	}
+	
+	switch (macro->type){
+		case Macro::Type::HTML: {
+			if (macro->html == nullptr && !macro->parseHTML())
+				HERE(error_include_fail(op, src.value(), path.c_str()));
+		} break;
+		
+		default: {
+			if (macro->txt == nullptr)
+				HERE(error_include_fail(op, src.value(), path.c_str()));
+		} break;
+		
+	}
+	
+}
+
+
 /**
  * @brief Transfer leading and trailing whitespace.
  * @param dst Node with new child elements (reversed list).
@@ -357,10 +399,10 @@ static void _include_macro(const Node& op, const Attr& src, stack_vector<var_cop
 }
 
 
-
 void MacroEngine::include(const Node& op, Node& dst){
 	stack_vector<var_copy,2> args;
 	const Attr* src_attr = nullptr;
+	bool header = false;
 	bool wrap = true;
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
@@ -374,10 +416,10 @@ void MacroEngine::include(const Node& op, Node& dst){
 			continue;
 		}
 		
-		else if (name == "NO-WRAP"){
+		else if (name == "HEADER"){
 			if (attr->value_p != nullptr)
 				HERE(warn_ignored_attr_value(op, *attr));
-			wrap = false;
+			header = true;
 			continue;
 		}
 		
@@ -386,6 +428,19 @@ void MacroEngine::include(const Node& op, Node& dst){
 			case Branch::FAILED: return;
 			case Branch::PASSED: continue;
 			case Branch::NONE: break;
+		}
+		
+		// All remaining attributes are irrelevant for headers
+		if (header){
+			HERE(warn_ignored_attribute(op, *attr));
+			continue;
+		}
+		
+		else if (name == "NO-WRAP"){
+			if (attr->value_p != nullptr)
+				HERE(warn_ignored_attr_value(op, *attr));
+			wrap = false;
+			continue;
 		}
 		
 		// Push argument
@@ -403,10 +458,12 @@ void MacroEngine::include(const Node& op, Node& dst){
 	
 	if (src_attr == nullptr){
 		HERE(warn_missing_attr(op, "SRC"));
-		return;
+	} else if (header){
+		_include_header(op, *src_attr);
+	} else {
+		_include_macro(op, *src_attr, args, wrap, dst);
 	}
 	
-	_include_macro(op, *src_attr, args, wrap, dst);
 }
 
 
