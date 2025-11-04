@@ -15,17 +15,15 @@ vector<filepath> Paths::includeDirs;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool Paths::resolve(filepath& path) noexcept {
+bool Paths::resolve(filepath& path, const filepath& cwd) noexcept {
 	try {
 		if (path.is_absolute()){
 			path = filesystem::canonical(path);
 			return true;
 		}
 		
-		assert(cwd != nullptr);
-		
 		// Check cwd
-		filepath p1 = *cwd / path;
+		filepath p1 = cwd / path;
 		if (fs::exists(p1)){
 			path = filesystem::relative(p1);
 			return true;
@@ -44,7 +42,7 @@ bool Paths::resolve(filepath& path) noexcept {
 		}
 		
 		path = filesystem::proximate(p1);
-		return fs::exists(path);
+		return true;
 	} catch (...){}
 	
 	return false;

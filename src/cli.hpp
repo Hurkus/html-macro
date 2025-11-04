@@ -6,6 +6,7 @@
 extern struct Opt {
 	const char* program = "html-macro";
 	bool help = false;
+	bool printDependencies = false;
 	
 	const char* outFilePath = "-";		// "-" means stdout
 	const char* inFilePath = nullptr;

@@ -13,6 +13,12 @@ using namespace html;
 using namespace MacroEngine;
 
 
+// ----------------------------------- [ Prototypes ] --------------------------------------- //
+
+
+bool printDependencies(const char* path);
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -38,6 +44,9 @@ void help(){
 	LOG_STDOUT("  " Y("--include <path>") ", " Y("-i <path>") " .. Add folder to list of path searches when including files with relative paths.\n");
 	LOG_STDOUT("  " Y("--output <path>") ", " Y("-o <path>") " ... Write output to file instead of stdout.\n");
 	LOG_STDOUT("  " Y("-x") " ........................... Do not output any results; only errors.\n");
+	LOG_STDOUT("  " Y("-d") ", " Y("--dependencies") " ........... Print list of file paths on which the input file depens on.\n");
+	LOG_STDOUT("                                  The paths are extracted from <INCLUDE/> macros.\n");
+	LOG_STDOUT("                                  Only non-expression attribute values are considered.\n");
 	LOG_STDOUT("\n");
 }
 
@@ -148,13 +157,11 @@ int main(int argc, char const* const* argv){
 	stderr_isTTY = (isatty(fileno(stderr)) == 1);
 	
 	#ifdef DEBUG
-		// log_stdout_isTTY = 0;
-		// log_stderr_isTTY = 0;
-		
 		const char* _argv[] = {
 			argv[0],
+			// "-d",
+			// "doc/src/main.html"
 			"test/test-0.html"
-			// "test/test-1.in.html"
 		};
 		if (argc < 2){
 			argv = _argv;
@@ -183,7 +190,11 @@ int main(int argc, char const* const* argv){
 			Paths::includeDirs.pop_back();
 	}
 	
-	if (!run()){
+	// Run
+	if (opt.printDependencies){
+		if (!printDependencies(opt.inFilePath))
+			return 2;
+	} else if (!run()){
 		return 2;
 	}
 	

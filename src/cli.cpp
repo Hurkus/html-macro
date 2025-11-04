@@ -20,6 +20,7 @@ Opt opt;
 
 enum class OptId {
 	HELP,
+	DEPENDENCIES,
 	VOID,
 	OUTPUT,
 	INCLUDE,
@@ -33,10 +34,11 @@ struct OptInfo {
 };
 
 constexpr array options = {
-	OptInfo { "-h", "--help",    OptId::HELP,    false },
-	OptInfo { "-x", "",          OptId::VOID,    false },
-	OptInfo { "-o", "--out",     OptId::OUTPUT,  true  },
-	OptInfo { "-i", "--include", OptId::INCLUDE, true  },
+	OptInfo { "-h", "--help",         OptId::HELP,         false },
+	OptInfo { "-d", "--dependencies", OptId::DEPENDENCIES, false },
+	OptInfo { "-x", "",               OptId::VOID,         false },
+	OptInfo { "-o", "--out",          OptId::OUTPUT,       true  },
+	OptInfo { "-i", "--include",      OptId::INCLUDE,      true  },
 };
 
 
@@ -47,6 +49,10 @@ static bool onOption(OptId id, const char* value){
 	switch (id){
 		case OptId::HELP:
 			opt.help = true;
+			return true;
+		
+		case OptId::DEPENDENCIES:
+			opt.printDependencies = true;
 			return true;
 		
 		case OptId::VOID:

@@ -59,8 +59,20 @@ test: bin/$(EXE) bin/test-$(EXE)
 .PHONY: doc
 doc: doc/documentation.html
 
-doc/documentation.html: doc/src/main.html $(shell find './doc/src/') bin/$(EXE) | bin/
+doc/documentation.html: doc/src/main.html bin/$(EXE) | doc/
 	./bin/$(EXE) '$<' -o '$@'
+
+# Generate dependency list of <INCLUDE>
+obj/documentation.html.d: doc/src/main.html bin/$(EXE) | obj/
+	@echo '$@'
+	@(\
+		echo 'doc/documentation.html: $< \' ;\
+		./bin/$(EXE) --dependencies '$<' | sed -r "s|.*|\t\0 \\\\|g" ;\
+	) >'$@'
+
+ifeq ($(filter $(MAKECMDGOALS), doc doc/documentation.html),doc)
+include obj/documentation.html.d
+endif
 
 
 ################################################################
