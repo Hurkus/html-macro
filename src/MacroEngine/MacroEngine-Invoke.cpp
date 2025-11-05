@@ -18,9 +18,134 @@ struct var_copy {
 };
 
 
-enum class IncludeType {
-	AUTO, HTML, CSS, JS, TXT
-};
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static void _invoke_macro(const Node& op, stack_vector<var_copy,2>& args, const Macro& macro, Node& dst){
+	if (macro.html == nullptr){
+		return;
+	}
+	
+	// Evaluate default parameters
+	for (const Attr* param = macro.html->attribute ; param != nullptr ; param = param->next){
+		string_view name = param->name();
+		if (name.empty() || name == "NAME"sv){
+			continue;
+		}
+		
+		// Check if default value needed
+		for (var_copy& v : args){
+			if (v.name == name)
+				goto next;
+		}
+		
+		// Clone variable
+		if (param->value_p == nullptr){
+			Value* var = MacroEngine::variables.get(name);
+			
+			if (var != nullptr)
+				args.emplace_back(name, *var, true);
+			else
+				args.emplace_back(name);
+		}
+		
+		// Evaluate default value
+		else {
+			Value& arg = args.emplace_back(name).value;
+			if (!eval_attr_value(op, *param, arg))
+				return;
+		}
+		
+		next: continue;
+	}
+	
+	// Apply arguments to variable list
+	for (var_copy& arg : args){
+		Value* var = MacroEngine::variables.get(arg.name);
+		
+		if (var != nullptr){
+			swap(arg.value, *var);
+			arg.defined = true;
+		} else {
+			MacroEngine::variables.insert(arg.name, move(arg.value));
+		}
+		
+	}
+	
+	exec(macro, dst);
+	
+	// Restore argument list
+	for (var_copy& arg : args){
+		if (arg.defined)
+			MacroEngine::variables.insert(arg.name, move(arg.value));
+		else
+			MacroEngine::variables.remove(arg.name);
+	}
+	
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void MacroEngine::userElementMacro(const Node& op, Node& dst){
+	assert(!op.name().empty());
+	stack_vector<var_copy,2> args;
+	
+	// Parse operation attributes
+	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
+		string_view name = attr->name();
+		
+		// Check IF, ELIF, ELSE
+		switch (check_attr_if(op, *attr)){
+			case Branch::FAILED: return;
+			case Branch::PASSED: continue;
+			case Branch::NONE: break;
+		}
+		
+		var_copy& var = args.emplace_back(name);
+		
+		// Clone global variable or evaluate new local
+		if (attr->value_p == nullptr){
+			Value* gvar = MacroEngine::variables.get(name);
+			if (gvar != nullptr)
+				var.value = *gvar;
+		} else if (!eval_attr_value(op, *attr, var.value)){
+			return;
+		}
+		
+	}
+	
+	Macro* macro = MacroCache::get(op.name());
+	if (macro == nullptr || (macro->html == nullptr && !macro->parseHTML())){
+		HERE(error_macro_not_found(op, op.name(), op.name()));
+		return;
+	}
+	
+	_invoke_macro(op, args, *macro, dst);
+}
+
+
+void MacroEngine::userAttrMacro(const Node& op, const Attr& attr, Node& dst){
+	assert(!attr.name().empty());
+	
+	Macro* macro = MacroCache::get(attr.name());
+	if (macro == nullptr || (macro->html == nullptr && !macro->parseHTML())){
+		HERE(error_macro_not_found(op, attr.name(), attr.name()));
+		return;
+	}
+	
+	stack_vector<var_copy,2> args;
+	
+	// Store attribute value as argument `VALUE`
+	if (attr.value_p != nullptr){
+		var_copy& arg = args.emplace_back("VALUE");
+		if (!eval_attr_value(op, attr, arg.value))
+			return;
+	}
+	
+	_invoke_macro(op, args, *macro, dst);
+}
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -62,86 +187,27 @@ void MacroEngine::call(const Node& op, Node& dst){
 		
 	}
 	
-	// Verify macro name
+	// Eval macro name
+	string macro_name_buff;
+	string_view macro_name;
+	
 	if (name_attr == nullptr){
 		HERE(error_missing_attr(op, "NAME"));
 		return;
 	} else if (name_attr->value_len <= 0){
 		HERE(error_missing_attr_value(op, *name_attr));
 		return;
-	}
-	
-	// Fetch macro
-	string macro_name_buff;
-	string_view macro_name;
-	if (!eval_attr_value(op, *name_attr, macro_name_buff, macro_name)){
+	} else if (!eval_attr_value(op, *name_attr, macro_name_buff, macro_name)){
 		return;
 	}
 	
-	const Macro* macro = MacroCache::get(macro_name);
-	if (macro == nullptr || macro->html == nullptr){
-		HERE(error_macro_not_found(op, name_attr->value(), name_attr->value()));
+	Macro* macro = MacroCache::get(macro_name);
+	if (macro == nullptr || (macro->html == nullptr && !macro->parseHTML())){
+		HERE(error_macro_not_found(op, name_attr->value(), macro_name));
 		return;
 	}
 	
-	// Evaluate default parameters
-	for (const Attr* param = macro->html->attribute ; param != nullptr ; param = param->next){
-		string_view name = param->name();
-		if (name.empty() || name == "NAME"sv){
-			continue;
-		}
-		
-		// Check if default value needed
-		for (var_copy& v : backup){
-			if (v.name == name)
-				goto next;
-		}
-		
-		// Clone variable
-		if (param->value_p == nullptr){
-			Value* var = MacroEngine::variables.get(name);
-			
-			if (var != nullptr){
-				backup.emplace_back(name, *var, true);
-			} else {
-				backup.emplace_back(name);
-			}
-			
-		}
-		
-		// Evaluate default value
-		else {
-			Value& arg = backup.emplace_back(name).value;
-			if (!eval_attr_value(op, *param, arg))
-				return;
-		}
-		
-		next: continue;
-	}
-	
-	// Apply arguments to variable list
-	for (var_copy& arg : backup){
-		Value* var = MacroEngine::variables.get(arg.name);
-		
-		if (var != nullptr){
-			swap(arg.value, *var);
-			arg.defined = true;
-		} else {
-			MacroEngine::variables.insert(arg.name, move(arg.value));
-		}
-		
-	}
-	
-	exec(*macro, dst);
-	
-	// Restore argument list
-	for (var_copy& arg : backup){
-		if (arg.defined)
-			MacroEngine::variables.insert(arg.name, move(arg.value));
-		else
-			MacroEngine::variables.remove(arg.name);
-	}
-	
+	_invoke_macro(op, backup, *macro, dst);
 }
 
 
@@ -156,67 +222,14 @@ void MacroEngine::call(const Node& op, const Attr& attr, Node& dst){
 		return;
 	}
 	
-	const Macro* macro = MacroCache::get(macro_name);
-	if (macro == nullptr || macro->html == nullptr){
+	Macro* macro = MacroCache::get(macro_name);
+	if (macro == nullptr || (macro->html == nullptr && !macro->parseHTML())){
 		HERE(error_macro_not_found(op, attr.value(), macro_name));
 		return;
 	}
 	
-	// Global variable backup, local variables shadow global
-	stack_vector<var_copy,2> backup;
-	
-	// Evaluate default parameters
-	for (const Attr* param = macro->html->attribute ; param != nullptr ; param = param->next){
-		string_view name = param->name();
-		if (name.empty() || name == "NAME"sv){
-			continue;
-		}
-		
-		// Clone variable
-		if (param->value_p == nullptr){
-			Value* var = MacroEngine::variables.get(name);
-			
-			if (var != nullptr){
-				backup.emplace_back(name, *var, true);
-			} else {
-				backup.emplace_back(name);
-			}
-			
-		}
-		
-		// Evaluate default value
-		else {
-			Value& arg = backup.emplace_back(name).value;
-			if (!eval_attr_value(op, *param, arg))
-				return;
-		}
-		
-	}
-	
-	// Apply arguments to variable list
-	for (var_copy& arg : backup){
-		Value* var = MacroEngine::variables.get(arg.name);
-		
-		if (var != nullptr){
-			swap(arg.value, *var);
-			arg.defined = true;
-		} else {
-			MacroEngine::variables.insert(arg.name, move(arg.value));
-		}
-		
-	}
-	
-	exec(*macro, dst);
-	
-	// Restore argument list
-	for (var_copy& arg : backup){
-		if (arg.defined)
-			MacroEngine::variables.insert(arg.name, move(arg.value));
-		else
-			MacroEngine::variables.remove(arg.name);
-	}
-	
-	return;
+	stack_vector<var_copy,2> args;
+	_invoke_macro(op, args, *macro, dst);
 }
 
 

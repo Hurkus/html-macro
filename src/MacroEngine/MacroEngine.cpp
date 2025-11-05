@@ -20,15 +20,22 @@ Branch MacroEngine::currentBranch_inline = Branch::NONE;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+constexpr bool isUpperCase(char c){
+	return 'A' <= c && c <= 'Z';
+}
+
+constexpr bool isMacroChar(char c){
+	return isUpperCase(c) || c == '_';
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 void MacroEngine::setVariableConstants(){
 	MacroEngine::variables["false"] = 0L;
 	MacroEngine::variables["true"] = 1L;
 	MacroEngine::variables["pi"] = M_PI;
-}
-
-
-constexpr bool isUpperCase(char c){
-	return 'A' <= c && c <= 'Z';
 }
 
 
@@ -63,8 +70,14 @@ void MacroEngine::run(const Node& op, Node& dst){
 	}
 	
 	// Regular tag
-	else if (!isUpperCase(name[0])){ regular_tag:
+	else if (!isMacroChar(name[0])){ regular_tag:
 		tag(op, dst);
+		return;
+	}
+	
+	// User macro
+	else if (!isUpperCase(name[0])){ user_macro:
+		userElementMacro(op, dst);
 		return;
 	}
 	
@@ -74,7 +87,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 			if (name == "IF")
 				branch_if(op, dst);
 			else
-				goto unknown;
+				goto user_macro;
 		} break;
 		
 		case 3: {
@@ -83,7 +96,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 			else if (name == "FOR")
 				loop_for(op, dst);
 			else
-				goto unknown;
+				goto user_macro;
 		} break;
 			
 		case 4: {
@@ -98,7 +111,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 			else if (name == "WARN")
 				warn(op);
 			else
-				goto unknown;
+				goto user_macro;
 		} break;
 		
 		case 5: {
@@ -109,7 +122,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 			else if (name == "ERROR")
 				error(op);
 			else
-				goto unknown;
+				goto user_macro;
 		} break;
 		
 		case 7: {
@@ -120,7 +133,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 			else if (name == "SET-TAG")
 				setTag(op, dst);
 			else
-				goto unknown;
+				goto user_macro;
 		} break;
 		
 		case 8: {
@@ -131,12 +144,11 @@ void MacroEngine::run(const Node& op, Node& dst){
 			else if (name == "DEL-ATTR")
 				delAttr(op, dst);
 			else
-				goto unknown;
+				goto user_macro;
 		} break;
 		
-		default: { unknown:
-			HERE(warn_unknown_macro_tag(op));
-			goto regular_tag;
+		default: {
+			goto user_macro;
 		} break;
 		
 	}

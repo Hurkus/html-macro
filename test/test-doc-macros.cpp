@@ -54,6 +54,37 @@ bool test_doc_macro_MACRO_2(){
 }
 
 
+REGISTER2(doc_macro_MACRO_3);
+bool test_doc_macro_MACRO_3(){
+	TmpFile in = TmpFile(
+		"<MACRO NAME=\"F1\">" NL
+		"	<h1>Book named {book}</h1>" NL
+		"</MACRO>" NL
+		"<MACRO NAME=\"F2\">" NL
+		"	<SET-ATTR href=\"#{VALUE}\"/>" NL
+		"	{VALUE}" NL
+		"</MACRO>" NL
+		"" NL
+		"<F1 book=\"Unnamed\"/>" NL
+		"<p>" NL
+		"	Go to chapter" NL
+		"	<a F2=\"main\" class=\"box\"/>" NL
+		"</p>" NL
+	);
+	string_view out = (
+		NL
+		"<h1>Book named Unnamed</h1>" NL
+		"<p>" NL
+		"	Go to chapter" NL
+		"	<a href=\"#main\" class=\"box\">" NL
+		"		main" NL
+		"	</a>" NL
+		"</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 

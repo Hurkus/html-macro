@@ -39,6 +39,43 @@ bool test_macro_MACRO_name(){
 }
 
 
+REGISTER2(macro_MACRO_customElement);
+bool test_macro_MACRO_customElement(){
+	TmpFile in = TmpFile(
+		"<MACRO NAME=\"FUNC\" x>" NL
+		"	<SET x='x+2' y='y+2'/>" NL
+		"	<p>A: (x,y) is ({x}, {y})</p>" NL
+		"</MACRO>" NL
+		"" NL
+		"<SET x='10'/>" NL
+		"<FUNC y='20'/>" NL
+	);
+	string_view out = (
+		NL
+		"<p>A: (x,y) is (12, 22)</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(macro_MACRO_customAttribute);
+bool test_macro_MACRO_customAttribute(){
+	TmpFile in = TmpFile(
+		"<MACRO NAME=\"FUNC\">" NL
+		"	<SET-ATTR href='VALUE'/>" NL
+		"	<SET-ATTR class=\"link\"/>" NL
+		"</MACRO>" NL
+		"" NL
+		"<a FUNC=\"https://github.com/Hurkus/html-macro/\">repo</a>" NL
+	);
+	string_view out = (
+		NL
+		"<a href=\"https://github.com/Hurkus/html-macro/\" class=\"link\">repo</a>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 

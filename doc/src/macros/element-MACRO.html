@@ -1,49 +1,76 @@
+<INCLUDE HEADER SRC="element-CALL.html"/>
+<INCLUDE HEADER SRC="element-FOR.html"/>
+<INCLUDE HEADER SRC="element-SET-ATTR.html"/>
+
+
 <MACRO NAME="link-em-MACRO">
 	<SET-ATTR href="#MACRO"/>
 	<SET-ATTR title="Defines a new macro."/>
 </MACRO>
 
 
+
+<style>
+	#MACRO.macro .c1 {
+		color: hsl(0, 60%, 40%);
+	}
+	#MACRO.macro .c2 {
+		color: hsl(100, 50%, 20%);
+	}
+	#MACRO.macro .c3 {
+		color: hsl(270, 76%, 30%);
+	}
+</style>
+
+
 <div id="MACRO" class="macro box">
 	<h4><a href="#MACRO" class="code">{l}MACRO{r}...{l}/MACRO{r}</a></h4>
 	<p>Defines a new macro.</p>
 	<x-line></x-line>
-	
-	<p>
-		Must be in the form of <code>{l}MACRO NAME="[name]" [variable]=[default_value]{r}</code>, where:
-		<ul>
-			<li>
-				<code>[name]</code> represents the name of the new macro, which will be used to invoke it.
-				Only the latest macro with that name is cached.
-				All previous macros are discarded.
-			</li>
-			<li>
-				<code>[variable]</code> represents the name of a variable that is local during the execution of the macro.
-				Variables not listed here or at the calling site (for example in the <a CALL="link-em-CALL">{l}CALL{r}</a> macro), are considered global and any modifications to those variables remain after the end of the macro execution.<br/>
-				These attributes also serve as a semantic list of parameters of the macro.
-			</li>
-			<li>
-				<code>[default_value]</code> represents the (optional) initial value of the local variable <code>[variable]</code>.
-				This value can be overwritten by the calling site (for example by the <a CALL="link-em-CALL">{l}CALL{r}</a> macro).
-				If this value is missing, the (possibly existing) global variable of the same name is coppied into the local variable.
-			</li>
-		</ul>
-	</p>
-	<br/>
 	<p>
 		Macro elements serve as <em>templates</em> for instantiating/evaluating the same HTML element tree multiple times.
 		All <a CALL="link-em-MACRO">{l}MACRO{r}</a> elements are referenced globally, i.e. cached and removed from the source document right after the document is parsed and before any instantiation occurs.
 		This means their position in the document doesn't matter.
 	</p>
+	
+	
+	<br/>
+	<p>
+		Attributes:
+		<ul>
+			<li>
+				<code>NAME="[name]"</code> represents the name of the new macro, which will be used to invoke it.
+				Any previous macro with the same name is discarded/shadowed by the new one.
+			</li>
+			<li>
+				<code>[variable]=[default_value]</code> represents the name of a variable that is local during the execution of the macro.
+				Variables not listed here or at the calling site (for example in the <a CALL="link-em-CALL">{l}CALL{r}</a> macro), are considered global and any modifications to them remain after the end of the macro execution.
+				<br/>
+				The expression <code>[default_value]</code> serves as a default value of the new local variable.
+				It is assigned only if it is not defined at the calling site.
+				If <code>[default_value]</code> is not present, the copy of the global variable serves as the default value.
+				<br/>
+				These attributes also serve as a semantic list of parameters of the macro.
+			</li>
+		</ul>
+	</p>
+	
+	
 	<br/>
 	<p>
 		Expression variables within macros are typically global (their modifications carry over after the end of the macro execution), except the list of local variables declared in the attribute list of the element.
 		If the user wishes to use a macro only for computation, they can return the result through a global variable.
 	</p>
+	
+	
 	<br/>
 	<p>
-		All files have an anonymous <a CALL="link-em-MACRO">{l}MACRO{r}</a> root element.
+		A user-defined macro can always be invoked using the <a CALL="link-em-CALL">{l}CALL{r}</a> macro,
+		however if the name (attribute <code>NAME</code>) of the macro begins with an uppercase letter or underscore <code>_</code> (regex <code>[A-Z_]</code>), it can also be invoked directly by an element's tag, or by an attribute's name of a regular element.
+		If the macro is invoked by an attribute, a local variable <code>VALUE</code> is assigned to the value of the attribute.
 	</p>
+	
+	
 	<br/>
 	<p>
 		When instantiated, all child elements are (recursively) coppied and evaluated:
@@ -51,9 +78,10 @@
 			<li>Macro elements are evaluated.</li>
 			<li>Regular HTML elements are coppied.</li>
 			<li>Attributes are coppied and evaluated for any expressions or attribute macros.</li>
-			<li>Text elements are interpolated for expressions.</li>
+			<li>Text elements are <a href="#expression-context">interpolated</a> for expressions.</li>
 		</ul>
 	</p>
+	
 	
 	<br/>
 	<p>See also:
@@ -61,6 +89,7 @@
 		<a CALL="link-am-CALL">attribute CALL</a>,
 		<a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a>
 	</p>
+	
 	
 	<x-line></x-line>
 	<div class="example">
@@ -117,31 +146,31 @@
 				<td class="code">
 					{l}<a CALL="link-em-MACRO">MACRO</a>
 						<span title="Macro is named &quot;func&quot;">NAME="func"</span>
-						<span title="Declare a local variable x, which will be initialised with the global variable x">x</span>
-						<span title="Declare a local variable y with a default value of 0">y='0'</span>{r}<br/>
+						<span title="Declare a local variable x, which will be initialised with the global variable x" class="c1">x</span>
+						<span title="Declare a local variable y with a default value of 0" class="c2">y='0'</span>{r}<br/>
 						{t}{l}<a CALL="link-em-SET">SET</a>
-							<span title="Add 2 to variable x">x='x+2'</span>
-							<span title="Add 2 to variable y">y='y+2'</span>
-							<span title="Add 2 to variable z">z='z+2'</span>/{r}<br/>
+							<span title="Add 2 to variable x" class="c1">x='x+2'</span>
+							<span title="Add 2 to variable y" class="c2">y='y+2'</span>
+							<span title="Add 2 to variable z" class="c3">z='z+2'</span>/{r}<br/>
 						{t}{l}p{r}A: (x,y,z) is
-							(<span title="Insert value of variable x">\{x}</span>,
-							<span title="Insert value of variable y">\{y}</span>,
-							<span title="Insert value of variable z">\{z}</span>){l}/p{r}<br/>
+							(<span title="Insert value of variable x" class="c1">\{x}</span>,
+							<span title="Insert value of variable y" class="c2">\{y}</span>,
+							<span title="Insert value of variable z" class="c3">\{z}</span>){l}/p{r}<br/>
 					{l}<a CALL="link-em-MACRO">/MACRO</a>{r}<br/>
 					<br/>
 					{l}<a CALL="link-em-SET">SET</a>
-						<span title="Set variable x to 10">x='10'</span>
-						<span title="Set variable y to 20">y='20'</span>
-						<span title="Set variable z to 30">z='30'</span>/{r}<br/>
+						<span title="Set variable x to 10" class="c1">x='10'</span>
+						<span title="Set variable y to 20" class="c2">y='20'</span>
+						<span title="Set variable z to 30" class="c3">z='30'</span>/{r}<br/>
 					{l}<a CALL="link-em-CALL">CALL</a> <span title="Call macro named &quot;func&quot;">NAME="func"</span>/{r}<br/>
 					{l}p{r}B: (x,y,z) is
-						(<span title="Insert value of variable x">\{x}</span>,
-						<span title="Insert value of variable y">\{y}</span>,
-						<span title="Insert value of variable z">\{z}</span>){l}/p{r}<br/>
+						(<span title="Insert value of variable x" class="c1">\{x}</span>,
+						<span title="Insert value of variable y" class="c2">\{y}</span>,
+						<span title="Insert value of variable z" class="c3">\{z}</span>){l}/p{r}<br/>
 				</td>
 				<td class="code">
-					{l}p{r}A: (x,y,z) is (12, 2, 32){l}/p{r}<br/>
-					{l}p{r}B: (x,y,z) is (10, 20, 32){l}/p{r}
+					{l}p{r}A: (x,y,z) is (<span class="c1">12</span>, <span class="c2">2</span>, <span class="c3">32</span>){l}/p{r}<br/>
+					{l}p{r}B: (x,y,z) is (<span class="c1">10</span>, <span class="c2">20</span>, <span class="c3">32</span>){l}/p{r}
 				</td>
 			</tr>
 		</table>
@@ -151,6 +180,42 @@
 			Their modifications are not carried outside of the macro after execution.
 			On the other hand, variable <code>z</code> remains global and its modification remains after the end of the macro.
 		</p>
+	</div>
+	<div class="example">
+		<h4><b>Example:</b></h4>
+		<p>Direct macro invocation.</p>
+		<table style="margin-top: 0;">
+			<tr>
+				<th>input</th>
+				<th>output</th>
+			</tr>
+			<tr>
+				<td class="code">
+					{l}<a CALL="link-em-MACRO">MACRO</a> <span title="Macro is named &quot;F1&quot;">NAME="F1"</span>{r}<br/>
+						{t}{l}h1{r}Book named <span title="Insert variable book" class="c1">\{book}</span>{l}/h1{r}<br/>
+					{l}<a CALL="link-em-MACRO">/MACRO</a>{r}<br/>
+					{l}<a CALL="link-em-MACRO">MACRO</a> <span title="Macro is named &quot;F2&quot;">NAME="F2"</span>{r}<br/>
+						{t}{l}<a CALL="link-em-SET-ATTR">SET-ATTR</a> <span title="Set parent element's attribute.">href=&quot;#<span class="c3">\{VALUE}</span>&quot;</span>/{r}<br/>
+						{t}<span title="Insert variable VALUE" class="c3">\{VALUE}</span><br/>
+					{l}<a CALL="link-em-MACRO">/MACRO</a>{r}<br/>
+					<br/>
+					{l}<span title="Invocation of the previously defined F1 macro.">F1</span> <span title="Define local variable named &apos;book&apos;"><span class="c1">book</span>="<span class="c1">Unnamed</span>"</span>/{r}<br/>
+					{l}p{r}<br/>
+						{t}Go to chapter<br/>
+						{t}{l}a F2="<span class="c3">main</span>" <span title="Regular attribute of the &apos;a&apos; HTML element">class="box"</span>/{r}<br/>
+					{l}/p{r}
+				</td>
+				<td class="code">
+					<span title="Generated by macro F1">{l}h1{r}Book named <span class="c1">Unnamed</span>{l}/h1{r}</span><br/>
+					{l}p{r}<br/>
+						{t}Go to chapter<br/>
+						{t}{l}a <span title="Generated by macro F2">href="#<span class="c3">main</span>"</span> class="box"{r}<br/>
+							{t*2}<span title="Generated by macro F2" class="c3">main</span><br/>
+						{t}{l}/a{r}<br/>
+					{l}/p{r}
+				</td>
+			</tr>
+		</table>
 	</div>
 	
 </div>

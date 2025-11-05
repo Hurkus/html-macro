@@ -93,6 +93,22 @@ void attribute(const html::Node& op, const html::Attr& op_attr, html::Node& dst)
 
 
 /**
+ * @brief Shorthand for <CALL> with NAME being the tag name.
+ * @param op Calling operation node from which to extract call information.
+ * @param dst Destination parent node for any created nodes.
+ */
+void userElementMacro(const html::Node& op, html::Node& dst);
+
+/**
+ * @brief Shorthand for CALL attribute macro with NAME being the attribute name.
+ * @param op Calling operation node from which `opAttr` originates.
+ * @param opAttr Attribute invoking the macro call.
+ * @param dst Destination parent node for any created nodes.
+ */
+void userAttrMacro(const html::Node& op, const html::Attr& opAttr, html::Node& dst);
+
+
+/**
  * @brief Element macro for invoking a macro.
  * @param op Calling operation node from which to extract call information.
  * @param dst Destination parent node for any created nodes.

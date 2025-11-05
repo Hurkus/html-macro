@@ -9,6 +9,14 @@ using namespace MacroEngine;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+constexpr bool isMacroChar(char c){
+	return ('A' <= c && c <= 'Z') || c == '_';
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 void MacroEngine::text(const Node& src, Node& dst){
 	assert(src.type != NodeType::ROOT);
 	Node& txt = dst.appendChild(src.type);
@@ -52,17 +60,15 @@ void MacroEngine::tag(const Node& op, Node& dst){
 	// Copy attributes
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
+		assert(!name.empty());
 		
 		// Check regular attribute
-		if (name.empty()){
-			assert(!name.empty());
-			continue;
-		} else if (!isupper(name[0])){
+		if (!isMacroChar(name[0])){ regular_attr:
 			attribute(op, *attr, *child);
 			continue;
 		}
 		
-		if (name == "CALL"){
+		else if (name == "CALL"){
 			call(op, *attr, *child);
 			continue;
 		}
@@ -79,9 +85,14 @@ void MacroEngine::tag(const Node& op, Node& dst){
 			case Branch::NONE: break;
 		}
 		
-		// Unknown attr macro
+		// User macro
+		if (MacroCache::get(attr->name()) != nullptr){
+			userAttrMacro(op, *attr, *child);
+			continue;
+		}
+		
 		HERE(warn_unknown_macro_attribute(op, *attr));
-		attribute(op, *attr, *child);
+		goto regular_attr;
 	}
 	
 	child->type = NodeType::TAG;
