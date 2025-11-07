@@ -1,6 +1,7 @@
 #include "html.hpp"
 #include <vector>
-#include <fstream>
+
+#include "fs.hpp"
 
 using namespace std;
 using namespace html;
@@ -726,44 +727,6 @@ static ParseResult parse(Document& doc, const char* buff){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool readFile(const filesystem::path& path, string& buff){
-	ifstream in = ifstream(path);
-	if (!in){
-		return false;
-	}
-	
-	if (!in.seekg(0, ios_base::end)){
-		return false;
-	}
-	
-	const streampos pos = in.tellg();
-	if (pos < 0 || !in.seekg(0, ios_base::beg)){
-		return false;
-	}
-	
-	assert(pos >= 0);
-	const size_t size = size_t(pos);
-	buff.resize(size);
-	size_t count = 0;
-	
-	while (count < size && in.read(&buff[count], size - count)){
-		const streamsize n = in.gcount();
-		
-		if (n < 0){
-			return false;
-		} else if (n == 0){
-			break;
-		}
-		
-		assert(n >= 0);
-		count += size_t(n);
-	}
-	
-	buff.resize(count);
-	return true;
-}
-
-
 ParseResult Document::parseBuff(shared_ptr<const string> buff){
 	reset();
 	this->buffer = move(buff);
@@ -775,7 +738,7 @@ ParseResult Document::parseFile(shared_ptr<const filesystem::path> path){
 	assert(path != nullptr);
 	unique_ptr<string> buff = make_unique<string>();
 	
-	if (!readFile(*path, *buff)){
+	if (!fs::readFile(*path, *buff)){
 		return ParseResult {
 			.status = ParseStatus::IO
 		};
