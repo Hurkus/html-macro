@@ -144,8 +144,11 @@ bool Macro::parseHTML(){
 	// Extract and register all child <MACRO> nodes.
 	for (Node* m : res.macros){
 		assert(m != nullptr && m->parent != nullptr);
+		
 		registerChildMacro(*this, move(*m));
-		Node::del(m);
+		bool remd = m->parent->removeChild(m);
+		
+		assert(remd);
 	}
 	
 	return true;

@@ -45,7 +45,7 @@ void MacroEngine::setVariableConstants(){
 void MacroEngine::run(const Node& op, Node& dst){
 	switch (op.type){
 		case NodeType::TAG:
-			break;
+			goto tag;
 		
 		case NodeType::ROOT:
 			runChildren(op, dst);
@@ -63,6 +63,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 			return;
 	}
 	
+	tag:
 	string_view name = op.name();
 	if (name.empty()){
 		assert(!name.empty());
@@ -70,7 +71,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 	}
 	
 	// Regular tag
-	else if (!isMacroChar(name[0])){ regular_tag:
+	else if (!isMacroChar(name[0])){
 		tag(op, dst);
 		return;
 	}
@@ -163,10 +164,8 @@ void MacroEngine::runChildren(const Node& macroParent, Node& dst){
 	MacroEngine::currentBranch_block = Branch::NONE;
 	MacroEngine::currentBranch_inline = Branch::NONE;
 	
-	const Node* macroChild = macroParent.child;
-	while (macroChild != nullptr){
-		run(*macroChild, dst);
-		macroChild = macroChild->next;
+	for (const Node* child = macroParent.child ; child != nullptr ; child = child->next){
+		run(*child, dst);
 	}
 	
 	MacroEngine::currentBranch_block = _branch_1;
@@ -181,8 +180,6 @@ void MacroEngine::exec(const Macro& macro, Node& dst){
 	}
 	
 	// Backup state
-	auto _branch_1 = MacroEngine::currentBranch_block;
-	auto _branch_2 = MacroEngine::currentBranch_inline;
 	auto _cwd = move(Paths::cwd);
 	
 	// Set new state
@@ -193,15 +190,10 @@ void MacroEngine::exec(const Macro& macro, Node& dst){
 		Paths::cwd = _cwd;
 	}
 	
-	MacroEngine::currentBranch_block = Branch::NONE;
-	MacroEngine::currentBranch_inline = Branch::NONE;
-	
 	runChildren(*macro.html, dst);
 	
 	// Restore state
 	Paths::cwd = move(_cwd);
-	MacroEngine::currentBranch_inline = _branch_2;
-	MacroEngine::currentBranch_block = _branch_1;
 }
 
 

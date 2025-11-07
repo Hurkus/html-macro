@@ -54,7 +54,7 @@ void MacroEngine::tag(const Node& op, Node& dst){
 	assert(op.type == NodeType::TAG);
 	
 	// Create child, unlinked
-	unique_ptr child = unique_ptr<Node,Node::deleter>(html::newNode());
+	unique_ptr<Node> child = make_unique<Node>();
 	child->type = op.type;
 	
 	// Copy attributes

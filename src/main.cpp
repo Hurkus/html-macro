@@ -159,9 +159,8 @@ int main(int argc, char const* const* argv){
 	#ifdef DEBUG
 		const char* _argv[] = {
 			argv[0],
-			// "-d",
-			// "doc/src/main.html"
 			"test/test-0.html"
+			// "test/test-9.in.css"
 		};
 		if (argc < 2){
 			argv = _argv;

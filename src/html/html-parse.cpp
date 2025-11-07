@@ -73,13 +73,13 @@ const char* html::errstr(ParseStatus status) noexcept {
 
 
 inline Attr* allocAttr(){
-	html::Attr* a = html::newAttr();
+	Attr* a = new Attr();
 	a->options |= NodeOptions::LIST_FORWARDS;
 	return a;
 }
 
 inline Node* allocNode(NodeType type){
-	html::Node* node = html::newNode();
+	Node* node = new Node();
 	node->type = type;
 	node->options |= NodeOptions::LIST_FORWARDS;
 	return node;
@@ -90,7 +90,7 @@ inline Node* addChild(Parser& state, Node* node){
 	node->parent = state.current;
 	
 	// Append sibling
-	html::Node*& prev_sibling = state.lastChild.back();
+	Node*& prev_sibling = state.lastChild.back();
 	if (prev_sibling != nullptr)
 		prev_sibling->next = node;
 	else

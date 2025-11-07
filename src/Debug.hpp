@@ -14,6 +14,13 @@
 #endif
 
 
+#ifdef DEBUG
+	#define IN_DEBUG(statement)	statement
+#else
+	#define IN_DEBUG(statement)
+#endif
+
+
 // ---------------------------------- [ Definitions ] --------------------------------------- //
 
 

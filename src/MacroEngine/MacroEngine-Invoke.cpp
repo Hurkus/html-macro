@@ -90,6 +90,17 @@ static void _invoke_macro(const Node& op, stack_vector<var_copy,2>& args, const 
 
 void MacroEngine::userElementMacro(const Node& op, Node& dst){
 	assert(!op.name().empty());
+	
+	// Verify macro existance
+	Macro* macro = MacroCache::get(op.name());
+	if (macro == nullptr){
+		tag(op, dst);
+		return;
+	} else if (macro->html == nullptr && !macro->parseHTML()){
+		HERE(error_macro_not_found(op, op.name(), op.name()));
+		return;
+	}
+	
 	stack_vector<var_copy,2> args;
 	
 	// Parse operation attributes
@@ -114,12 +125,6 @@ void MacroEngine::userElementMacro(const Node& op, Node& dst){
 			return;
 		}
 		
-	}
-	
-	Macro* macro = MacroCache::get(op.name());
-	if (macro == nullptr || (macro->html == nullptr && !macro->parseHTML())){
-		HERE(error_macro_not_found(op, op.name(), op.name()));
-		return;
 	}
 	
 	_invoke_macro(op, args, *macro, dst);

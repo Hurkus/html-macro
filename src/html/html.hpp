@@ -62,7 +62,6 @@ enum class html::NodeOptions : uint8_t {
 	SPACE_BEFORE  = 1 << 6, // Node is prefixed (before opening tag) with whitespace.
 	SPACE_AFTER   = 1 << 7, // Node is suffixed (after closing tag) with whitespace.
 };
-
 template<> inline constexpr bool has_enum_operators<html::NodeOptions> = true;
 
 
@@ -73,9 +72,6 @@ struct html::ParseResult {
 };
 
 
-
-
-/* Readonly node for marking HTML structure in a source text. */
 struct html::Node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
@@ -90,6 +86,10 @@ public:
 	Node* next = nullptr;			// Linked list.
 	
 	Attr* attribute = nullptr;		// First/last attribute in linked list.
+	
+// ---------------------------------- [ Constructors ] -------------------------------------- //
+public:
+	~Node();
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
@@ -132,20 +132,23 @@ public:
 public:
 	Node& appendChild(NodeType type = NodeType::TAG);
 	void appendChild(Node* child) noexcept;
-	Attr& appendAttribute();
 	
+	Node* extractChild(Node* child) noexcept;
 	bool removeChild(Node* child);
 	void removeChildren();
-	Node* extractChild(Node* child) noexcept;
 	
+public:
+	Attr& appendAttribute();
+	
+	Attr* extractAttr(Attr* attr) noexcept;
 	bool removeAttr(Attr* attr);
 	bool removeAttr(std::string_view name);
 	void removeAttributes();
-	Attr* extractAttr(Attr* child) noexcept;
 	
+public:
 	void clear(){
-		removeAttributes();
 		removeChildren();
+		removeAttributes();
 		value(nullptr);
 	}
 	
@@ -165,26 +168,10 @@ public:
 		return *(Document*)this;
 	}
 	
+// ----------------------------------- [ Operators ] ---------------------------------------- //
 public:
-	static void del(Node* node){
-		assert(node != nullptr);
-		if (node->parent != nullptr){
-			node->parent->removeChild(node);
-		} else {
-			node->clear();
-			html::del(node);
-		}
-	}
-	
-public:
-	struct deleter {
-		void operator()(Node* p){
-			if (p != nullptr){
-				p->clear();
-				html::del(p);
-			}
-		}
-	};
+	static void* operator new(size_t size);
+	static void operator delete(void*) noexcept;
 	
 // ------------------------------------------------------------------------------------------ //
 };
@@ -201,6 +188,10 @@ public:
 	const char* value_p = nullptr;
 	
 	Attr* next = nullptr;	// Linked list.
+	
+// ---------------------------------- [ Constructors ] -------------------------------------- //
+public:
+	~Attr();
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
@@ -232,6 +223,11 @@ public:
 	
 	// Set name to const string.
 	void name(char* str, size_t len);
+	
+// ----------------------------------- [ Operators ] ---------------------------------------- //
+public:
+	static void* operator new(size_t size);
+	static void operator delete(void*) noexcept;
 	
 // ------------------------------------------------------------------------------------------ //
 };
@@ -299,6 +295,12 @@ public:
 	// 	this->value_len = 0;
 	// 	this->next = nullptr;
 	// }
+	
+// ----------------------------------- [ Operators ] ---------------------------------------- //
+public:
+	static void* operator new(size_t size);
+	static void operator delete(void*) noexcept;
+	
 	
 // ------------------------------------------------------------------------------------------ //
 };
