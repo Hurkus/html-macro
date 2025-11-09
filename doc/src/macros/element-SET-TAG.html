@@ -8,19 +8,24 @@
 	<h4><a href="#SET-TAG" class="code">{l}SET-TAG/{r}</a></h4>
 	<p>Sets tag of parent element.</p>
 	<x-line></x-line>
+	
 	<p>
-		Must be in the form of <code>{l}SET-TAG NAME='...' /{r}</code> or <code>{l}SET-TAG [name] /{r}</code>.
+		Sets the tag (name) of the parent element.
 	</p>
+	
+	
 	<br/>
 	<p>
 		Attributes:
 		<ul>
 			<li>
-				<code>NAME='...'</code>
-				Set tag of parent element to result of the attribute value expression.
+				<code>NAME=[value]</code>
+				The new tag of the parent element.
 			</li>
 		</ul>
 	</p>
+	
+	
 	<br/>
 	<p>
 		Other attributes:
@@ -30,10 +35,14 @@
 			<li CALL="common-ELSE-after"></li>
 		</ul>
 	</p>
+	
+	
 	<br/>
 	<p>See also:
 		<a CALL="link-em-GET-ATTR">{l}GET-ATTR{r}</a>
 	</p>
+	
+	
 	<x-line></x-line>
 	<div class="example">
 		<h4><b>Example</b></h4>

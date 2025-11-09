@@ -66,7 +66,7 @@
 				Depending on the <code>NO-WRAP</code> attribute, the appended text is wrapped with <code>{l}script{r}{l}/script{r}</code> tags.
 			</li>
 			<li>
-				All other files are treated as plain text and appended to the final document.
+				All other files are treated as plain text and coppied to the final document.
 			</li>
 		</ul>
 	</p>
@@ -84,15 +84,14 @@
 				<code>NO-WRAP</code>
 				Do not wrap contents of certain file types within their respective HTML element:
 				<ul>
-					<li><code>.css</code> files are not wrapped with <code>{l}style{r}{l}/style{r}</code>.</li>
-					<li><code>.js</code> files are not wrapped with <code>{l}script{r}{l}/script{r}</code>.</li>
-					<li>Others aren't even wrapped.</li>
+					<li><code>.css</code> files are not wrapped with <code>{l}style{r}...{l}/style{r}</code>.</li>
+					<li><code>.js</code> files are not wrapped with <code>{l}script{r}...{l}/script{r}</code>.</li>
 				</ul>
 			</li>
 			<li>
 				<code>HEADER</code>
 				Only load and cache the file; do not append any content to the final document.<br/>
-				It is usefull for loading <a CALL="link-em-MACRO">{l}MACRO{r}</a> macros at the beginning of the file and later including the file again without the <code>HEADER</code> attribute to include the non <a CALL="link-em-MACRO">{l}MACRO{r}</a> content.
+				It is usefull for loading macros at the beginning of the file and later including the file again without the <code>HEADER</code> attribute to include the non <a CALL="link-em-MACRO">{l}MACRO{r}</a> content.
 			</li>
 			<li>
 				<code>[variable]=[value]</code> represents a variable name that is local durring execution of the root macro of the included file.

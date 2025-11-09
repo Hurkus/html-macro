@@ -95,11 +95,13 @@ bool test_doc_expression_context(){
 		"<p attr=\"text {1 + 2}\"></p>" NL
 		"<p attr='2 * 2'></p>" NL
 		"<p>There are {9.0 / 2} apples.</p>" NL
+		"<p>Escaped expression \\\\\\{1+1}</p>" NL
 	);
 	string_view out = (
 		"<p attr=\"text 3\"></p>" NL
 		"<p attr=\"4\"></p>" NL
 		"<p>There are 4.5 apples.</p>" NL
+		"<p>Escaped expression \\{1+1}</p>" NL
 	);
 	return run({in}, out, "", 0);
 }

@@ -132,8 +132,21 @@
 		<p>
 			While most of the HTML elements and their attributes are coppied to the final document, some of them perform special operations that programatically generate content.
 			These elements and attributes are typically written in <b>uppercase</b>.
-			Details about this mechanism can be found in the chapter about <a href="#macros">macros</a>.
-			Aditionally, plaintext can also be modified with string interpolation, as seen in the chapter on <a href="#expressions">expressions</a>.
+			Details about this mechanism can be found in the chapter on <a href="#macros">macros</a>.
+		</p>
+		
+		<br/>
+		<p>
+			Another consideration when writing regular HTML is with element attributes.
+			The types of quotes around the attriute's value hold different meanings.
+			Double quotes <code>attr=&quot;...&quot;</code> represent a string, while single quotes <code>attr=&apos;...&apos;</code> represent an <a href="#expressions">expressions</a>.
+		</p>
+		
+		<br/>
+		<p>
+			Text is also parsed for expressions within curly brackets <code>\{}</code>, which are replaced by the stringified value of the evaluated expression.
+			Backslashes <code>\\\{...}</code> escape the expression and output the text as is.
+			More on expressions and string interpolation can be found in the chapter on <a href="#expressions">expressions</a>.
 		</p>
 		
 		<br/>

@@ -10,9 +10,9 @@
 	<x-line></x-line>
 	<p>
 		Must be in the form of <code>{l}IF [cond]{r}</code>,
-		where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
-		or direct variable comparison <code>var='value'</code>.
-		Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
+		where <code>[cond]</code> can either be a boolean check <code>TRUE=[expr]</code> or <code>FALSE=[expr]</code>,
+		or a direct variable comparison <code>[var]=[value]</code>.
+		Direct variable comparison is equivalent to <code>TRUE='[var]==[value]'</code>.
 		<br/>
 		Child elements are included in the final document only if all conditionals <code>[cond]</code> are evaluated to <code>true</code>.
 	</p>

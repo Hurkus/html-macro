@@ -1,5 +1,5 @@
 SHELL := /usr/bin/env bash
-config = debug
+config = release
 
 CC = g++
 

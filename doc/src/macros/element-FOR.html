@@ -13,14 +13,14 @@
 		where:
 		<ul>
 			<li>
-				<code>[init]</code> represents setting a variable in the form <code>name='value'</code>, where the attribute name is the name of the variable, and the attribute value is the value of the variable.
+				<code>[init]</code> represents setting/initializing a variable in the form <code>[name]=[value]</code>, where the attribute name is the name of the variable, and the attribute value is the value of the variable.
 			</li>
 			<li>
-				<code>[cond]</code> represents a conditional attribute <code>TRUE='...'</code> or <code>FALSE='...'</code>.
+				<code>[cond]</code> represents a conditional attribute <code>TRUE='[expr]'</code> or <code>FALSE='[expr]'</code>.
 				The loop ends when the expression of the attribute value evaluates to <code>false</code>, or <code>true</code> respectively.
 			</li>
 			<li>
-				<code>[inc]</code> represents setting a variable to a new value, in the form of <code>name='value'</code>, after each iteration of the loop.
+				<code>[inc]</code> represents setting a variable to a new value, in the form of <code>[name]=[expr]</code>, after each iteration of the loop.
 			</li>
 		</ul>
 	</p>

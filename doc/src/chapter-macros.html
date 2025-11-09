@@ -64,10 +64,15 @@
 	
 	<p>
 		While most content from source files is coppied to the final document, <b>macros</b> can invoke special functionality for generating or excluding content.
-		While the user can define custom macros (with limited functionality), there are two sets of predefined macros:
+		The user can also define custom macros, although with limited functionality.<br/>
+	</p>
+	
+	<br/>
+	<p>
+		There are two sets of predefined macros:
 		<ul>
-			<li><a href="#element-macros">Element macros</a></li>
-			<li><a href="#attribute-macros">Attribute macros</a></li>
+			<li><a href="#element-macros">Element macros</a> &mdash; triggered by the element's tag.</li>
+			<li><a href="#attribute-macros">Attribute macros</a> &mdash; triggered by an attribute's name of an element.</li>
 		</ul>
 	</p>
 	
@@ -79,20 +84,19 @@
 		<h3><a href="#element-macros">{ci}.{cii}. Element macros</a></h3>
 		
 		<p>
-			Some HTML elements act as macros, and are not coppied to the final document.
-			Instead they perform other functions such as deciding what content to include or generate.
-			They are called <b>element macros</b> and their tags are written in <b>uppercase</b>.
-			Parameters for their functionality are passed with HTML attributes, which are <i>usually</i> also in written uppercase.
+			Macros that are invoked in-place of an HTML element are called <b>element macros</b>, and their tags are written in <b>uppercase</b>.
+			Parameters for their functionality are passed through attributes, which are <i>usually</i> also in written uppercase.
 		</p>
+		
 		<br/>
 		<p>
-			What happens with child elements depends on the specific macro in question.
-			While some copy/evaluate their children, others remove them and some only affect the execution environment.
+			While they typically can have child elements of any kind, they are considered only by some macros.
+			While some macros copy/evaluate their child elements, others remove them and some only affect the execution environment.
 		</p>
 		
 		<br/>
 		<div class="example">
-			<h4><b>Example:</b> Macro demonstration for language-specific text.</h4>
+			<h4><b>Example:</b> Macro demonstration for language-specific content.</h4>
 			<table>
 				<tr>
 					<th>input</th>
@@ -117,9 +121,11 @@
 				</tr>
 			</table>
 			<p>
-				Here we decide language-specific text for the final document.
-				The decision, which text to include, is done by the flow controll <code>IF</code> and <code>ELSE</code> macros,
+				Here we decide what content to include in the final document, based on a variable containing the desired language of the document.
+				The decision, which text to include, is done by the flow controll <code>{l}IF{r}</code> and <code>{l}ELSE{r}</code> macros,
 				which depend on a variable <code>lang</code>.
+				<br/>
+				The variable was not defined within the source document, nor by the command-line options, therefore it is undefined. The resulting content is thus selected from the <code>{l}ELSE{r}</code> branch.
 			</p>
 		</div>
 		
@@ -134,22 +140,22 @@
 			<ul class="list">
 				<li><a CALL="link-em-MACRO">{l}MACRO{r}</a> &mdash; Defines a new macro.</li>
 				<li><a CALL="link-em-CALL">{l}CALL{r}</a>  &mdash; Invokes a <a CALL="link-em-MACRO">{l}MACRO{r}</a>.</li>
-				<li><a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a> &mdash; Includes contents of another file.</li>
+				<li><a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a> &mdash; Includes content from another file.</li>
 				<li><a CALL="link-em-SET">{l}SET{r}</a> &mdash; Assigns values to variables.</li>
 				<li><a CALL="link-em-IF">{l}IF{r}</a> &mdash; Conditionally includes child elements.</li>
-				<li><a CALL="link-em-ELIF">{l}ELIF{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
-				<li><a CALL="link-em-ELSE">{l}ELSE{r}</a> &mdash; Extends <a CALL="link-em-IF">{l}IF{r}</a>.</li>
-				<li><a CALL="link-em-FOR">{l}FOR{r}</a> &mdash; Include child elements in a loop.</li>
-				<li><a CALL="link-em-WHILE">{l}WHILE{r}</a> &mdash; Include child elements in a loop.</li>
+				<li><a CALL="link-em-ELIF">{l}ELIF{r}</a> &mdash; Conditionally includes child elements.</li>
+				<li><a CALL="link-em-ELSE">{l}ELSE{r}</a> &mdash; Conditionally includes child elements.</li>
+				<li><a CALL="link-em-FOR">{l}FOR{r}</a> &mdash; Includes child elements in a loop.</li>
+				<li><a CALL="link-em-WHILE">{l}WHILE{r}</a> &mdash; Includes child elements in a loop.</li>
 				<li><a CALL="link-em-SET-TAG">{l}SET-TAG{r}</a> &mdash; Sets tag of parent element.</li>
-				<li><a CALL="a-GET-TAG">{l}GET-TAG{r}</a> &mdash; Set variable to parent tag.</li>
-				<li><a CALL="link-em-SET-ATTR">{l}SET-ATTR{r}</a> &mdash; Set parent element attribute value.</li>
-				<li><a CALL="link-em-GET-ATTR">{l}GET-ATTR{r}</a> &mdash; Set variable to value of a parent's attribute.</li>
-				<li><a CALL="link-em-DEL-ATTR">{l}DEL-ATTR{r}</a> &mdash; Remove attribute from parent element.</li>
-				<li><a CALL="a-SHELL">{l}SHELL{r}</a> &mdash; Execute shell command.</li>
-				<li><a CALL="link-em-INFO">{l}INFO{r}</a> &mdash; Log messages to stderr.</li>
-				<li><a CALL="link-em-WARN">{l}WARN{r}</a> &mdash; Log warning messages to stderr.</li>
-				<li><a CALL="link-em-ERROR">{l}ERROR{r}</a> &mdash; Log error messages to stderr.</li>
+				<li><a CALL="a-GET-TAG">{l}GET-TAG{r}</a> &mdash; Sets a variable to parent element's tag.</li>
+				<li><a CALL="link-em-SET-ATTR">{l}SET-ATTR{r}</a> &mdash; Sets parent element's attribute value.</li>
+				<li><a CALL="link-em-GET-ATTR">{l}GET-ATTR{r}</a> &mdash; Sets variable to value of a parent's attribute.</li>
+				<li><a CALL="link-em-DEL-ATTR">{l}DEL-ATTR{r}</a> &mdash; Removes attribute from parent element.</li>
+				<li><a CALL="a-SHELL">{l}SHELL{r}</a> &mdash; Executes shell command.</li>
+				<li><a CALL="link-em-INFO">{l}INFO{r}</a> &mdash; Logs messages to stderr.</li>
+				<li><a CALL="link-em-WARN">{l}WARN{r}</a> &mdash; Logs warning messages to stderr.</li>
+				<li><a CALL="link-em-ERROR">{l}ERROR{r}</a> &mdash; Logs error messages to stderr.</li>
 			</ul>
 		</p>
 		
@@ -196,9 +202,9 @@
 	<section id="attribute-macros">
 		<SET cii='cii + 1'/>
 		<h3><a href="#attribute-macros">{ci}.{cii}. Attribute macros</a></h3>
+		
 		<p>
-			Some of the attributes on regular HTML elements act as macros, and are not coppied to the final document.
-			They are called <b>attribute macros</b> and are written in <b>uppercase</b>.
+			Macros that are invoked in-place of an element's attribute are called <b>attribute macros</b>, and their names are written in <b>uppercase</b>.
 			They typically serve as short forms of <a href="element-macros">element macros</a>.
 		</p>
 	

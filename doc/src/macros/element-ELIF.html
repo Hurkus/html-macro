@@ -10,9 +10,9 @@
 	<x-line></x-line>
 	<p>
 		Must follow a previous <a CALL="link-em-IF"><code>{l}IF{r}</code></a> macro and be in the form of <code>{l}ELIF [cond]{r}</code>,
-		where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
-		or direct variable comparison <code>var='value'</code>.
-		Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
+		where <code>[cond]</code> can either be a boolean check <code>TRUE=[expr]</code> or <code>FALSE=[expr]</code>,
+		or direct variable comparison <code>[var]=[value]</code>.
+		Direct variable comparison is equivalent to <code>TRUE='[var]==[value]'</code>.
 		<br/>
 		Child elements are included in the final document only if a previous <a CALL="link-em-IF"><code>{l}IF{r}</code></a> macro failed and
 		all conditionals <code>[cond]</code> of this macro are evaluated to <code>true</code>.

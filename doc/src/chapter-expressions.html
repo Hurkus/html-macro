@@ -1,6 +1,7 @@
-<SET ci='ci + 1' cii='0'/>
-<!--  -->
 <INCLUDE HEADER SRC="macros/element-SET.html"/>
+<!--  -->
+<SET ci='ci + 1' cii='0'/>
+<SET l="&lt;" r="&gt;"/>
 <!--  -->
 <section id="expressions" class="chapter">
 	<h2><a href="#expressions">{ci}. Expressions</a></h2>
@@ -15,7 +16,7 @@
 		<ul>
 			<li><b>int</b>eger: <i>long</i>, 64 bit,</li>
 			<li><b>float</b>ing point number: <i>double</i>, 64 bit,</li>
-			<li><b>string</b>.</li>
+			<li><b>string</b>: <i>char[]</i>.</li>
 		</ul>
 	</p>
 	<br/>
@@ -24,7 +25,7 @@
 		<ul>
 			<li><b>number</b>: <b>int</b> or <b>float</b>,</li>
 			<li>
-				<b>bool</b>ean: <b>int</b> where logical
+				<b>bool</b>ean: <b>int</b>, where logical
 				<code>false</code> equals <code>0</code> and
 				<code>true</code> equals <code>1</code>.
 			</li>
@@ -41,10 +42,20 @@
 			Expressions can be defined and evaluated within HTML attribute values or HTML text nodes.
 			HTML attribute values, quoted with single quotes (<code>&apos;&apos;</code>),
 			are directly evaluated as expressions and then converted to text before they are appended to the final document.
-			Attribute values, quoted with double quotes (<code>&quot;&quot;</code>),
-			are evaluated as strings, which are interpolated for any expressions contained within curly brackets <code>\{}</code>.
-			Similarly, HTML text nodes are also interpolated for expressions within curly brackets.
+			Attribute values, quoted with double quotes (<code>&quot;&quot;</code>), are evaluated as strings/plain text.
 		</p>
+		
+		<br/>
+		<p>
+			Any plain text or string attribute values (quoted with double quotes <code>&quot;...&quot;</code>) are interpolated for any expressions contained within curly brackets <code>\{}</code>.
+			Content within the curly brackets is evaluated as an expression and it's result is stringified and inserted in-place of the expression in the final document.<br/>
+		</p>
+		
+		<br/>
+		<p>
+			In order to escape an expression (to consider it as just text and not an expression), it must be prefixed with a backslash: <code>\\\{...}</code>.
+		</p>
+		
 		<br/>
 		<div class="example">
 			<h4><b>Example:</b> Attribute expressions and text interpolation.</h4>
@@ -55,14 +66,16 @@
 				</tr>
 				<tr>
 					<td class="code">
-						&lt;p attr="text <span title="Replace this expression with its result (3)">\{1 + 2}</span>"&gt;&lt;/p&gt;<br/>
-						&lt;p attr=<span title="Set attribute value to the result of this expression (4)">'2 * 2'</span>&gt;&lt;/p&gt;<br/>
-						&lt;p&gt;There are <span title="Replace this expression with its result (4.5)">\{9.0 / 2}</span> apples.&lt;/p&gt;
+						{l}p attr="text <span title="Replace this expression with its result (3)">\{1 + 2}</span>"{r}{l}/p{r}<br/>
+						{l}p attr=<span title="Set attribute value to the result of this expression (4)">'2 * 2'</span>{r}{l}/p{r}<br/>
+						{l}p{r}There are <span title="Replace this expression with its result (4.5)">\{9.0 / 2}</span> apples.{l}/p{r}<br/>
+						{l}p{r}Escaped expression <span title="This expression is not evaluated">\\\{1+1}</span>{l}/p{r}
 					</td>
 					<td class="code">
-						&lt;p attr="text 3"&gt;&lt;/p&gt;<br/>
-						&lt;p attr="4"&gt;&lt;/p&gt;<br/>
-						&lt;p&gt;There are 4.5 apples.&lt;/p&gt;
+						{l}p attr="text 3"{r}{l}/p{r}<br/>
+						{l}p attr="4"{r}{l}/p{r}<br/>
+						{l}p{r}There are 4.5 apples.{l}/p{r}<br/>
+						{l}p{r}Escaped expression \{1+1}{l}/p{r}
 					</td>
 				</tr>
 			</table>
@@ -79,7 +92,7 @@
 			Regex descriptions for types of constants:
 			<ul>
 				<li><b>int:</b> <code>-?[0-9]+</code></li>
-				<li><b>float:</b> <code>-?[0-9]+[.][0-9]+</code></li>
+				<li><b>float:</b> <code>-?[0-9]+[.][0-9]*</code></li>
 				<li><b>string:</b> <code>&quot;.*?&quot;|&apos;.*?&apos;</code> (All text between either single <code>&apos;</code> or double <code>&quot;</code> quotes)</li>
 			</ul>
 		</p>
@@ -268,7 +281,7 @@
 		<h3><a href="#expression-variables">{ci}.{cii}. Variables</a></h3>
 		<p>
 			Variable identifiers comprise of alpha-numerical and underscore characters, where the first character cannot be a digit.
-			The equivalent regex would be: <code>[a-zA-Z_][a-zA-Z0-9_]+</code>.
+			The equivalent regex would be: <code>[a-zA-Z_][a-zA-Z0-9_]*</code>.
 			They are defined/assigned with the <a CALL="link-em-SET">&lt;SET/&gt;</a> macro and can be referenced globally from all expressions.
 			The types of their values are dynamic and correspond to their most recently assigned value type.
 		</p>

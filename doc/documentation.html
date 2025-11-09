@@ -559,8 +559,19 @@
 					<p>
 						While most of the HTML elements and their attributes are coppied to the final document, some of them perform special operations that programatically generate content.
 						These elements and attributes are typically written in <b>uppercase</b>.
-						Details about this mechanism can be found in the chapter about <a href="#macros">macros</a>.
-						Aditionally, plaintext can also be modified with string interpolation, as seen in the chapter on <a href="#expressions">expressions</a>.
+						Details about this mechanism can be found in the chapter on <a href="#macros">macros</a>.
+					</p>
+					<br/>
+					<p>
+						Another consideration when writing regular HTML is with element attributes.
+						The types of quotes around the attriute's value hold different meanings.
+						Double quotes <code>attr=&quot;...&quot;</code> represent a string, while single quotes <code>attr=&apos;...&apos;</code> represent an <a href="#expressions">expressions</a>.
+					</p>
+					<br/>
+					<p>
+						Text is also parsed for expressions within curly brackets <code>{}</code>, which are replaced by the stringified value of the evaluated expression.
+						Backslashes <code>\{...}</code> escape the expression and output the text as is.
+						More on expressions and string interpolation can be found in the chapter on <a href="#expressions">expressions</a>.
 					</p>
 					<br/>
 					<p>
@@ -611,10 +622,14 @@
 				<h2><a href="#macros">4. Macros</a></h2>
 				<p>
 					While most content from source files is coppied to the final document, <b>macros</b> can invoke special functionality for generating or excluding content.
-					While the user can define custom macros (with limited functionality), there are two sets of predefined macros:
+					The user can also define custom macros, although with limited functionality.<br/>
+				</p>
+				<br/>
+				<p>
+					There are two sets of predefined macros:
 					<ul>
-						<li><a href="#element-macros">Element macros</a></li>
-						<li><a href="#attribute-macros">Attribute macros</a></li>
+						<li><a href="#element-macros">Element macros</a> &mdash; triggered by the element's tag.</li>
+						<li><a href="#attribute-macros">Attribute macros</a> &mdash; triggered by an attribute's name of an element.</li>
 					</ul>
 				</p>
 				<br/>
@@ -622,19 +637,17 @@
 				<section id="element-macros">
 					<h3><a href="#element-macros">4.1. Element macros</a></h3>
 					<p>
-						Some HTML elements act as macros, and are not coppied to the final document.
-						Instead they perform other functions such as deciding what content to include or generate.
-						They are called <b>element macros</b> and their tags are written in <b>uppercase</b>.
-						Parameters for their functionality are passed with HTML attributes, which are <i>usually</i> also in written uppercase.
+						Macros that are invoked in-place of an HTML element are called <b>element macros</b>, and their tags are written in <b>uppercase</b>.
+						Parameters for their functionality are passed through attributes, which are <i>usually</i> also in written uppercase.
 					</p>
 					<br/>
 					<p>
-						What happens with child elements depends on the specific macro in question.
-						While some copy/evaluate their children, others remove them and some only affect the execution environment.
+						While they typically can have child elements of any kind, they are considered only by some macros.
+						While some macros copy/evaluate their child elements, others remove them and some only affect the execution environment.
 					</p>
 					<br/>
 					<div class="example">
-						<h4><b>Example:</b> Macro demonstration for language-specific text.</h4>
+						<h4><b>Example:</b> Macro demonstration for language-specific content.</h4>
 						<table>
 							<tr>
 								<th>input</th>
@@ -660,9 +673,11 @@
 							</tr>
 						</table>
 						<p>
-							Here we decide language-specific text for the final document.
-							The decision, which text to include, is done by the flow controll <code>IF</code> and <code>ELSE</code> macros,
+							Here we decide what content to include in the final document, based on a variable containing the desired language of the document.
+							The decision, which text to include, is done by the flow controll <code>&lt;IF&gt;</code> and <code>&lt;ELSE&gt;</code> macros,
 							which depend on a variable <code>lang</code>.
+							<br/>
+							The variable was not defined within the source document, nor by the command-line options, therefore it is undefined. The resulting content is thus selected from the <code>&lt;ELSE&gt;</code> branch.
 						</p>
 					</div>
 					<br/>
@@ -676,22 +691,22 @@
 						<ul class="list">
 							<li><a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> &mdash; Defines a new macro.</li>
 							<li><a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt;</a>  &mdash; Invokes a <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a>.</li>
-							<li><a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a> &mdash; Includes contents of another file.</li>
+							<li><a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a> &mdash; Includes content from another file.</li>
 							<li><a href="#SET" title="Assigns values to variables.">&lt;SET&gt;</a> &mdash; Assigns values to variables.</li>
 							<li><a href="#IF" title="Conditionally includes child elements.">&lt;IF&gt;</a> &mdash; Conditionally includes child elements.</li>
-							<li><a href="#ELIF" title="Includes child elements if previous condition macros fail.">&lt;ELIF&gt;</a> &mdash; Extends <a href="#IF" title="Conditionally includes child elements.">&lt;IF&gt;</a>.</li>
-							<li><a href="#ELSE" title="Includes child elements if previous condition macros fail.">&lt;ELSE&gt;</a> &mdash; Extends <a href="#IF" title="Conditionally includes child elements.">&lt;IF&gt;</a>.</li>
-							<li><a href="#FOR" title="Evaluates child elements for a set amount of times.">&lt;FOR&gt;</a> &mdash; Include child elements in a loop.</li>
-							<li><a href="#WHILE" title="Repeatedly evaluates child elements.">&lt;WHILE&gt;</a> &mdash; Include child elements in a loop.</li>
+							<li><a href="#ELIF" title="Includes child elements if previous condition macros fail.">&lt;ELIF&gt;</a> &mdash; Conditionally includes child elements.</li>
+							<li><a href="#ELSE" title="Includes child elements if previous condition macros fail.">&lt;ELSE&gt;</a> &mdash; Conditionally includes child elements.</li>
+							<li><a href="#FOR" title="Evaluates child elements for a set amount of times.">&lt;FOR&gt;</a> &mdash; Includes child elements in a loop.</li>
+							<li><a href="#WHILE" title="Repeatedly evaluates child elements.">&lt;WHILE&gt;</a> &mdash; Includes child elements in a loop.</li>
 							<li><a href="#SET-TAG" title="Sets tag of parent element.">&lt;SET-TAG&gt;</a> &mdash; Sets tag of parent element.</li>
-							<li><a href="#GET-TAG" title="Set variable to parent tag name.">&lt;GET-TAG&gt;</a> &mdash; Set variable to parent tag.</li>
-							<li><a href="#SET-ATTR" title="Set attribute value of parent element.">&lt;SET-ATTR&gt;</a> &mdash; Set parent element attribute value.</li>
-							<li><a href="#GET-ATTR" title="Set variable to value of a parent's attribute.">&lt;GET-ATTR&gt;</a> &mdash; Set variable to value of a parent's attribute.</li>
-							<li><a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a> &mdash; Remove attribute from parent element.</li>
-							<li><a href="#SHELL" title="Execute shell command.">&lt;SHELL&gt;</a> &mdash; Execute shell command.</li>
-							<li><a href="#INFO" title="Log messages to stderr.">&lt;INFO&gt;</a> &mdash; Log messages to stderr.</li>
-							<li><a href="#WARN" title="Log warning messages to stderr.">&lt;WARN&gt;</a> &mdash; Log warning messages to stderr.</li>
-							<li><a href="#ERROR" title="Log error messages to stderr.">&lt;ERROR&gt;</a> &mdash; Log error messages to stderr.</li>
+							<li><a href="#GET-TAG" title="Set variable to parent tag name.">&lt;GET-TAG&gt;</a> &mdash; Sets a variable to parent element's tag.</li>
+							<li><a href="#SET-ATTR" title="Set attribute value of parent element.">&lt;SET-ATTR&gt;</a> &mdash; Sets parent element's attribute value.</li>
+							<li><a href="#GET-ATTR" title="Set variable to value of a parent's attribute.">&lt;GET-ATTR&gt;</a> &mdash; Sets variable to value of a parent's attribute.</li>
+							<li><a href="#DEL-ATTR" title="Remove attribute from parent element.">&lt;DEL-ATTR&gt;</a> &mdash; Removes attribute from parent element.</li>
+							<li><a href="#SHELL" title="Execute shell command.">&lt;SHELL&gt;</a> &mdash; Executes shell command.</li>
+							<li><a href="#INFO" title="Log messages to stderr.">&lt;INFO&gt;</a> &mdash; Logs messages to stderr.</li>
+							<li><a href="#WARN" title="Log warning messages to stderr.">&lt;WARN&gt;</a> &mdash; Logs warning messages to stderr.</li>
+							<li><a href="#ERROR" title="Log error messages to stderr.">&lt;ERROR&gt;</a> &mdash; Logs error messages to stderr.</li>
 						</ul>
 					</p>
 					<br/><br/>
@@ -1096,7 +1111,7 @@
 									Depending on the <code>NO-WRAP</code> attribute, the appended text is wrapped with <code>&lt;script&gt;&lt;/script&gt;</code> tags.
 								</li>
 								<li>
-									All other files are treated as plain text and appended to the final document.
+									All other files are treated as plain text and coppied to the final document.
 								</li>
 							</ul>
 						</p>
@@ -1112,15 +1127,14 @@
 									<code>NO-WRAP</code>
 									Do not wrap contents of certain file types within their respective HTML element:
 									<ul>
-										<li><code>.css</code> files are not wrapped with <code>&lt;style&gt;&lt;/style&gt;</code>.</li>
-										<li><code>.js</code> files are not wrapped with <code>&lt;script&gt;&lt;/script&gt;</code>.</li>
-										<li>Others aren't even wrapped.</li>
+										<li><code>.css</code> files are not wrapped with <code>&lt;style&gt;...&lt;/style&gt;</code>.</li>
+										<li><code>.js</code> files are not wrapped with <code>&lt;script&gt;...&lt;/script&gt;</code>.</li>
 									</ul>
 								</li>
 								<li>
 									<code>HEADER</code>
 									Only load and cache the file; do not append any content to the final document.<br/>
-									It is usefull for loading <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> macros at the beginning of the file and later including the file again without the <code>HEADER</code> attribute to include the non <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> content.
+									It is usefull for loading macros at the beginning of the file and later including the file again without the <code>HEADER</code> attribute to include the non <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> content.
 								</li>
 								<li>
 									<code>[variable]=[value]</code> represents a variable name that is local durring execution of the root macro of the included file.
@@ -1237,11 +1251,10 @@
 						<p>Assigns values to variables.</p>
 						<x-line></x-line>
 						<p>
-							Must be in the form of <code>&lt;SET [name='value'] /&gt;</code>,
+							Must be in the form of <code>&lt;SET [name]=[value] /&gt;</code>,
 							where each attribute name and value corresponds to a variable.<br/>
 							The type of the variable is same as the return type of the expression in the attribute value.
 							If the attribute value is within double quotes, it is considered to be a string.<br/>
-							All variables are <b>global</b>.
 						</p>
 						<br/>
 						<p>
@@ -1298,9 +1311,9 @@
 						<x-line></x-line>
 						<p>
 							Must be in the form of <code>&lt;IF [cond]&gt;</code>,
-							where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
-							or direct variable comparison <code>var='value'</code>.
-							Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
+							where <code>[cond]</code> can either be a boolean check <code>TRUE=[expr]</code> or <code>FALSE=[expr]</code>,
+							or a direct variable comparison <code>[var]=[value]</code>.
+							Direct variable comparison is equivalent to <code>TRUE='[var]==[value]'</code>.
 							<br/>
 							Child elements are included in the final document only if all conditionals <code>[cond]</code> are evaluated to <code>true</code>.
 						</p>
@@ -1354,9 +1367,9 @@
 						<x-line></x-line>
 						<p>
 							Must follow a previous <a href="#IF" title="Conditionally includes child elements."><code>&lt;IF&gt;</code></a> macro and be in the form of <code>&lt;ELIF [cond]&gt;</code>,
-							where <code>[cond]</code> can either be a boolean check <code>TRUE='...'</code> or <code>FALSE='...'</code>,
-							or direct variable comparison <code>var='value'</code>.
-							Direct variable comparison is equivalent to <code>TRUE='var==value'</code>.
+							where <code>[cond]</code> can either be a boolean check <code>TRUE=[expr]</code> or <code>FALSE=[expr]</code>,
+							or direct variable comparison <code>[var]=[value]</code>.
+							Direct variable comparison is equivalent to <code>TRUE='[var]==[value]'</code>.
 							<br/>
 							Child elements are included in the final document only if a previous <a href="#IF" title="Conditionally includes child elements."><code>&lt;IF&gt;</code></a> macro failed and
 							all conditionals <code>[cond]</code> of this macro are evaluated to <code>true</code>.
@@ -1454,14 +1467,14 @@
 							where:
 							<ul>
 								<li>
-									<code>[init]</code> represents setting a variable in the form <code>name='value'</code>, where the attribute name is the name of the variable, and the attribute value is the value of the variable.
+									<code>[init]</code> represents setting/initializing a variable in the form <code>[name]=[value]</code>, where the attribute name is the name of the variable, and the attribute value is the value of the variable.
 								</li>
 								<li>
-									<code>[cond]</code> represents a conditional attribute <code>TRUE='...'</code> or <code>FALSE='...'</code>.
+									<code>[cond]</code> represents a conditional attribute <code>TRUE='[expr]'</code> or <code>FALSE='[expr]'</code>.
 									The loop ends when the expression of the attribute value evaluates to <code>false</code>, or <code>true</code> respectively.
 								</li>
 								<li>
-									<code>[inc]</code> represents setting a variable to a new value, in the form of <code>name='value'</code>, after each iteration of the loop.
+									<code>[inc]</code> represents setting a variable to a new value, in the form of <code>[name]=[expr]</code>, after each iteration of the loop.
 								</li>
 							</ul>
 						</p>
@@ -1524,7 +1537,7 @@
 							Must be in the form of <code>&lt;WHILE [cond]&gt;</code>, where:
 							<ul>
 								<li>
-									<code>[cond]</code> represents a conditional attribute <code>TRUE='...'</code> or <code>FALSE='...'</code>.
+									<code>[cond]</code> represents a conditional attribute <code>TRUE='[expr]'</code> or <code>FALSE='[expr]'</code>.
 									The loop ends when the expression of the attribute value evaluates to <code>false</code>, or <code>true</code> respectively.
 								</li>
 							</ul>
@@ -1585,15 +1598,15 @@
 						<p>Sets tag of parent element.</p>
 						<x-line></x-line>
 						<p>
-							Must be in the form of <code>&lt;SET-TAG NAME='...' /&gt;</code> or <code>&lt;SET-TAG [name] /&gt;</code>.
+							Sets the tag (name) of the parent element.
 						</p>
 						<br/>
 						<p>
 							Attributes:
 							<ul>
 								<li>
-									<code>NAME='...'</code>
-									Set tag of parent element to result of the attribute value expression.
+									<code>NAME=[value]</code>
+									The new tag of the parent element.
 								</li>
 							</ul>
 						</p>
@@ -2110,8 +2123,7 @@
 				<section id="attribute-macros">
 					<h3><a href="#attribute-macros">4.2. Attribute macros</a></h3>
 					<p>
-						Some of the attributes on regular HTML elements act as macros, and are not coppied to the final document.
-						They are called <b>attribute macros</b> and are written in <b>uppercase</b>.
+						Macros that are invoked in-place of an element's attribute are called <b>attribute macros</b>, and their names are written in <b>uppercase</b>.
 						They typically serve as short forms of <a href="element-macros">element macros</a>.
 					</p>
 					<br/>
@@ -2463,7 +2475,7 @@
 					<ul>
 						<li><b>int</b>eger: <i>long</i>, 64 bit,</li>
 						<li><b>float</b>ing point number: <i>double</i>, 64 bit,</li>
-						<li><b>string</b>.</li>
+						<li><b>string</b>: <i>char[]</i>.</li>
 					</ul>
 				</p>
 				<br/>
@@ -2472,7 +2484,7 @@
 					<ul>
 						<li><b>number</b>: <b>int</b> or <b>float</b>,</li>
 						<li>
-							<b>bool</b>ean: <b>int</b> where logical
+							<b>bool</b>ean: <b>int</b>, where logical
 							<code>false</code> equals <code>0</code> and
 							<code>true</code> equals <code>1</code>.
 						</li>
@@ -2486,9 +2498,16 @@
 						Expressions can be defined and evaluated within HTML attribute values or HTML text nodes.
 						HTML attribute values, quoted with single quotes (<code>&apos;&apos;</code>),
 						are directly evaluated as expressions and then converted to text before they are appended to the final document.
-						Attribute values, quoted with double quotes (<code>&quot;&quot;</code>),
-						are evaluated as strings, which are interpolated for any expressions contained within curly brackets <code>{}</code>.
-						Similarly, HTML text nodes are also interpolated for expressions within curly brackets.
+						Attribute values, quoted with double quotes (<code>&quot;&quot;</code>), are evaluated as strings/plain text.
+					</p>
+					<br/>
+					<p>
+						Any plain text or string attribute values (quoted with double quotes <code>&quot;...&quot;</code>) are interpolated for any expressions contained within curly brackets <code>{}</code>.
+						Content within the curly brackets is evaluated as an expression and it's result is stringified and inserted in-place of the expression in the final document.<br/>
+					</p>
+					<br/>
+					<p>
+						In order to escape an expression (to consider it as just text and not an expression), it must be prefixed with a backslash: <code>\{...}</code>.
 					</p>
 					<br/>
 					<div class="example">
@@ -2502,12 +2521,14 @@
 								<td class="code">
 									&lt;p attr="text <span title="Replace this expression with its result (3)">{1 + 2}</span>"&gt;&lt;/p&gt;<br/>
 									&lt;p attr=<span title="Set attribute value to the result of this expression (4)">'2 * 2'</span>&gt;&lt;/p&gt;<br/>
-									&lt;p&gt;There are <span title="Replace this expression with its result (4.5)">{9.0 / 2}</span> apples.&lt;/p&gt;
+									&lt;p&gt;There are <span title="Replace this expression with its result (4.5)">{9.0 / 2}</span> apples.&lt;/p&gt;<br/>
+									&lt;p&gt;Escaped expression <span title="This expression is not evaluated">\{1+1}</span>&lt;/p&gt;
 								</td>
 								<td class="code">
 									&lt;p attr="text 3"&gt;&lt;/p&gt;<br/>
 									&lt;p attr="4"&gt;&lt;/p&gt;<br/>
-									&lt;p&gt;There are 4.5 apples.&lt;/p&gt;
+									&lt;p&gt;There are 4.5 apples.&lt;/p&gt;<br/>
+									&lt;p&gt;Escaped expression {1+1}&lt;/p&gt;
 								</td>
 							</tr>
 						</table>
@@ -2523,7 +2544,7 @@
 							<li><b>int:</b>
 								<code>-?[0-9]+</code></li>
 							<li><b>float:</b>
-								<code>-?[0-9]+[.][0-9]+</code></li>
+								<code>-?[0-9]+[.][0-9]*</code></li>
 							<li><b>string:</b>
 								<code>&quot;.*?&quot;|&apos;.*?&apos;</code> (All text between either single <code>&apos;</code> or double <code>&quot;</code> quotes)</li>
 						</ul>
@@ -2702,7 +2723,7 @@
 					<h3><a href="#expression-variables">5.4. Variables</a></h3>
 					<p>
 						Variable identifiers comprise of alpha-numerical and underscore characters, where the first character cannot be a digit.
-						The equivalent regex would be: <code>[a-zA-Z_][a-zA-Z0-9_]+</code>.
+						The equivalent regex would be: <code>[a-zA-Z_][a-zA-Z0-9_]*</code>.
 						They are defined/assigned with the <a href="#SET" title="Assigns values to variables.">&lt;SET/&gt;</a> macro and can be referenced globally from all expressions.
 						The types of their values are dynamic and correspond to their most recently assigned value type.
 					</p>

@@ -25,7 +25,7 @@ bool printDependencies(const char* path);
 #define B(s)		ANSI_BOLD s ANSI_RESET
 #define Y(s)		ANSI_YELLOW s ANSI_RESET
 #define P(s)		ANSI_PURPLE s ANSI_RESET
-#define VERSION 	"Version 0.11.0 (alpha)"
+#define VERSION 	"Version 0.11.0"
 
 
 void help(){
@@ -156,17 +156,17 @@ int main(int argc, char const* const* argv){
 	stdout_isTTY = (isatty(fileno(stdout)) == 1);
 	stderr_isTTY = (isatty(fileno(stderr)) == 1);
 	
-	#ifdef DEBUG
-		const char* _argv[] = {
-			argv[0],
-			"test/test-0.html"
-			// "test/test-9.in.css"
-		};
-		if (argc < 2){
-			argv = _argv;
-			argc = sizeof(_argv) / sizeof(*_argv);
-		}
-	#endif
+	// #ifdef DEBUG
+	// 	const char* _argv[] = {
+	// 		argv[0],
+	// 		"test/test-0.html"
+	// 		// "test/test-9.in.css"
+	// 	};
+	// 	if (argc < 2){
+	// 		argv = _argv;
+	// 		argc = sizeof(_argv) / sizeof(*_argv);
+	// 	}
+	// #endif
 	
 	if (argc < 2){
 		help();
