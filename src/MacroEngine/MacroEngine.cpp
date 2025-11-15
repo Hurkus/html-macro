@@ -51,7 +51,6 @@ void MacroEngine::run(const Node& op, Node& dst){
 			runChildren(op, dst);
 			return;
 		
-		case NodeType::PI:
 		case NodeType::DIRECTIVE:
 		case NodeType::TEXT:
 		case NodeType::COMMENT:

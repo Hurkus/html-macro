@@ -26,6 +26,10 @@ namespace html {
 
 enum class html::ParseStatus {
 	OK,
+	ERROR,					// Unknown error.
+	MEMORY,					// Out of memory.
+	IO,						// Failed to read file.
+	UNEXPECTED_CHAR,
 	UNCLOSED_TAG,			// ...>
 	UNCLOSED_STRING,		// ..."
 	UNCLOSED_QUESTION,		// ...?>
@@ -34,16 +38,12 @@ enum class html::ParseStatus {
 	INVALID_TAG_CHAR,		// <...>
 	MISSING_END_TAG,		// Some tags are unclosed: </tag>
 	INVALID_END_TAG,		// Too many </tag>.
-	MISSING_ATTR_VALUE,		// attr=
-	MEMORY,					// Out of memory.
-	IO,						// Failed to read file.
-	ERROR					// Unknown error.
+	MISSING_ATTR_VALUE		// attr=
 };
 
 
 enum class html::NodeType : uint8_t {
 	TAG,		// <tag ... >
-	PI,			// <? ... ?>
 	DIRECTIVE,	// <! ... >
 	COMMENT,	// <!-- ... -->
 	TEXT,		// <...>text</...>

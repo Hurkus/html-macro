@@ -63,7 +63,7 @@ constexpr bool isUnaryOp(int c){
 }
 
 
-constexpr const char* parse_whiteSpace(const char* s, const char* end) noexcept {
+constexpr const char* parseWhitespace(const char* s, const char* end) noexcept {
 	assert(s != nullptr && end != nullptr);
 	while (s != end && isSpace(*s)) s++;
 	return s;
@@ -173,7 +173,7 @@ static const char* parse_unaryExpression(const char* s, const char* end, Allocat
 	const char* beg = s;
 	const char op = *s;
 	
-	s = parse_whiteSpace(s + 1, end);
+	s = parseWhitespace(s + 1, end);
 	if (s == end){
 		throw Error(Status::INVALID_UNARY_EXPRESSION, string_view(beg, s+1));
 	}
@@ -350,7 +350,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 	
 	Operation* first = nullptr;
 	s = parse_singleExpression(s, end, alc, first);
-	s = parse_whiteSpace(s, end);
+	s = parseWhitespace(s, end);
 	assert(first != nullptr);
 	
 	// No binary operation
@@ -365,7 +365,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 		return s;
 	}
 	
-	s = parse_whiteSpace(s, end);
+	s = parseWhitespace(s, end);
 	if (s == end){
 		throw Error(Status::INVALID_BINARY_EXPRESSION, string_view(beg, s));
 	}
@@ -375,7 +375,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 	assert(second != nullptr);
 	
 	// Lookahead for more operations
-	s = parse_whiteSpace(s, end);
+	s = parseWhitespace(s, end);
 	if (s == end){ one_bin:
 		out = _binop(alc, first, second, binop);
 		return s;
@@ -400,7 +400,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 	
 	// e1 + e2 + ...
 	while (true){
-		s = parse_whiteSpace(s, end);
+		s = parseWhitespace(s, end);
 		if (s == end){
 			throw Error(Status::INVALID_BINARY_EXPRESSION, string_view(mark, s));
 		}
@@ -411,7 +411,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 		args.emplace_back(arg);
 		
 		// Look ahead for more binops
-		s = parse_whiteSpace(s, end);
+		s = parseWhitespace(s, end);
 		if (s == end){
 			break;
 		}
@@ -458,7 +458,7 @@ static const char* parse_func(const char* s, const char* end, Allocator& alc, st
 	// Parse arguments
 	const char* beg = s++;
 	while (true){
-		s = parse_whiteSpace(s, end);
+		s = parseWhitespace(s, end);
 		
 		if (s == end){ unclosed:
 			throw Error(Status::UNCLOSED_EXPRESSION, string_view(beg, s));
@@ -469,7 +469,7 @@ static const char* parse_func(const char* s, const char* end, Allocator& alc, st
 				throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
 			}
 			
-			s = parse_whiteSpace(s+1, end);
+			s = parseWhitespace(s+1, end);
 			if (s == end){
 				goto unclosed;
 			}
@@ -516,7 +516,7 @@ static const char* parse_varOrFunc(const char* s, const char* end, Allocator& al
 	assert(!id.empty());
 	
 	// Check if function
-	s = parse_whiteSpace(s, end);
+	s = parseWhitespace(s, end);
 	if (s != end && *s == '('){
 		return parse_func(s, end, alc, id, out);
 	}
@@ -553,11 +553,11 @@ static const char* parse_singleExpression(const char* s, const char* end, Alloca
 	else if (*s == '('){
 		const char* beg = s;
 		
-		s = parse_whiteSpace(s + 1, end);
+		s = parseWhitespace(s + 1, end);
 		s = parse_binaryExpressionChain(s, end, alc, out);
 		assert(out != nullptr);
 		
-		s = parse_whiteSpace(s, end);
+		s = parseWhitespace(s, end);
 		if (s == end || *s != ')'){
 			throw Error(Status::UNCLOSED_EXPRESSION, string_view(beg, s));
 		}
@@ -624,9 +624,9 @@ Expression Expression::parse(string_view str, const Debugger& dbg) noexcept {
 		const char* s = str.begin();
 		const char* end = str.end();
 		
-		s = parse_whiteSpace(s, end);
+		s = parseWhitespace(s, end);
 		s = parse_binaryExpressionChain(s, end, *expr.alloc, expr.op);
-		s = parse_whiteSpace(s, end);
+		s = parseWhitespace(s, end);
 		assert(expr.op != nullptr);
 		
 		if (s != end){
