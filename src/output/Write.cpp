@@ -12,6 +12,8 @@ using namespace html;
 // ---------------------------------- [ Definitions ] --------------------------------------- //
 
 
+#define P(s)		ANSI_PURPLE s ANSI_RESET
+
 #define TAB_4		"\t\t\t\t"
 #define SPACE_4		"    "
 #define SPACE_16	SPACE_4 SPACE_4 SPACE_4 SPACE_4
@@ -126,6 +128,35 @@ static void writeIndentedText(ostream& out, string_view text, const int depth){
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static bool writeCompressedStyleElement(ostream& out, const Node& style){
+	for (const Node* child = style.child ; child != nullptr ; child = child->next){
+		if (child->type != NodeType::TEXT){
+			out.flush();
+			ERROR("Invalid child element type. Element " P("<style>") " can only have text child elements.");
+			return false;
+		}
+		
+		string_view css = child->value();
+		if (css.empty()){
+			continue;
+		}
+		
+		compressCSS(out, css.begin(), css.end());
+		
+		// Preserve whitespace between text chunks
+		if (child->next != nullptr){
+			if (isWhitespace(css.back()) || (child->next->value_len > 0 && isWhitespace(child->next->value_p[0])))
+				out << '\n';
+		}
+		
+	}
+	return true;
+}
+
+
 // --------------------------------- [ Main Function ] -------------------------------------- //
 
 
@@ -236,8 +267,15 @@ bool write(ostream& out, const Document& doc, WriteOptions options){
 			
 			// Enqueue children
 			if (node->child != nullptr){
-				
 				assert(!(node->options % NodeOptions::LIST_FORWARDS));
+				
+				// Directly compress CSS
+				if (node->name() == "style"sv && options % WriteOptions::COMPRESS_CSS){
+					if (!writeCompressedStyleElement(out, *node))
+						return false;
+					goto close;
+				}
+				
 				for (const Node* child = node->child ; child != nullptr ; child = child->next){
 					node_stack.emplace_back(child);
 				}
@@ -247,7 +285,7 @@ bool write(ostream& out, const Document& doc, WriteOptions options){
 			}
 			
 			// Empty
-			else {
+			else { close:
 				out << "</" << node->name() << ">";
 				add_space = node->options % NodeOptions::SPACE_AFTER;
 				goto pop;

@@ -8,6 +8,9 @@ extern struct Opt {
 	bool help = false;
 	bool printDependencies = false;
 	
+	bool compress_css = false;
+	bool compress_html = false;
+	
 	const char* outFilePath = "-";		// "-" means stdout
 	const char* inFilePath = nullptr;
 	

@@ -9,6 +9,9 @@
 using namespace std;
 
 
+#define P(s)	ANSI_PURPLE s ANSI_RESET
+
+
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 
@@ -20,10 +23,11 @@ Opt opt;
 
 enum class OptId {
 	HELP,
-	DEPENDENCIES,
-	VOID,
-	OUTPUT,
 	INCLUDE,
+	OUTPUT,
+	COMPRESS,
+	VOID,
+	DEPENDENCIES,
 };
 
 struct OptInfo {
@@ -35,10 +39,11 @@ struct OptInfo {
 
 constexpr array options = {
 	OptInfo { "-h", "--help",         OptId::HELP,         false },
-	OptInfo { "-d", "--dependencies", OptId::DEPENDENCIES, false },
-	OptInfo { "-x", "",               OptId::VOID,         false },
-	OptInfo { "-o", "--out",          OptId::OUTPUT,       true  },
 	OptInfo { "-i", "--include",      OptId::INCLUDE,      true  },
+	OptInfo { "-o", "--out",          OptId::OUTPUT,       true  },
+	OptInfo { "-c", "--compress",     OptId::COMPRESS,     true  },
+	OptInfo { "-x", "",               OptId::VOID,         false },
+	OptInfo { "-d", "--dependencies", OptId::DEPENDENCIES, false },
 };
 
 
@@ -74,6 +79,24 @@ static bool onOption(OptId id, const char* value){
 			opt.includes.emplace_back(value);
 			return true;
 		
+		case OptId::COMPRESS: {
+			assert(value != nullptr);
+			
+			if (value == "none"sv){
+				opt.compress_css = false;
+				opt.compress_html = false;
+			} else if (value == "html"sv){
+				opt.compress_html = true;
+			} else if (value == "css"sv){
+				opt.compress_css = true;
+			} else {
+				ERROR("Invalid option value " P("`%s`") ". Valid values are `none`, `html` and `css`.", value);
+				return false;
+			}
+			
+			return true;
+		}
+		
 	}
 	return false;
 }
@@ -92,7 +115,7 @@ static bool onFile(const char* arg){
 	if (arg[0] == 0){
 		return true;
 	} else if (opt.inFilePath != nullptr){
-		ERROR("Too many input files: `%s`", arg);
+		ERROR("Too many input files: " P("`%s`"), arg);
 		return false;
 	}
 	
@@ -103,17 +126,17 @@ static bool onFile(const char* arg){
 
 
 static bool err_invalidOption(const char* arg){
-	ERROR("Invalid option '%s'.", arg);
+	ERROR("Invalid option: " P("`%s`"), arg);
 	return false;
 }
 
 static bool err_invalidValue(const char* arg){
-	ERROR("Option '%s' does not expect a value.", arg);
+	ERROR("Option " P("`%s`") " does not expect a value.", arg);
 	return false;
 }
 
 static bool err_missingValue(const char* arg){
-	ERROR("Option '%s' is missing a value.", arg);
+	ERROR("Option " P("`%s`") " is missing a value.", arg);
 	return false;
 }
 

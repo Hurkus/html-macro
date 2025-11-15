@@ -40,13 +40,16 @@ void help(){
 	
 	LOG_STDOUT("\n");
 	LOG_STDOUT(B("Options:\n"));
-	LOG_STDOUT("  " Y("--help") ", " Y("-h") " ................... Print help.\n");
-	LOG_STDOUT("  " Y("--include <path>") ", " Y("-i <path>") " .. Add folder to list of path searches when including files with relative paths.\n");
-	LOG_STDOUT("  " Y("--output <path>") ", " Y("-o <path>") " ... Write output to file instead of stdout.\n");
-	LOG_STDOUT("  " Y("-x") " ........................... Do not output any results; only errors.\n");
-	LOG_STDOUT("  " Y("-d") ", " Y("--dependencies") " ........... Print list of file paths on which the input file depens on.\n");
-	LOG_STDOUT("                                  The paths are extracted from <INCLUDE/> macros.\n");
-	LOG_STDOUT("                                  Only non-expression attribute values are considered.\n");
+	LOG_STDOUT("  " Y("--help") ", " Y("-h") " .................... Print help.\n");
+	LOG_STDOUT("  " Y("--include <path>") ", " Y("-i <path>") " ... Add folder to list of path searches when including files with relative paths.\n");
+	LOG_STDOUT("  " Y("--output <path>") ", " Y("-o <path>") " .... Write output to file instead of stdout.\n");
+	LOG_STDOUT("  " Y("--compress <type>") ", " Y("-c <type>") " .. Compress output, where <type> can be `none`, `html` or `css`.\n");
+	LOG_STDOUT("                                   This option can be supplied multiple times to fill out the type enum.\n");
+	LOG_STDOUT("                                   (default: none)\n");
+	LOG_STDOUT("  " Y("-x") " ............................ Do not output any results; only errors.\n");
+	LOG_STDOUT("  " Y("-d") ", " Y("--dependencies") " ............ Print list of file paths on which the input file depens on.\n");
+	LOG_STDOUT("                                   The paths are extracted from <INCLUDE/> macros.\n");
+	LOG_STDOUT("                                   Only non-expression attribute values are considered.\n");
 	LOG_STDOUT("\n");
 }
 
@@ -90,14 +93,73 @@ static bool setDefinedVariables(const vector<const char*>& defines){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+static bool execMacro(Macro& macro, ostream* out){
+	switch (macro.type){
+		case Macro::Type::CSS: {
+			if (macro.txt == nullptr){
+				assert(macro.txt != nullptr);
+				return false;
+			} else if (out == nullptr){
+				return true;
+			}
+			
+			string_view txt = *macro.txt;
+			if (opt.compress_css){
+				return compressCSS(*out, txt.begin(), txt.end());
+			} else {
+				return bool(*out << txt);
+			}
+			
+		}
+		
+		case Macro::Type::HTML: {
+			if (!macro.parseHTML()){
+				return false;
+			}
+			
+			html::Document doc = {};
+			MacroEngine::exec(macro, doc);
+			
+			WriteOptions wropt = WriteOptions::NONE;
+			wropt |= (opt.compress_css) ? WriteOptions::COMPRESS_CSS : WriteOptions::NONE;
+			// wropt |= (opt.compress_html) ? WriteOptions::COMPRESS_HTML : WriteOptions::NONE;
+			
+			if (out != nullptr){
+				return write(*out, doc, wropt);
+			}
+			
+		}
+		
+		case Macro::Type::JS: {
+			assert(macro.txt != nullptr);
+			if (macro.txt == nullptr)
+				return false;
+			else if (out == nullptr)
+				return true;
+			else
+				return bool(*out << *macro.txt);
+		}
+		
+		default: {
+			ERROR("Unsupported input type.");
+			return false;
+		}
+		
+	}
+}
+
+
+
 static bool run(){
+	const bool voidOutput = (opt.outFilePath == nullptr);
+	
 	MacroEngine::reset();
 	MacroCache::clear();
 	Paths::cwd = make_unique<filepath>(fs::current_path());
 	
 	// Open output file
 	ofstream outf;
-	if (opt.outFilePath != nullptr && opt.outFilePath != "-"sv){
+	if (!voidOutput && opt.outFilePath != "-"sv){
 		outf = ofstream(opt.outFilePath);
 		if (!outf.is_open()){
 			ERROR("Failed to open output file `%s`.", opt.outFilePath);
@@ -122,21 +184,9 @@ static bool run(){
 		return false;
 	}
 	
-	bool ret = false;
-	
-	// Parse input file
-	if (root_macro->parseHTML()){
-		html::Document doc = {};
-		MacroEngine::exec(*root_macro, doc);
-		
-		// Select output stream and write
-		if (opt.outFilePath != nullptr){
-			ostream& out = (outf.is_open()) ? outf : cout;
-			ret |= write(out, doc);
-			out.flush();
-		}
-		
-	}
+	ostream& out = (outf.is_open()) ? outf : cout;
+	bool ret = execMacro(*root_macro, !voidOutput ? &out : nullptr);
+	out.flush();
 	
 	// Cleanup
 	MacroCache::clear();
@@ -155,7 +205,8 @@ int main(int argc, char const* const* argv){
 	#ifdef DEBUG
 		const char* _argv[] = {
 			argv[0],
-			"test/test-0.html"
+			"test/test-0.html",
+			"-c", "css"
 			// "test/test-9.in.css"
 		};
 		if (argc < 2){
