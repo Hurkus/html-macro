@@ -157,19 +157,14 @@ static bool writeCompressedStyleElement(ostream& out, const Node& style){
 }
 
 
-// --------------------------------- [ Main Function ] -------------------------------------- //
+// ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool write(ostream& out, const Document& doc, WriteOptions options){
+static bool writeUncompressedHTML(ostream& out, const Document& doc, WriteOptions options){
 	vector<const Node*> node_stack = {};	// Child node list is reversed.
 	vector<const Attr*> attr_stack = {};	// Attr list is reversed.
 	node_stack.reserve(64);
 	attr_stack.reserve(16);
-	
-	// #ifdef DEBUG
-	// 	// Automatic flush after each write.
-	// 	out << std::unitbuf;
-	// #endif
 	
 	int depth = 0;
 	bool add_space = false;
@@ -323,6 +318,184 @@ bool write(ostream& out, const Document& doc, WriteOptions options){
 	if (add_space){
 		out << '\n';
 	}
+	
+	return true;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static bool shouldPreserveWhitespace(string_view tag) noexcept {
+	switch (tag.length()){
+		case 1:
+			return tag == "p" || tag == "a" || tag == "i" || tag == "b" || tag == "u";
+		case 2:
+			if (tag == "li" || tag == "td" || tag == "th")
+				return  true;
+			return tag[0] == 'h' && '0' <= tag[1] && tag[1] <= '9';
+		case 4:
+			return tag == "span" || tag == "code";
+		default:
+			return false;
+	}
+}
+
+
+static void writeCompressedText(ostream& out, string_view txt){
+	const char* end = txt.end();
+	const char* s = txt.begin();
+	
+	while (s != end){
+		const char* _s = s;
+		
+		// Truncate whitespace (preserve one space or newline)
+		bool nl = false;
+		while (s != end && isWhitespace(*s)){
+			nl |= (*s == '\n');
+			s++;
+		}
+		
+		if (s != _s){
+			if (nl)
+				out << '\n';
+			else
+				out << ' ';
+		}
+		
+		if (s == end){
+			break;
+		}
+		
+		// Write solid-space
+		_s = s++;
+		while (s != end && !isWhitespace(*s)){
+			s++;
+		}
+		
+		out.write(_s, s - _s);
+	}
+	
+}
+
+
+static bool writeCompressedHTML(ostream& out, const Document& doc, WriteOptions options){
+	vector<const Node*> node_stack = {};	// Child node list is reversed.
+	vector<const Attr*> attr_stack = {};	// Attr list is reversed.
+	node_stack.reserve(64);
+	attr_stack.reserve(16);
+	
+	const Node* parent = &doc;
+	int preserveSpaceIdx = 0;
+	
+	// Push children of root element (reverse list)
+	assert(!(doc.options % NodeOptions::LIST_FORWARDS));
+	for (const Node* child = doc.child ; child != nullptr ; child = child->next){
+		node_stack.emplace_back(child);
+	}
+	
+	while (!node_stack.empty()){
+		const Node* node = node_stack.back();
+		node_stack.pop_back();
+		
+		// Close previous element child groups
+		while (parent != node->parent){
+			assert(parent != nullptr && parent != &doc);
+			
+			if (shouldPreserveWhitespace(parent->name())){
+				preserveSpaceIdx--;
+			}
+			
+			out << "</" << parent->name() << '>';
+			parent = parent->parent;
+		}
+		
+		switch (node->type){
+			case NodeType::TEXT:
+				goto text;
+			case NodeType::TAG:
+				goto tag;
+			case NodeType::DIRECTIVE:
+				goto directive;
+			default:
+				continue;
+		}
+		
+		tag: {
+			if (preserveSpaceIdx > 0 && node->options % NodeOptions::SPACE_BEFORE){
+				out << ' ';
+			}
+			
+			out << '<' << node->name();
+			writeAttributes(out, *node, attr_stack);
+			
+			// Close tag or whole element
+			if (node->child == nullptr){
+				if (node->options % NodeOptions::SELF_CLOSE)
+					out << "/>";
+				else
+					out << "></" << node->name() << '>';
+				continue;
+			} else {
+				out << '>';
+			}
+			
+			// Directly compress CSS
+			if (node->name() == "style"sv && options % WriteOptions::COMPRESS_CSS){
+				if (!writeCompressedStyleElement(out, *node))
+					return false;
+				out << "</" << node->name() << '>';
+				continue;
+			}
+			
+			// Enqueue children
+			for (const Node* child = node->child ; child != nullptr ; child = child->next){
+				node_stack.emplace_back(child);
+			}
+			
+			if (shouldPreserveWhitespace(node->name())){
+				preserveSpaceIdx++;
+			}
+			
+			parent = node;
+		} continue;
+		
+		
+		text: {
+			writeCompressedText(out, node->value());
+		} continue;
+		
+		
+		directive: {
+			out << '<' << node->value() << ">\n";
+		} continue;
+		
+	}
+	
+	// Write missing tail elements
+	while (parent != &doc){
+		assert(parent != nullptr);
+		out << "</" << parent->name() << '>';
+		parent = parent->parent;
+	}
+	
+	return true;
+}
+
+
+// --------------------------------- [ Main Function ] -------------------------------------- //
+
+
+bool write(ostream& out, const Document& doc, WriteOptions options){
+	#ifdef DEBUG
+		// Automatic flush after each write.
+		out << std::unitbuf;
+	#endif
+	
+	if (options % WriteOptions::COMPRESS_HTML)
+		writeCompressedHTML(out, doc, options);
+	else
+		writeUncompressedHTML(out, doc, options);
 	
 	return true;
 }

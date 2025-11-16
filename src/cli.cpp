@@ -85,12 +85,15 @@ static bool onOption(OptId id, const char* value){
 			if (value == "none"sv){
 				opt.compress_css = false;
 				opt.compress_html = false;
+			} else if (value == "all"sv){
+				opt.compress_css = true;
+				opt.compress_html = true;
 			} else if (value == "html"sv){
 				opt.compress_html = true;
 			} else if (value == "css"sv){
 				opt.compress_css = true;
 			} else {
-				ERROR("Invalid option value " P("`%s`") ". Valid values are `none`, `html` and `css`.", value);
+				ERROR("Invalid option value " P("`%s`") ". Valid values are `none`, `html`, `css` or `all`.", value);
 				return false;
 			}
 			

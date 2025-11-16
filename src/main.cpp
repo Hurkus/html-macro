@@ -43,7 +43,7 @@ void help(){
 	LOG_STDOUT("  " Y("--help") ", " Y("-h") " .................... Print help.\n");
 	LOG_STDOUT("  " Y("--include <path>") ", " Y("-i <path>") " ... Add folder to list of path searches when including files with relative paths.\n");
 	LOG_STDOUT("  " Y("--output <path>") ", " Y("-o <path>") " .... Write output to file instead of stdout.\n");
-	LOG_STDOUT("  " Y("--compress <type>") ", " Y("-c <type>") " .. Compress output, where <type> can be `none`, `html` or `css`.\n");
+	LOG_STDOUT("  " Y("--compress <type>") ", " Y("-c <type>") " .. Compress output, where <type> can be `none`, `html`, `css` or `all`.\n");
 	LOG_STDOUT("                                   This option can be supplied multiple times to fill out the type enum.\n");
 	LOG_STDOUT("                                   (default: none)\n");
 	LOG_STDOUT("  " Y("-x") " ............................ Do not output any results; only errors.\n");
@@ -122,7 +122,7 @@ static bool execMacro(Macro& macro, ostream* out){
 			
 			WriteOptions wropt = WriteOptions::NONE;
 			wropt |= (opt.compress_css) ? WriteOptions::COMPRESS_CSS : WriteOptions::NONE;
-			// wropt |= (opt.compress_html) ? WriteOptions::COMPRESS_HTML : WriteOptions::NONE;
+			wropt |= (opt.compress_html) ? WriteOptions::COMPRESS_HTML : WriteOptions::NONE;
 			
 			if (out != nullptr){
 				return write(*out, doc, wropt);
@@ -206,8 +206,10 @@ int main(int argc, char const* const* argv){
 		const char* _argv[] = {
 			argv[0],
 			"test/test-0.html",
-			"-c", "css"
-			// "test/test-9.in.css"
+			// "test/test-2.in.html",
+			// "-c", "css",
+			// "-c", "html",
+			"-c", "all",
 		};
 		if (argc < 2){
 			argv = _argv;

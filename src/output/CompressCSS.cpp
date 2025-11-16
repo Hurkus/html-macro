@@ -19,6 +19,7 @@ constexpr bool isQuote(char c) noexcept {
 // Doesnt need whitespace
 constexpr bool isTokenChar(char c) noexcept {
 	return c == ';' || c == ',' || c == ':'
+		|| c == '<' || c == '>'
 		|| c == '{' || c == '}'
 		|| c == '(' || c == ')'
 		|| c == '[' || c == ']'; 
@@ -112,8 +113,18 @@ bool compressCSS(ostream& out, const char* beg, const char* end){
 		
 		// Preserve whitespace on id characters
 		assert(left != s);
-		if (!isTokenChar(*left) && !isTokenChar(*s)){
+		const bool tl = isTokenChar(*left);
+		const bool tr = isTokenChar(*s);
+		
+		// Left and right are id characters, space must be preserved
+		if (!tl && !tl){
 			out << ' ';
+		}
+		
+		// Special case for `@media ... and ()`
+		else if (!tl && tr){
+			if (*s == '(' && string_view(beg, left+1).ends_with("and"sv))
+				out << ' ';
 		}
 		
 		continue;
