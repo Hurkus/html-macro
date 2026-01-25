@@ -25,7 +25,12 @@ bool printDependencies(const char* path);
 #define B(s)		ANSI_BOLD s ANSI_RESET
 #define Y(s)		ANSI_YELLOW s ANSI_RESET
 #define C(s)		ANSI_CYAN s ANSI_RESET
-#define VERSION 	"Version 0.12"
+
+#if DEBUG
+	#define VERSION 	"Version 0.12 (Debug)"
+#else
+	#define VERSION 	"Version 0.12"
+#endif
 
 
 void help(){
@@ -47,7 +52,7 @@ void help(){
 	LOG_STDOUT("  " Y("--compress <type>") ", " Y("-c <type>") " .. Compress output, where " Y("<type>") " can be " C("none") ", " C("html") ", " C("css") " or " C("all") ".\n");
 	LOG_STDOUT("                                   This option can be supplied multiple times to fill out the type enum.\n");
 	LOG_STDOUT("                                   (default: " C("none") ")\n");
-	LOG_STDOUT("  " Y("-x") " ............................ Do not output any results; only errors and warnings.\n");
+	LOG_STDOUT("  " Y("--nostdout") ", " Y("-x") " ................ Do not output any results; only errors and warnings.\n");
 	LOG_STDOUT("  " Y("--dependencies") ", " Y("-d")  " ............ Print list of file paths on which the input file depens on.\n");
 	LOG_STDOUT("                                   The paths are extracted from " PURPLE("<INCLUDE/>") " macros.\n");
 	LOG_STDOUT("                                   Only non-expression attribute values are considered.\n");
