@@ -11,13 +11,11 @@ extern struct Opt {
 	bool help = false;
 	bool printDependencies = false;
 	
-	
 	const char* inFilePath = nullptr;
 	Macro::Type inFileType = Macro::Type::NONE;
 	
-	const char* outFilePath = nullptr;
+	const char* outFilePath = "-";	// `-` is stdout
 	WriteOptions compress = WriteOptions::NONE;
-	bool noOutput = false;
 	
 	std::vector<const char*> includes;
 	std::vector<const char*> defines;

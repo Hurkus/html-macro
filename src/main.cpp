@@ -25,7 +25,7 @@ bool printDependencies(const char* path);
 #define B(s)		ANSI_BOLD s ANSI_RESET
 #define Y(s)		ANSI_YELLOW s ANSI_RESET
 #define C(s)		ANSI_CYAN s ANSI_RESET
-#define VERSION 	"Version 0.12.0 Alpha"
+#define VERSION 	"Version 0.12"
 
 
 void help(){
@@ -153,11 +153,11 @@ static bool run(){
 	MacroCache::clear();
 	Paths::cwd = make_unique<filepath>(fs::current_path());
 	
-	ostream* out = (opt.noOutput ? nullptr : &cout);
+	ostream* out = (opt.outFilePath != nullptr && opt.outFilePath == "-"sv ? &cout : nullptr);
 	ofstream outf;
 	
 	// Open output file
-	if (opt.outFilePath != nullptr && !opt.noOutput){
+	if (opt.outFilePath != nullptr && out == nullptr){
 		outf = ofstream(opt.outFilePath);
 		out = &outf;
 		

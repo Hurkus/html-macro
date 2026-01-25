@@ -87,8 +87,16 @@
 					The <code>{l}type{r}</code> can be <code>none</code>, <code>html</code>, <code>css</code> or <code>all</code>.
 				</td>
 			</tr>
+			<!-- <tr>
+				<td><code>--stdin</code></td>
+				<td><code>-p</code></td>
+				<td>
+					Recieve the input file through <i>stdin</i>.
+					Any relative paths used in the source text are relative to the current working directory.
+				</td>
+			</tr> -->
 			<tr>
-				<td></td>
+				<td><code>--nostdout</code></td>
 				<td><code>-x</code></td>
 				<td>
 					Discard any output except errors and warnings.
@@ -96,7 +104,7 @@
 				</td>
 			</tr>
 			<tr>
-				<td>--dependencies</td>
+				<td><code>--dependencies</code></td>
 				<td><code>-d</code></td>
 				<td>
 					Scan the document and extract all paths from various macros that reference other files (such as <a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a>) and print them.

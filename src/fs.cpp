@@ -1,5 +1,6 @@
 #include "fs.hpp"
 #include <cassert>
+#include <array>
 #include <string>
 #include <fstream>
 
@@ -7,6 +8,25 @@ using namespace std;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+bool fs::readStream(istream& in, string& buff){
+	array<char,4096> _buff;
+	
+	while (in.read(_buff.data(), _buff.size())){
+		const streamsize n = in.gcount();
+		
+		if (n < 0){
+			return false;
+		} else if (n == 0){
+			break;
+		}
+		
+		buff.append(_buff.data(), size_t(n));
+	}
+	
+	return true;
+}
 
 
 bool fs::readFile(const filepath& path, string& buff){

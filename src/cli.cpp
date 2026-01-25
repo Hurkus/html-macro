@@ -24,7 +24,7 @@ enum class OptId {
 	OUTPUT,
 	INPUT_TYPE,
 	COMPRESS,
-	DISCARD_OUTPUT,
+	OUTPUT_DISCARD,
 	DEPENDENCIES,
 };
 
@@ -41,7 +41,7 @@ constexpr array options = {
 	OptInfo { "-o", "--out",          OptId::OUTPUT,         true  },
 	OptInfo { "-t", "--type",         OptId::INPUT_TYPE,     true  },
 	OptInfo { "-c", "--compress",     OptId::COMPRESS,       true  },
-	OptInfo { "-x", "",               OptId::DISCARD_OUTPUT, false },
+	OptInfo { "-x", "--nostdout",     OptId::OUTPUT_DISCARD, false },
 	OptInfo { "-d", "--dependencies", OptId::DEPENDENCIES,   false },
 };
 
@@ -59,17 +59,17 @@ static bool onOption(OptId id, const char* value){
 			opt.printDependencies = true;
 			return true;
 		
-		case OptId::DISCARD_OUTPUT:
-			opt.noOutput = true;
+		case OptId::OUTPUT_DISCARD:
+			opt.outFilePath = nullptr;
 			return true;
 		
 		case OptId::OUTPUT: {
-			if (opt.outFilePath == nullptr){
-				opt.outFilePath = value;
+			if (value == ""sv){
+				opt.outFilePath = nullptr;
 				return true;
 			} else {
-				ERROR("Multiple output files are not allowed: " PURPLE("`%s`") " and " PURPLE("`%s`"), opt.outFilePath, value);
-				return false;
+				opt.outFilePath = value;
+				return true;
 			}
 		}
 		

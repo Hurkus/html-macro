@@ -29,6 +29,7 @@ inline bool exists(const filepath& path) noexcept {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+bool readStream(std::istream& in, std::string& buff);
 bool readFile(const filepath& path, std::string& buff);
 
 
