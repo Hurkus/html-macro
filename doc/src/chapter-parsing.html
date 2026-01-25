@@ -7,7 +7,7 @@
 	<p>
 		There are 4 different file types considered during parsing:
 		<ul>
-			<li>HTML files with extension <code>.html</code>,</li>
+			<li>HTML files with extension <code>.html</code>, <code>.xml</code> or <code>.svg</code>,</li>
 			<li>CSS files with extension <code>.css</code>,</li>
 			<li>JavaScript files with extension <code>.js</code> and</li>
 			<li>text files with any other extension.</li>
@@ -16,10 +16,8 @@
 	
 	<br/>
 	<p>
-		Currently only HTML files are actually parsed, the others are considered as plain text.
-		This will change in a future version when CSS and JS compression is added.
+		Currently, <code>.js</code> files are treated as plain text, as compression is not available.
 	</p>
-	
 	
 	
 	<br/>
@@ -159,9 +157,26 @@
 			</ul>
 		</p>
 		
-		
+		<br/>
+		<p>
+			The output can <a href="#cli-options">optionally</a> be compressed, where all unnecessary text is discarded.
+			This mostly affects whitespace.
+		</p>
 	</section>
 	
+	
+	<br/>
+	<br/>
+	<section id="css-files">
+		<SET cii='cii + 1'/>
+		<h3><a href="#css-files">{ci}.{cii}. CSS files</a></h3>
+		
+		<p>
+			CSS files are only parsed if they have to be compressed (see <a href="#cli-options">options</a>).
+			The file is not checked for validity, it is only parsed to the extent required to discard unnecessary text.
+			This mostly affects whitespace and comments.
+		</p>
+	</section>
 	
 	
 </section>

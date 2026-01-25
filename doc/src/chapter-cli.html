@@ -16,7 +16,7 @@
 		General usage would be: <code>html-macro [options] [variables] {l}path{r}</code>, where:
 		<ul>
 			<li>
-				<code><a href="#cli-options" class="TD-0">[options]</a></code> represents the optional list of program options described <a href="#cli-options">below</a>.
+				<code><a href="#cli-options" class="TD-0">[options]</a></code> represents the optional list of program options.
 			</li>
 			<li>
 				<code>[variables]</code> represents the list of predefined variables used in <a href="#expressions">expressions</a>.
@@ -24,7 +24,7 @@
 			</li>
 			<li>
 				<code>{l}path{r}</code> represents the mandatory path to the input file (typically a <code>.html</code> file).
-				The <code>path</code> cannot contain an <code>=</code> character, as that would be considered a variable assignment.
+				The <code>path</code> cannot contain the <code>=</code> character, as that would be considered a variable declaration.
 			</li>
 		</ul>
 	</p>
@@ -72,11 +72,35 @@
 				</td>
 			</tr>
 			<tr>
+				<td><code>--type {l}type{r}</code></td>
+				<td><code>-t {l}type{r}</code></td>
+				<td>
+					Force input file to be treated as a different file <a href="#parsing">type</a>, where <code>{l}type{r}</code> can be
+					<code>html</code>, <code>css</code>, <code>js</code> or <code>txt</code>.
+				</td>
+			</tr>
+			<tr>
+				<td><code>--compress {l}type{r}</code></td>
+				<td><code>-c {l}type{r}</code></td>
+				<td>
+					Compress output by removing unecessary spaces and other constructs.
+					The <code>{l}type{r}</code> can be <code>none</code>, <code>html</code>, <code>css</code> or <code>all</code>.
+				</td>
+			</tr>
+			<tr>
 				<td></td>
 				<td><code>-x</code></td>
 				<td>
-					Discard the <i>stdout</i> stream and/or do not write any output to a file.
+					Discard any output except errors and warnings.
 					This option can be used to check for errors without generating any output.
+				</td>
+			</tr>
+			<tr>
+				<td>--dependencies</td>
+				<td><code>-d</code></td>
+				<td>
+					Scan the document and extract all paths from various macros that reference other files (such as <a CALL="link-em-INCLUDE">{l}INCLUDE{r}</a>) and print them.
+					This is usefull when generating dependency files with make.
 				</td>
 			</tr>
 		</table>

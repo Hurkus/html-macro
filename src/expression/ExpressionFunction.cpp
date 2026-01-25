@@ -13,7 +13,6 @@ using Type = Value::Type;
 // ----------------------------------- [ Prototypes ] --------------------------------------- //
 
 
-#define P(s) ANSI_PURPLE s ANSI_RESET
 #define VAL_STR(val)	(val.toStr().c_str())
 
 
@@ -25,10 +24,10 @@ Value eval(const Operation& op, const VariableMap& vars, const Debugger& dbg);
 
 static Value f_defined(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
-		HERE(dbg.error(f.name, "Missing argument in function " P("int(e)") ".\n"));
+		HERE(dbg.error(f.name, "Missing argument in function " PURPLE("int(e)") ".\n"));
 		return 0L;
 	} else if (f.argc > 1){
-		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " P("int(e)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " PURPLE("int(e)") ".\n", f.argc));
 	}
 	
 	const Operation* arg0 = f.argv[0].expr;
@@ -49,10 +48,10 @@ static Value f_defined(const Function& f, const VariableMap& vars, const Debugge
 
 static Value f_int(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
-		HERE(dbg.error(f.name, "Missing argument in function " P("int(e)") ".\n"));
+		HERE(dbg.error(f.name, "Missing argument in function " PURPLE("int(e)") ".\n"));
 		return Value(0L);
 	} else if (f.argc > 1){
-		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " P("int(e)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " PURPLE("int(e)") ".\n", f.argc));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 	}
@@ -76,10 +75,10 @@ static Value f_int(const Function& f, const VariableMap& vars, const Debugger& d
 
 static Value f_float(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
-		HERE(dbg.error(f.name, "Missing argument in function " P("float(e)") ".\n"));
+		HERE(dbg.error(f.name, "Missing argument in function " PURPLE("float(e)") ".\n"));
 		return Value(0.0);
 	} else if (f.argc > 1){
-		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " P("float(e)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " PURPLE("float(e)") ".\n", f.argc));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 	}
@@ -103,10 +102,10 @@ static Value f_float(const Function& f, const VariableMap& vars, const Debugger&
 
 static Value f_str(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
-		HERE(dbg.error(f.name, "Missing argument in function " P("str(e)") ".\n"));
+		HERE(dbg.error(f.name, "Missing argument in function " PURPLE("str(e)") ".\n"));
 		return string_view();
 	} else if (f.argc > 1){
-		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " P("str(e)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " PURPLE("str(e)") ".\n", f.argc));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 	}
@@ -128,10 +127,10 @@ static Value f_str(const Function& f, const VariableMap& vars, const Debugger& d
 
 static Value f_len(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
-		HERE(dbg.warn(f.name, "Missing argument in function " P("%.*s(e)") ".\n", int(f.name.length()), f.name.data()));
+		HERE(dbg.warn(f.name, "Missing argument in function " PURPLE("%.*s(e)") ".\n", int(f.name.length()), f.name.data()));
 		return Value(0L);
 	} else if (f.argc > 1){
-		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " P("%.*s(e)") ".\n", f.argc, int(f.name.length()), f.name.data()));
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " PURPLE("%.*s(e)") ".\n", f.argc, int(f.name.length()), f.name.data()));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 	}
@@ -176,7 +175,7 @@ static bool toNum(const Value& val, long& out_i, double& out_f){
 
 static Value f_min(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
-		HERE(dbg.warn(f.name, "Missing argument in function " P("min(a,...)") ".\n"));
+		HERE(dbg.warn(f.name, "Missing argument in function " PURPLE("min(a,...)") ".\n"));
 		return {};
 	}
 	
@@ -212,7 +211,7 @@ static Value f_min(const Function& f, const VariableMap& vars, const Debugger& d
 
 static Value f_max(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
-		HERE(dbg.warn(f.name, "Missing argument in function " P("max(a,...)") ".\n"));
+		HERE(dbg.warn(f.name, "Missing argument in function " PURPLE("max(a,...)") ".\n"));
 		return {};
 	}
 	
@@ -246,12 +245,68 @@ static Value f_max(const Function& f, const VariableMap& vars, const Debugger& d
 }
 
 
+static Value f_sin(const Function& f, const VariableMap& vars, const Debugger& dbg){
+	if (f.argc < 1){
+		HERE(dbg.warn(f.name, "Missing argument in function " PURPLE("sin(x)") ".\n"));
+		return Value(0L);
+	} else if (f.argc > 1){
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " PURPLE("sin(x)") ".\n", f.argc));
+	} else {
+		assert(f.argv[0].expr != nullptr);
+	}
+	
+	Value val = eval(*f.argv[0].expr, vars, dbg);
+	
+	switch (val.type){
+		case Type::LONG:
+			val.data.d = sin(double(val.data.l));
+			val.type = Type::DOUBLE;
+			break;
+		case Type::DOUBLE:
+			val.data.d = sin(val.data.d);
+			break;
+		case Type::STRING:
+			break;
+	}
+	
+	return val;
+}
+
+
+static Value f_cos(const Function& f, const VariableMap& vars, const Debugger& dbg){
+	if (f.argc < 1){
+		HERE(dbg.warn(f.name, "Missing argument in function " PURPLE("cos(x)") ".\n"));
+		return Value(0L);
+	} else if (f.argc > 1){
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " PURPLE("cos(x)") ".\n", f.argc));
+	} else {
+		assert(f.argv[0].expr != nullptr);
+	}
+	
+	Value val = eval(*f.argv[0].expr, vars, dbg);
+	
+	switch (val.type){
+		case Type::LONG:
+			val.data.d = cos(double(val.data.l));
+			val.type = Type::DOUBLE;
+			break;
+		case Type::DOUBLE:
+			val.data.d = cos(val.data.d);
+			break;
+		case Type::STRING:
+			break;
+	}
+	
+	return val;
+}
+
+
 static Value f_if(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 3){
-		HERE(dbg.error(f.name, "Missing arguments (%d/3) in function " P("if(cond,true_expr,false_expr)") ".\n", f.argc));
+		HERE(dbg.error(f.name, "Missing arguments (%d/3) in function " PURPLE("if(cond,true_expr,false_expr)") ".\n", f.argc));
 		return {};
 	} else if (f.argc > 3){
-		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " P("if(cond,true_expr,false_expr)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " PURPLE("if(cond,true_expr,false_expr)") ".\n", f.argc));
 	}
 	
 	assert(f.argv[0].expr != nullptr);
@@ -302,10 +357,10 @@ inline string_view substr(string_view s, long beg, long end){
 
 static Value f_lower(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
-		HERE(dbg.error(f.name, "Missing argument in function " P("lower(str)") ".\n"));
+		HERE(dbg.error(f.name, "Missing argument in function " PURPLE("lower(str)") ".\n"));
 		return string_view();
 	} else if (f.argc > 1){
-		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " P("lower(str)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " PURPLE("lower(str)") ".\n", f.argc));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 	}
@@ -330,10 +385,10 @@ static Value f_lower(const Function& f, const VariableMap& vars, const Debugger&
 
 static Value f_upper(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 1){
-		HERE(dbg.error(f.name, "Missing argument in function " P("upper(str)") ".\n"));
+		HERE(dbg.error(f.name, "Missing argument in function " PURPLE("upper(str)") ".\n"));
 		return string_view();
 	} else if (f.argc > 1){
-		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " P("upper(str)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[1].mark, "Too many arguments (%d/1) in function " PURPLE("upper(str)") ".\n", f.argc));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 	}
@@ -358,10 +413,10 @@ static Value f_upper(const Function& f, const VariableMap& vars, const Debugger&
 
 static Value f_substr(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 2){
-		HERE(dbg.error(f.name, "Missing arguments (%d/2) in function " P("substr(str,beg,[len])") ".\n", f.argc));
+		HERE(dbg.error(f.name, "Missing arguments (%d/2) in function " PURPLE("substr(str,beg,[len])") ".\n", f.argc));
 		return string_view();
 	} else if (f.argc > 3){
-		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " P("substr(str,beg,[len])") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " PURPLE("substr(str,beg,[len])") ".\n", f.argc));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 		assert(f.argv[1].expr != nullptr);
@@ -391,7 +446,7 @@ static Value f_substr(const Function& f, const VariableMap& vars, const Debugger
 			beg = long(arg_1.data.d);
 			break;
 		default:
-			HERE(dbg.error(f.argv[1].mark, "Argument " P("beg={%s}") " in function " P("substr(str,beg,[len])") " must be an integer.\n", VAL_STR(arg_1)));
+			HERE(dbg.error(f.argv[1].mark, "Argument " PURPLE("beg={%s}") " in function " PURPLE("substr(str,beg,[len])") " must be an integer.\n", VAL_STR(arg_1)));
 			return arg_0;
 	}
 	
@@ -405,7 +460,7 @@ static Value f_substr(const Function& f, const VariableMap& vars, const Debugger
 				len = long(arg_2.data.d);
 				break;
 			default:
-				HERE(dbg.error(f.argv[2].mark, "Argument " P("len={%s}") " in function " P("substr(str,beg,[len])") " must be an integer.\n", VAL_STR(arg_2)));
+				HERE(dbg.error(f.argv[2].mark, "Argument " PURPLE("len={%s}") " in function " PURPLE("substr(str,beg,[len])") " must be an integer.\n", VAL_STR(arg_2)));
 				return arg_0;
 		}
 	}
@@ -451,10 +506,10 @@ static Value f_substr(const Function& f, const VariableMap& vars, const Debugger
 
 static Value f_match(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 2){
-		HERE(dbg.error(f.name, "Missing arguments (%d/2) in function " P("match(str,reg)") ".\n", f.argc));
+		HERE(dbg.error(f.name, "Missing arguments (%d/2) in function " PURPLE("match(str,reg)") ".\n", f.argc));
 		return 0L;
 	} else if (f.argc > 2){
-		HERE(dbg.warn(f.argv[2].mark, "Too many arguments (%d/2) in function " P("match(str,reg)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[2].mark, "Too many arguments (%d/2) in function " PURPLE("match(str,reg)") ".\n", f.argc));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 		assert(f.argv[1].expr != nullptr);
@@ -463,14 +518,14 @@ static Value f_match(const Function& f, const VariableMap& vars, const Debugger&
 	// Parse argument 0 [str]
 	Value arg_str = eval(*f.argv[0].expr, vars, dbg);
 	if (arg_str.type != Type::STRING){
-		HERE(dbg.error(f.argv[0].mark, "Argument " P("str={%s}") " in function " P("match(str,reg)") " must be a string.\n", VAL_STR(arg_str)));
+		HERE(dbg.error(f.argv[0].mark, "Argument " PURPLE("str={%s}") " in function " PURPLE("match(str,reg)") " must be a string.\n", VAL_STR(arg_str)));
 		return 0L;
 	}
 	
 	// Parse argument 1, [reg]
 	Value arg_reg = eval(*f.argv[1].expr, vars, dbg);
 	if (arg_reg.type != Type::STRING){
-		HERE(dbg.error(f.argv[1].mark, "Argument " P("reg={%s}") " in function " P("match(str,reg)") " must be a regular expression string.\n", VAL_STR(arg_reg)));
+		HERE(dbg.error(f.argv[1].mark, "Argument " PURPLE("reg={%s}") " in function " PURPLE("match(str,reg)") " must be a regular expression string.\n", VAL_STR(arg_reg)));
 		return 0L;
 	}
 	
@@ -479,7 +534,7 @@ static Value f_match(const Function& f, const VariableMap& vars, const Debugger&
 	try {
 		reg = regex(arg_reg.data.s, arg_reg.data_len);
 	} catch (...){
-		HERE(dbg.error(f.argv[1].mark, "Invalid regular expression " P("reg={%.*s}") " in function " P("match(str,reg)") ".\n", arg_reg.data_len, arg_reg.data.s));
+		HERE(dbg.error(f.argv[1].mark, "Invalid regular expression " PURPLE("reg={%.*s}") " in function " PURPLE("match(str,reg)") ".\n", arg_reg.data_len, arg_reg.data.s));
 		return 0L;
 	}
 	
@@ -487,7 +542,7 @@ static Value f_match(const Function& f, const VariableMap& vars, const Debugger&
 		bool m = regex_match(arg_str.data.s, arg_str.data.s + arg_str.data_len, reg);
 		return Value(m ? 1L : 0L);
 	} catch (...){
-		HERE(dbg.error(f.name, "Failed to evaluate function " P("match(str,reg)") ":\n str=" P("'%.*s'") ", reg=" P("'%.*s'") "\n", arg_str.data_len, arg_str.data.s, arg_reg.data_len, arg_reg.data.s));
+		HERE(dbg.error(f.name, "Failed to evaluate function " PURPLE("match(str,reg)") ":\n str=" PURPLE("'%.*s'") ", reg=" PURPLE("'%.*s'") "\n", arg_str.data_len, arg_str.data.s, arg_reg.data_len, arg_reg.data.s));
 		return 0L;
 	}
 	
@@ -496,10 +551,10 @@ static Value f_match(const Function& f, const VariableMap& vars, const Debugger&
 
 static Value f_replace(const Function& f, const VariableMap& vars, const Debugger& dbg){
 	if (f.argc < 3){
-		HERE(dbg.error(f.name, "Missing arguments (%d/3) in function " P("replace(str,reg,rep)") ".\n", f.argc));
+		HERE(dbg.error(f.name, "Missing arguments (%d/3) in function " PURPLE("replace(str,reg,rep)") ".\n", f.argc));
 		return Value(""sv);
 	} else if (f.argc > 3){
-		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " P("replace(str,reg,rep)") ".\n", f.argc));
+		HERE(dbg.warn(f.argv[3].mark, "Too many arguments (%d/3) in function " PURPLE("replace(str,reg,rep)") ".\n", f.argc));
 	} else {
 		assert(f.argv[0].expr != nullptr);
 		assert(f.argv[1].expr != nullptr);
@@ -509,21 +564,21 @@ static Value f_replace(const Function& f, const VariableMap& vars, const Debugge
 	// Parse argument 0 [str]
 	Value arg_str = eval(*f.argv[0].expr, vars, dbg);
 	if (arg_str.type != Type::STRING){
-		HERE(dbg.error(f.argv[0].mark, "Argument " P("str={%s}") " in function " P("replace(str,reg,rep)") " must be a string.\n", VAL_STR(arg_str)));
+		HERE(dbg.error(f.argv[0].mark, "Argument " PURPLE("str={%s}") " in function " PURPLE("replace(str,reg,rep)") " must be a string.\n", VAL_STR(arg_str)));
 		return arg_str;
 	}
 	
 	// Parse argument 1, [reg]
 	Value arg_reg = eval(*f.argv[1].expr, vars, dbg);
 	if (arg_reg.type != Type::STRING){
-		HERE(dbg.error(f.argv[1].mark, "Argument " P("reg={%s}") " in function " P("replace(str,reg,rep)") " must be a regular expression string.\n", VAL_STR(arg_reg)));
+		HERE(dbg.error(f.argv[1].mark, "Argument " PURPLE("reg={%s}") " in function " PURPLE("replace(str,reg,rep)") " must be a regular expression string.\n", VAL_STR(arg_reg)));
 		return arg_str;
 	}
 	
 	// Parse argument 2, [rep]
 	Value arg_rep = eval(*f.argv[2].expr, vars, dbg);
 	if (arg_rep.type != Type::STRING){
-		HERE(dbg.error(f.argv[2].mark, "Argument " P("rep={%s}") " in function " P("replace(str,reg,rep)") " must be a string.\n", VAL_STR(arg_rep)));
+		HERE(dbg.error(f.argv[2].mark, "Argument " PURPLE("rep={%s}") " in function " PURPLE("replace(str,reg,rep)") " must be a string.\n", VAL_STR(arg_rep)));
 		return arg_str;
 	}
 	
@@ -532,7 +587,7 @@ static Value f_replace(const Function& f, const VariableMap& vars, const Debugge
 	try {
 		reg = regex(arg_reg.data.s, arg_reg.data_len);
 	} catch (...){
-		HERE(dbg.error(f.argv[1].mark, "Invalid regular expression " P("reg={%s}") " in function " P("replace(str,reg,rep)") ".\n", arg_reg.data_len, arg_reg.data.s));
+		HERE(dbg.error(f.argv[1].mark, "Invalid regular expression " PURPLE("reg={%s}") " in function " PURPLE("replace(str,reg,rep)") ".\n", arg_reg.data_len, arg_reg.data.s));
 		return arg_str;
 	}
 	
@@ -543,7 +598,7 @@ static Value f_replace(const Function& f, const VariableMap& vars, const Debugge
 		arg_str = Value(move(buff));
 	} catch (...){
 		HERE(dbg.error(f.name,
-			"Failed to evaluate function " P("replace(str,reg,rep)") ":\n str=" P("'%s'") ", reg=" P("'%s'") ", rep=" P("'%s'") "\n",
+			"Failed to evaluate function " PURPLE("replace(str,reg,rep)") ":\n str=" PURPLE("'%s'") ", reg=" PURPLE("'%s'") ", rep=" PURPLE("'%s'") "\n",
 			arg_str.data_len, arg_str.data.s,
 			arg_reg.data_len, arg_reg.data.s,
 			arg_rep.data_len, arg_rep.data.s
@@ -576,6 +631,10 @@ Value eval(const Function& f, const VariableMap& vars, const Debugger& dbg){
 					return f_min(f, vars, dbg);
 				else if (name == "max")
 					return f_max(f, vars, dbg);
+				else if (name == "sin")
+					return f_sin(f, vars, dbg);
+				else if (name == "cos")
+					return f_cos(f, vars, dbg);
 				break;
 			case 5:
 				if (name == "float")

@@ -12,8 +12,6 @@ using namespace html;
 // ---------------------------------- [ Definitions ] --------------------------------------- //
 
 
-#define P(s)		ANSI_PURPLE s ANSI_RESET
-
 #define TAB_4		"\t\t\t\t"
 #define SPACE_4		"    "
 #define SPACE_16	SPACE_4 SPACE_4 SPACE_4 SPACE_4
@@ -135,7 +133,7 @@ static bool writeCompressedStyleElement(ostream& out, const Node& style){
 	for (const Node* child = style.child ; child != nullptr ; child = child->next){
 		if (child->type != NodeType::TEXT){
 			out.flush();
-			ERROR("Invalid child element type. Element " P("<style>") " can only have text child elements.");
+			ERROR("Invalid child element type. Element " PURPLE("<style>") " can only have text child elements.");
 			return false;
 		}
 		
@@ -487,7 +485,7 @@ static bool writeCompressedHTML(ostream& out, const Document& doc, WriteOptions 
 
 
 bool write(ostream& out, const Document& doc, WriteOptions options){
-	#ifdef DEBUG
+	#if DEBUG
 		// Automatic flush after each write.
 		out << std::unitbuf;
 	#endif

@@ -158,6 +158,8 @@ bool test_doc_expressions_functions(){
 		"{abs(-4.5)}" NL
 		"{min(1, 2.5, 'three')}" NL
 		"{max(1, 2.5, 'three')}" NL
+		"{sin(pi/6)}" NL
+		"{cos(pi/3)}" NL
 		NL
 		"{lower('World!')}" NL
 		"{upper('World!')}" NL
@@ -181,6 +183,8 @@ bool test_doc_expressions_functions(){
 		"4.5" NL
 		"1" NL
 		"three" NL
+		"0.5" NL
+		"0.5" NL
 		NL
 		"world!" NL
 		"WORLD!" NL

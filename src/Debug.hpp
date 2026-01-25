@@ -7,15 +7,22 @@
 // ---------------------------------- [ Definitions ] --------------------------------------- //
 
 
-#ifdef NDEBUG
-	#undef DEBUG
-#else
-	#define DEBUG
+#ifndef DEBUG
+	#ifndef NDEBUG
+		#define DEBUG 1
+	#else
+		#define DEBUG 0
+	#endif
 #endif
 
 
-#ifdef DEBUG
-	#define IN_DEBUG(statement)	statement
+#ifndef DEBUG_LOCATION
+	#define DEBUG_LOCATION DEBUG
+#endif
+
+
+#if DEBUG
+	#define IN_DEBUG(statement)	do { statement; } while (false)
 #else
 	#define IN_DEBUG(statement)
 #endif
@@ -28,25 +35,29 @@ extern bool stderr_isTTY;
 extern bool stdout_isTTY;
 
 // Switch between ANSI text and plain text: `stderr_isTTY`
-#define LOG_STDERR(fmt, ...) {                                  \
+#define LOG_STDERR(fmt, ...) do {                               \
 	static constexpr char f_str[] = fmt;                        \
 	static constexpr fmt_ansi<f_str> f = {};                    \
 	fprintf(stderr, f(stderr_isTTY) __VA_OPT__(,) __VA_ARGS__); \
-}                                                               \
+} while (false)
 
 // Switch between ANSI text and plain text: `stdout_isTTY`
-#define LOG_STDOUT(fmt, ...) {                                  \
+#define LOG_STDOUT(fmt, ...) do {                               \
 	static constexpr char f_str[] = fmt;                        \
 	static constexpr fmt_ansi<f_str> f = {};                    \
 	fprintf(stderr, f(stdout_isTTY) __VA_OPT__(,) __VA_ARGS__); \
-}                                                               \
+} while (false)
+
+
+// Quick unpack for `std::string_view` or `std::string` when using `%.*` format.
+#define VA_STRV(str)	int(str.length()), str.data()
 
 
 // ---------------------------------- [ Definitions ] --------------------------------------- //
 
 
 // Print source code location before executing argument
-#ifdef DEBUG
+#if DEBUG_LOCATION
 	#define HERE(...) {                                                                      \
 		if (stderr_isTTY)                                                                    \
 			fprintf(stderr, ANSI_BOLD "[%s:%ld]" ANSI_RESET "\n", __FILE__, long(__LINE__)); \
@@ -57,25 +68,25 @@ extern bool stdout_isTTY;
 #endif
 
 
-#define ERROR(fmt, ...) {                    \
-	HERE();                                   \
+#define ERROR(fmt, ...) do {                   \
+	HERE();                                    \
 	LOG_STDERR(ANSI_RED "error: " ANSI_RESET); \
 	LOG_STDERR(fmt __VA_OPT__(,) __VA_ARGS__); \
-	LOG_STDERR("\n");                         \
-}                                            \
+	LOG_STDERR("\n");                          \
+} while (false)
 
-#define WARN(fmt, ...) {                       \
-	HERE();                                     \
+#define WARN(fmt, ...) do {                      \
+	HERE();                                      \
 	LOG_STDERR(ANSI_YELLOW "warn: " ANSI_RESET); \
-	LOG_STDERR(fmt __VA_OPT__(,) __VA_ARGS__);  \
-	LOG_STDERR("\n");                          \
-}       
+	LOG_STDERR(fmt __VA_OPT__(,) __VA_ARGS__);   \
+	LOG_STDERR("\n");                            \
+} while (false)
 
-#define INFO(fmt, ...) {                       \
+#define INFO(fmt, ...) do {                     \
 	HERE();                                     \
 	LOG_STDERR(fmt __VA_OPT__(,) __VA_ARGS__);  \
-	LOG_STDERR("\n");                          \
-}                                             \
+	LOG_STDERR("\n");                           \
+} while (false)
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //

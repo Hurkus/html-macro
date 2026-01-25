@@ -20,7 +20,7 @@ BlockAllocator<S,A> BlockAllocator<S,A>::heap;
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 
-#ifdef DEBUG
+#if DEBUG
 template<typename T>
 static long allocCount = 0;
 
@@ -29,7 +29,7 @@ static long deallocCount = 0;
 #endif
 
 
-#ifdef DEBUG
+#if DEBUG
 	#define INC(var)	(var++)
 #else
 	#define INC(var)	{}
@@ -128,7 +128,7 @@ void html::del(char* str) noexcept {
 bool html::assertDeallocations(){
 	bool pass = true;
 	
-	#ifdef DEBUG
+	#if DEBUG
 	pass &= (allocCount<Document> == deallocCount<Document>);
 	pass &= (allocCount<Node> == deallocCount<Node>);
 	pass &= (allocCount<Attr> == deallocCount<Attr>);

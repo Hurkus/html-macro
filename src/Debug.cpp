@@ -31,11 +31,11 @@ bool stdout_isTTY = false;
 void printErrSrc(const char* file, long row, long col) noexcept {
 	if (file != nullptr && file[0] != 0){
 		if (row > 0 && col > 0)
-			LOG_STDERR(BOLD("%s:%ld:%ld: "), file, row, col)
+			LOG_STDERR(BOLD("%s:%ld:%ld: "), file, row, col);
 		else if (row > 0)
-			LOG_STDERR(BOLD("%s:%ld: "), file, row)
+			LOG_STDERR(BOLD("%s:%ld: "), file, row);
 		else
-			LOG_STDERR(BOLD("%s: "), file)
+			LOG_STDERR(BOLD("%s: "), file);
 	}
 }
 

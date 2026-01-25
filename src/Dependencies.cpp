@@ -11,9 +11,6 @@
 using namespace std;
 
 
-#define P(s)	ANSI_PURPLE s ANSI_RESET
-
-
 // ----------------------------------- [ Constants ] ---------------------------------------- //
 
 
@@ -113,9 +110,9 @@ bool printDependencies(const char* mainPath){
 	const filepath file = mainPath;
 	if (!process_file(file, buff, paths)){
 		if (!fs::exists(file))
-			ERROR("Input file " P("`%s`") " not found.", file.c_str())
+			ERROR("Input file not found: " PURPLE("`%s`"), file.c_str());
 		else
-			ERROR("Failed to open input file " P("`%s`") ".", file.c_str())
+			ERROR("Failed to open input file: " PURPLE("`%s`"), file.c_str());
 		return false;
 	}
 	

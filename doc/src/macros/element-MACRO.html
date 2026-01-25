@@ -1,4 +1,5 @@
 <INCLUDE HEADER SRC="element-CALL.html"/>
+<INCLUDE HEADER SRC="attr-CALL.html"/>
 <INCLUDE HEADER SRC="element-FOR.html"/>
 <INCLUDE HEADER SRC="element-SET-ATTR.html"/>
 
@@ -30,7 +31,7 @@
 	<p>
 		Macro elements serve as <em>templates</em> for instantiating/evaluating the same HTML element tree multiple times.
 		All <a CALL="link-em-MACRO">{l}MACRO{r}</a> elements are referenced globally, i.e. cached and removed from the source document right after the document is parsed and before any instantiation occurs.
-		This means their position in the document doesn't matter.
+		This means their position in the document does not matter.
 	</p>
 	
 	
@@ -40,7 +41,7 @@
 		<ul>
 			<li>
 				<code>NAME="[name]"</code> represents the name of the new macro, which will be used to invoke it.
-				Any previous macro with the same name is discarded/shadowed by the new one.
+				Any previously cached macro of the same name is replaced with the new one.
 			</li>
 			<li>
 				<code>[variable]=[default_value]</code> represents the name of a variable that is local during the execution of the macro.
@@ -216,6 +217,11 @@
 				</td>
 			</tr>
 		</table>
+		<br/>
+		<p>
+			In this example, the macros <code>F1</code> and <code>F2</code> are invoked directly
+			(without a <a CALL="link-em-CALL">{l}CALL{r} element macro</a> or <a CALL="link-am-CALL">CALL attribute macro</a>).
+		</p>
 	</div>
 	
 </div>

@@ -276,7 +276,7 @@
 			<div class="details">
 				<p>Author &ndash; <a href="https://hurkus.dev" style="font-weight: bold;">Hurkus</a></p>
 				&bull;
-				<p>Date &ndash; <span class="date TD-U">15/11/2025</span></p>
+				<p>Date &ndash; <span class="date TD-U">25/01/2026</span></p>
 				&bull;
 				<p>Repository &ndash; <a href="https://github.com/Hurkus/html-macro/">github.com/Hurkus/html-macro/</a></p>
 			</div>
@@ -286,7 +286,7 @@
 					<li><a href="#introduction">1. Introduction</a></li>
 					<li><a href="#cli">2. Command-line interface</a></li>
 					<li>
-						<a href="#document">3. Parsing</a>
+						<a href="#parsing">3. Parsing</a>
 						<ol class="lvl-2">
 							<li><a href="#html-files">3.1. HTML files</a></li>
 						</ol>
@@ -372,7 +372,7 @@
 					General usage would be: <code>html-macro [options] [variables] &lt;path&gt;</code>, where:
 					<ul>
 						<li>
-							<code><a href="#cli-options" class="TD-0">[options]</a></code> represents the optional list of program options described <a href="#cli-options">below</a>.
+							<code><a href="#cli-options" class="TD-0">[options]</a></code> represents the optional list of program options.
 						</li>
 						<li>
 							<code>[variables]</code> represents the list of predefined variables used in <a href="#expressions">expressions</a>.
@@ -380,7 +380,7 @@
 						</li>
 						<li>
 							<code>&lt;path&gt;</code> represents the mandatory path to the input file (typically a <code>.html</code> file).
-							The <code>path</code> cannot contain an <code>=</code> character, as that would be considered a variable assignment.
+							The <code>path</code> cannot contain the <code>=</code> character, as that would be considered a variable declaration.
 						</li>
 					</ul>
 				</p>
@@ -426,11 +426,35 @@
 							</td>
 						</tr>
 						<tr>
+							<td><code>--type &lt;type&gt;</code></td>
+							<td><code>-t &lt;type&gt;</code></td>
+							<td>
+								Force input file to be treated as a different file <a href="#parsing">type</a>, where <code>&lt;type&gt;</code> can be
+								<code>html</code>, <code>css</code>, <code>js</code> or <code>txt</code>.
+							</td>
+						</tr>
+						<tr>
+							<td><code>--compress &lt;type&gt;</code></td>
+							<td><code>-c &lt;type&gt;</code></td>
+							<td>
+								Compress output by removing unecessary spaces and other constructs.
+								The <code>&lt;type&gt;</code> can be <code>none</code>, <code>html</code>, <code>css</code> or <code>all</code>.
+							</td>
+						</tr>
+						<tr>
 							<td></td>
 							<td><code>-x</code></td>
 							<td>
-								Discard the <i>stdout</i> stream and/or do not write any output to a file.
+								Discard any output except errors and warnings.
 								This option can be used to check for errors without generating any output.
+							</td>
+						</tr>
+						<tr>
+							<td>--dependencies</td>
+							<td><code>-d</code></td>
+							<td>
+								Scan the document and extract all paths from various macros that reference other files (such as <a href="#INCLUDE" title="Includes contents of another file.">&lt;INCLUDE&gt;</a>) and print them.
+								This is usefull when generating dependency files with make.
 							</td>
 						</tr>
 					</table>
@@ -444,7 +468,7 @@
 				<p>
 					There are 4 different file types considered during parsing:
 					<ul>
-						<li>HTML files with extension <code>.html</code>,</li>
+						<li>HTML files with extension <code>.html</code>, <code>.xml</code> or <code>.svg</code>,</li>
 						<li>CSS files with extension <code>.css</code>,</li>
 						<li>JavaScript files with extension <code>.js</code> and</li>
 						<li>text files with any other extension.</li>
@@ -452,8 +476,7 @@
 				</p>
 				<br/>
 				<p>
-					Currently only HTML files are actually parsed, the others are considered as plain text.
-					This will change in a future version when CSS and JS compression is added.
+					Currently, <code>.js</code> files are treated as plain text, as compression is not available.
 				</p>
 				<br/>
 				<br/>
@@ -581,6 +604,21 @@
 							<li><code>&lt;script&gt;</code> &ndash; All content is parsed as plain text untill the closing <code>&lt;/script&gt;</code> tag.</li>
 							<li><code>&lt;pre&gt;</code> &ndash; All content is parsed as plain text untill the closing <code>&lt;/pre&gt;</code> tag.</li>
 						</ul>
+					</p>
+					<br/>
+					<p>
+						The output can <a href="#cli-options">optionally</a> be compressed, where all unnecessary text is discarded.
+						This mostly affects whitespace.
+					</p>
+				</section>
+				<br/>
+				<br/>
+				<section id="css-files">
+					<h3><a href="#css-files">3.2. CSS files</a></h3>
+					<p>
+						CSS files are only parsed if they have to be compressed (see <a href="#cli-options">options</a>).
+						The file is not checked for validity, it is only parsed to the extent required to discard unnecessary text.
+						This mostly affects whitespace and comments.
 					</p>
 				</section>
 			</section>
@@ -728,7 +766,7 @@
 						<p>
 							Macro elements serve as <em>templates</em> for instantiating/evaluating the same HTML element tree multiple times.
 							All <a href="#MACRO" title="Defines a new macro.">&lt;MACRO&gt;</a> elements are referenced globally, i.e. cached and removed from the source document right after the document is parsed and before any instantiation occurs.
-							This means their position in the document doesn't matter.
+							This means their position in the document does not matter.
 						</p>
 						<br/>
 						<p>
@@ -736,7 +774,7 @@
 							<ul>
 								<li>
 									<code>NAME="[name]"</code> represents the name of the new macro, which will be used to invoke it.
-									Any previous macro with the same name is discarded/shadowed by the new one.
+									Any previously cached macro of the same name is replaced with the new one.
 								</li>
 								<li>
 									<code>[variable]=[default_value]</code> represents the name of a variable that is local during the execution of the macro.
@@ -909,6 +947,11 @@
 									</td>
 								</tr>
 							</table>
+							<br/>
+							<p>
+								In this example, the macros <code>F1</code> and <code>F2</code> are invoked directly
+								(without a <a href="#CALL" title="Invokes a user-defined macro.">&lt;CALL&gt; element macro</a> or <a href="#ATTR-CALL" title="Invoke a user-defined macro inside the current element.">CALL attribute macro</a>).
+							</p>
 						</div>
 					</div>
 					<br/><br/>
@@ -2852,6 +2895,22 @@
 							<td>Returns largest <i>number</i> or longest <i>string</i>.</td>
 							<td>
 								<code>max(1, 2.5, 'three')</code> &rarr; <code>three</code>
+							</td>
+						</tr>
+						<tr id="function-sin">
+							<td><code>sin(x)</code></td>
+							<td>float</td>
+							<td>Returns <i>sin</i> of <i>x rad</i>.</td>
+							<td>
+								<code>sin(pi/6)</code> &rarr; <code>0.5</code>
+							</td>
+						</tr>
+						<tr id="function-cos">
+							<td><code>cos(x)</code></td>
+							<td>float</td>
+							<td>Returns <i>cos</i> of <i>x rad</i>.</td>
+							<td>
+								<code>cos(pi/3)</code> &rarr; <code>0.5</code>
 							</td>
 						</tr>
 						<tr id="function-lower" class="br">

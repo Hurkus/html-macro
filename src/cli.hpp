@@ -2,17 +2,22 @@
 #include <string_view>
 #include <vector>
 
+#include "Macro.hpp"
+#include "Write.hpp"
+
 
 extern struct Opt {
 	const char* program = "html-macro";
 	bool help = false;
 	bool printDependencies = false;
 	
-	bool compress_css = false;
-	bool compress_html = false;
 	
-	const char* outFilePath = "-";		// "-" means stdout
 	const char* inFilePath = nullptr;
+	Macro::Type inFileType = Macro::Type::NONE;
+	
+	const char* outFilePath = nullptr;
+	WriteOptions compress = WriteOptions::NONE;
+	bool noOutput = false;
 	
 	std::vector<const char*> includes;
 	std::vector<const char*> defines;

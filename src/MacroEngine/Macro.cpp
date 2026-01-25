@@ -32,7 +32,7 @@ static unordered_map<string_view,shared_ptr<Macro>> macroNameCache;
 
 Macro::Type Macro::getType(const filepath& path){
 	const filepath ext = path.extension();
-	if (ext == ".html"sv)
+	if (ext == ".html"sv || ext == ".svg"sv || ext == ".xml"sv)
 		return Type::HTML;
 	else if (ext == ".css"sv)
 		return Type::CSS;
