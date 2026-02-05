@@ -3,9 +3,9 @@
 #include <vector>
 #include <filesystem>
 
-#include "ANSI.h"
-
-using filepath = std::filesystem::path;
+#include "../src/fs.hpp"
+#include "../src/includes/fd.hpp"
+#include "../src/Debug.hpp"
 
 
 // ----------------------------------- [ Variables ] ---------------------------------------- //
@@ -71,7 +71,6 @@ bool slurp(const filepath& path, std::string& buff);
 std::string slurp(const filepath& path);
 
 int exe(const std::vector<std::string>& args, std::string& out, std::string& err);
-
 bool run(const std::vector<std::string>& args, std::string_view out, std::string_view err, int status = 0);
 
 

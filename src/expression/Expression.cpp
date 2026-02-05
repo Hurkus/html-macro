@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "Debug.hpp"
+#include "DebugSource.hpp"
 
 using namespace std;
 using Operation = Expression::Operation;
@@ -12,8 +13,8 @@ using Type = Value::Type;
 // ----------------------------------- [ Prototypes ] --------------------------------------- //
 
 
-Value eval(const Operation& op, const VariableMap& vars, const Debugger& dbg);
-Value eval(const Function& op, const VariableMap& vars, const Debugger& dbg);
+Value eval(const Expression& self, const Operation& op, const VariableMap& vars);
+Value eval(const Expression& self, const Function& op, const VariableMap& vars);
 
 
 // ---------------------------------- [ Constructors ] -------------------------------------- //
@@ -38,24 +39,37 @@ constexpr T clamp(T x, T min, T max){
 }
 
 
+static void warn_undefined_variable(const Expression& self, const Variable& var){
+	if (self.origin == nullptr){
+		return;
+	}
+	
+	string_view mark = var.view();
+	linepos pos = findLine(*self.origin, mark.begin());
+	
+	print(pos);
+	LOG_STDERR(WARN_PFX "Undefined variable `" PURPLE("%.*s") "`. Defaulted to " PURPLE("0") ".\n", VA_STRV(var.name()));
+	printCodeView(pos, mark, ANSI_YELLOW);
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static Value eval(const Variable& var, const VariableMap& vars, const Debugger& dbg){
-	const Value* val = vars.get(var.name);
+static Value var(const Expression& self, const Variable& var, const VariableMap& vars){
+	const Value* val = vars.get(var.name());
 	if (val != nullptr){
 		return Value(*val);
 	} else {
-		string_view name = var.name;
-		HERE(dbg.warn(name, "Undefined variable " ANSI_PURPLE "'%.*s'" ANSI_RESET " defaulted to 0.\n", int(name.length()), name.data()));
+		warn_undefined_variable(self, var);
 		return Value(0L);
 	}
 }
 
 
-static Value nott(const UnaryOperation& unop, const VariableMap& vars, const Debugger& dbg){
+static Value nott(const Expression& self, const UnaryOperation& unop, const VariableMap& vars){
 	assert(unop.arg != nullptr);
-	Value val = eval(*unop.arg, vars, dbg);
+	Value val = eval(self, *unop.arg, vars);
 	
 	switch (val.type){
 		case Type::LONG:
@@ -73,9 +87,9 @@ static Value nott(const UnaryOperation& unop, const VariableMap& vars, const Deb
 }
 
 
-static Value neg(const UnaryOperation& unop, const VariableMap& vars, const Debugger& dbg){
+static Value neg(const Expression& self, const UnaryOperation& unop, const VariableMap& vars){
 	assert(unop.arg != nullptr);
-	Value val = eval(*unop.arg, vars, dbg);
+	Value val = eval(self, *unop.arg, vars);
 	
 	switch (val.type){
 		case Type::LONG:
@@ -95,10 +109,10 @@ static Value neg(const UnaryOperation& unop, const VariableMap& vars, const Debu
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static Value add(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static Value add(const Expression& self, const BinaryOperation& binop, const VariableMap& vars){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value v1 = eval(*binop.arg_1, vars, dbg);
-	Value v2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(self, *binop.arg_1, vars);
+	Value v2 = eval(self, *binop.arg_2, vars);
 	
 	if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
@@ -139,10 +153,10 @@ static Value add(const BinaryOperation& binop, const VariableMap& vars, const De
 }
 
 
-static Value sub(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static Value sub(const Expression& self, const BinaryOperation& binop, const VariableMap& vars){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value v1 = eval(*binop.arg_1, vars, dbg);
-	Value v2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(self, *binop.arg_1, vars);
+	Value v2 = eval(self, *binop.arg_2, vars);
 	
 	if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
@@ -169,10 +183,10 @@ static Value sub(const BinaryOperation& binop, const VariableMap& vars, const De
 }
 
 
-static Value mul(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static Value mul(const Expression& self, const BinaryOperation& binop, const VariableMap& vars){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value v1 = eval(*binop.arg_1, vars, dbg);
-	Value v2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(self, *binop.arg_1, vars);
+	Value v2 = eval(self, *binop.arg_2, vars);
 	
 	auto mul = [](string_view sv, long n){
 		assert(n > 0);
@@ -238,10 +252,10 @@ static Value mul(const BinaryOperation& binop, const VariableMap& vars, const De
 }
 
 
-static Value div(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static Value div(const Expression& self, const BinaryOperation& binop, const VariableMap& vars){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value v1 = eval(*binop.arg_1, vars, dbg);
-	Value v2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(self, *binop.arg_1, vars);
+	Value v2 = eval(self, *binop.arg_2, vars);
 	
 	if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
@@ -261,10 +275,10 @@ static Value div(const BinaryOperation& binop, const VariableMap& vars, const De
 }
 
 
-static Value mod(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static Value mod(const Expression& self, const BinaryOperation& binop, const VariableMap& vars){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value v1 = eval(*binop.arg_1, vars, dbg);
-	Value v2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(self, *binop.arg_1, vars);
+	Value v2 = eval(self, *binop.arg_2, vars);
 	
 	if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
@@ -284,10 +298,10 @@ static Value mod(const BinaryOperation& binop, const VariableMap& vars, const De
 }
 
 
-static Value xxor(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static Value xxor(const Expression& self, const BinaryOperation& binop, const VariableMap& vars){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value v1 = eval(*binop.arg_1, vars, dbg);
-	Value v2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(self, *binop.arg_1, vars);
+	Value v2 = eval(self, *binop.arg_2, vars);
 	
 	if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
@@ -302,10 +316,10 @@ static Value xxor(const BinaryOperation& binop, const VariableMap& vars, const D
 
 
 template<typename OP>
-static Value logical(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static Value logical(const Expression& self, const BinaryOperation& binop, const VariableMap& vars){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value v1 = eval(*binop.arg_1, vars, dbg);
-	Value v2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(self, *binop.arg_1, vars);
+	Value v2 = eval(self, *binop.arg_2, vars);
 	return OP{}(v1.toBool(), v2.toBool()) ? 1L : 0L;
 }
 
@@ -313,10 +327,10 @@ static Value logical(const BinaryOperation& binop, const VariableMap& vars, cons
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool equals(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static bool equals(const Expression& self, const BinaryOperation& binop, const VariableMap& vars){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value v1 = eval(*binop.arg_1, vars, dbg);
-	Value v2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(self, *binop.arg_1, vars);
+	Value v2 = eval(self, *binop.arg_2, vars);
 	
 	if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
@@ -350,10 +364,10 @@ static bool equals(const BinaryOperation& binop, const VariableMap& vars, const 
 
 
 template<typename OP>
-static bool cmp(const BinaryOperation& binop, const VariableMap& vars, const Debugger& dbg){
+static bool cmp(const Expression& self, const BinaryOperation& binop, const VariableMap& vars){
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value v1 = eval(*binop.arg_1, vars, dbg);
-	Value v2 = eval(*binop.arg_2, vars, dbg);
+	Value v1 = eval(self, *binop.arg_1, vars);
+	Value v2 = eval(self, *binop.arg_2, vars);
 	OP op = {};
 	
 	if (v1.type == Type::LONG){
@@ -390,52 +404,51 @@ static bool cmp(const BinaryOperation& binop, const VariableMap& vars, const Deb
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Value eval(const Operation& op, const VariableMap& vars, const Debugger& dbg){
+Value eval(const Expression& self, const Operation& op, const VariableMap& vars){
 	switch (op.type){
 		case Operation::Type::LONG:
 			return static_cast<const Long&>(op).n;
 		case Operation::Type::DOUBLE:
 			return static_cast<const Double&>(op).n;
 		case Operation::Type::STRING:
-			return static_cast<const String&>(op).s;
+			return static_cast<const String&>(op).str();
 		case Operation::Type::VAR:
-			return eval(static_cast<const Variable&>(op), vars, dbg);
+			return var(self, static_cast<const Variable&>(op), vars);
 		case Operation::Type::NOT:
-			return nott(static_cast<const UnaryOperation&>(op), vars, dbg);
+			return nott(self, static_cast<const UnaryOperation&>(op), vars);
 		case Operation::Type::NEG:
-			return neg(static_cast<const UnaryOperation&>(op), vars, dbg);
+			return neg(self, static_cast<const UnaryOperation&>(op), vars);
 		case Operation::Type::ADD:
-			return add(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return add(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::SUB:
-			return sub(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return sub(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::MUL:
-			return mul(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return mul(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::DIV:
-			return div(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return div(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::MOD:
-			return mod(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return mod(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::XOR:
-			return xxor(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return xxor(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::AND:
-			return logical<logical_and<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return logical<logical_and<>>(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::OR:
-			return logical<logical_or<>>(static_cast<const BinaryOperation&>(op), vars, dbg);
+			return logical<logical_or<>>(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::EQ:
-			return equals(static_cast<const BinaryOperation&>(op), vars, dbg) ? 1L : 0L;
+			return equals(self, static_cast<const BinaryOperation&>(op), vars) ? 1L : 0L;
 		case Operation::Type::NEQ:
-			return equals(static_cast<const BinaryOperation&>(op), vars, dbg) ? 0L : 1L;
+			return equals(self, static_cast<const BinaryOperation&>(op), vars) ? 0L : 1L;
 		case Operation::Type::LT:
-			return cmp<less<>>(static_cast<const BinaryOperation&>(op), vars, dbg) ? 1L : 0L;
+			return cmp<less<>>(self, static_cast<const BinaryOperation&>(op), vars) ? 1L : 0L;
 		case Operation::Type::LTE:
-			return cmp<less_equal<>>(static_cast<const BinaryOperation&>(op), vars, dbg) ? 1L : 0L;
+			return cmp<less_equal<>>(self, static_cast<const BinaryOperation&>(op), vars) ? 1L : 0L;
 		case Operation::Type::GT:
-			return cmp<greater<>>(static_cast<const BinaryOperation&>(op), vars, dbg) ? 1L : 0L;
+			return cmp<greater<>>(self, static_cast<const BinaryOperation&>(op), vars) ? 1L : 0L;
 		case Operation::Type::GTE:
-			return cmp<greater_equal<>>(static_cast<const BinaryOperation&>(op), vars, dbg) ? 1L : 0L;
+			return cmp<greater_equal<>>(self, static_cast<const BinaryOperation&>(op), vars) ? 1L : 0L;
 		case Operation::Type::FUNC:
-			return eval(static_cast<const Function&>(op), vars, dbg);
+			return eval(self, static_cast<const Function&>(op), vars);
 		case Operation::Type::ERROR:
-			dbg.error(dbg.mark(), "Bad expression.\n");
 			assert(false);
 			break;
 	}
@@ -446,13 +459,12 @@ Value eval(const Operation& op, const VariableMap& vars, const Debugger& dbg){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Value Expression::eval(const VariableMap& vars, const Debugger& dbg) const noexcept {
+Value Expression::eval(const VariableMap& vars) const noexcept {
 	if (op == nullptr){
-		dbg.error(dbg.mark(), "Bad expression.\n");
 		assert(op != nullptr);
 		return Value();
 	}
-	return ::eval(*op, vars, dbg);
+	return ::eval(*this, *op, vars);
 }
 
 

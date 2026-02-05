@@ -1,3 +1,9 @@
+<SET t='0' fmt="%d/%m/%Y" />
+<p>
+	The world was created on:
+	<SHELL VARS="t,fmt">date -d "@$t" +"$fmt"</SHELL>
+</p>
+
 <INCLUDE SRC="test-5.inc.html" HEADER/>
 
 <html>

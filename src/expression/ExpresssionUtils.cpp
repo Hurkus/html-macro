@@ -10,30 +10,42 @@ using Operation = Expression::Operation;
 static void serialize(const Operation* op, string& buff);
 
 
-static void serialize(const Variable& c, string& buff){
-	buff.append(c.name);
+static void serialize(const Variable& var, string& buff){
+	buff.append(var.name());
 }
 
-static void serialize(const UnaryOperation& c, string& buff, string_view op){
+static void serialize(const Long& num, string& buff){
+	buff.append(to_string(num.n));
+}
+
+static void serialize(const Double& num, string& buff){
+	buff.append(to_string(num.n));
+}
+
+static void serialize(const String& str, string& buff){
+	buff.append(str.str());
+}
+
+static void serialize(const UnaryOperation& un, string& buff, string_view op){
 	buff.append(op).push_back('(');
-	serialize(c.arg, buff);
+	serialize(un.arg, buff);
 	buff.push_back(')');
 }
 
-static void serialize(const BinaryOperation& c, string& buff, string_view op){
+static void serialize(const BinaryOperation& bin, string& buff, string_view op){
 	buff.push_back('(');
-	serialize(c.arg_1, buff);
+	serialize(bin.arg_1, buff);
 	buff.append(op);
-	serialize(c.arg_2, buff);
+	serialize(bin.arg_2, buff);
 	buff.push_back(')');
 }
 
-static void serialize(const Function& c, string& buff){
-	buff.append(c.name).push_back('(');
-	for (int i = 0 ; i < c.argc ; i++){
+static void serialize(const Function& fun, string& buff){
+	buff.append(fun.name()).push_back('(');
+	for (uint32_t i = 0 ; i < fun.argc ; i++){
 		if (i > 0)
 			buff.push_back(',');
-		serialize(c.argv[i].expr, buff);
+		serialize(fun.argv[i], buff);
 	}
 	buff.push_back(')');
 }
@@ -46,14 +58,11 @@ static void serialize(const Operation* op, string& buff){
 	
 	switch (op->type){
 		case Operation::Type::LONG:
-			buff.append(to_string(static_cast<const Long&>(*op).n));
-			return;
+			return serialize(static_cast<const Long&>(*op), buff);
 		case Operation::Type::DOUBLE:
-			buff.append(to_string(static_cast<const Double&>(*op).n));
-			return;
+			return serialize(static_cast<const Double&>(*op), buff);
 		case Operation::Type::STRING:
-			buff.append(static_cast<const String&>(*op).s);
-			return;
+			return serialize(static_cast<const String&>(*op), buff);
 		case Operation::Type::VAR:
 			return serialize(static_cast<const Variable&>(*op), buff);
 		case Operation::Type::NOT:

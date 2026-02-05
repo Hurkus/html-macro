@@ -8,32 +8,26 @@ using namespace html;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-template<bool OPT = true>
-inline void _free_name(Node& self) noexcept {
-	if (self.options % (NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME)){
-		html::del((char*)self.value_p);
-		if constexpr (OPT)
-			self.options &= ~(NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME);
+inline void _free_name(CharAllocator& alloc, Node& self) noexcept {
+	if (self.options % (NodeOptions::OWNED_NAME | NodeOptions::OWNED_VALUE)){
+		alloc.dealloc((char*)self.value_p);
+		self.options &= ~(NodeOptions::OWNED_NAME | NodeOptions::OWNED_VALUE);
 	}
 }
 
 
-template<bool OPT = true>
-inline void _free_name(Attr& self) noexcept {
+inline void _free_name(CharAllocator& alloc, Attr& self) noexcept {
 	if (self.options % NodeOptions::OWNED_NAME){
-		html::del((char*)self.name_p);
-		if constexpr (OPT)
-			self.options &= ~(NodeOptions::OWNED_NAME);
+		alloc.dealloc((char*)self.name_p);
+		self.options &= ~NodeOptions::OWNED_NAME;
 	}
 }
 
 
-template<bool OPT = true>
-inline void _free_value(Attr& self) noexcept {
+inline void _free_value(CharAllocator& alloc, Attr& self) noexcept {
 	if (self.options % NodeOptions::OWNED_VALUE){
-		html::del((char*)self.value_p);
-		if constexpr (OPT)
-			self.options &= ~(NodeOptions::OWNED_VALUE);
+		alloc.dealloc((char*)self.value_p);
+		self.options &= ~NodeOptions::OWNED_VALUE;
 	}
 }
 
@@ -41,23 +35,23 @@ inline void _free_value(Attr& self) noexcept {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void Node::value(nullptr_t){
-	_free_name(*this);
+void Node::value(Document& root, nullptr_t) noexcept {
+	_free_name(*root.charAlloc, *this);
 	value_p = nullptr;
 	value_len = 0;
 }
 
 
-void Node::value(string_view str){
-	_free_name(*this);
+void Node::value(Document& root, string_view str) noexcept {
+	_free_name(*root.charAlloc, *this);
 	value_p = str.data();
 	value_len = uint32_t(min(str.length(), size_t(UINT32_MAX)));
 }
 
 
-void Node::value(char* str, size_t len){
-	_free_name<false>(*this);
-	options |= (NodeOptions::OWNED_VALUE | NodeOptions::OWNED_NAME);
+void Node::value(Document& root, char* str, size_t len) noexcept {
+	_free_name(*root.charAlloc, *this);
+	options |= NodeOptions::OWNED_VALUE;
 	value_p = str;
 	value_len = uint32_t(min(len, size_t(UINT32_MAX)));
 }
@@ -66,37 +60,31 @@ void Node::value(char* str, size_t len){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Node& Node::appendChild(NodeType type){
-	assert(!(this->options % NodeOptions::LIST_FORWARDS));
-	Node* child = new Node();
-	child->type = type;
-	child->parent = this;
-	child->next = this->child;
-	this->child = child;
-	return *child;
+void Node::remove(Document& root) noexcept {
+	if (parent != nullptr){
+		Node* n = parent->extractChild(this);
+		assert(n == this);
+	}
+	clear(root);
+	root.nodeAlloc->dealloc(this);
 }
 
-void Node::appendChild(Node* child) noexcept {
+
+Node* Node::appendChild(Node* child) noexcept {
 	assert(child != nullptr);
-	assert(!(this->options % NodeOptions::LIST_FORWARDS));
-	
-	if (child->parent != nullptr) [[unlikely]] {
-		child->parent->extractChild(child);
-	}
-	
+	assert(child->parent == nullptr);
+	assert(child->next == nullptr);
 	child->parent = this;
 	child->next = this->child;
 	this->child = child;
+	return child;
 }
 
 
 Node* Node::extractChild(Node* child) noexcept {
+	assert(child != nullptr);
 	Node* prev = nullptr;
 	Node* curr = this->child;
-	
-	if (child == nullptr){
-		return nullptr;
-	}
 	
 	// Find previous node
 	while (curr != child){
@@ -119,107 +107,98 @@ Node* Node::extractChild(Node* child) noexcept {
 }
 
 
-bool Node::removeChild(Node* child){
-	child = extractChild(child);
-	delete child;
-	return child != nullptr;
-}
-
-
-void Node::removeChildren(){
-	Node* stack = this->child;
-	this->child = nullptr;
-	
-	while (stack != nullptr){
+void Node::removeChildren(Document& root) noexcept {
+	for (Node* stack = this->child ; stack != nullptr ; ){
 		// Pop 1
 		Node* node = stack;
 		stack = node->next;
 		
 		// Push children to stack
-		for (Node* c = node->child ; c != nullptr ; ){
-			Node* next = c->next;
-			
-			c->next = stack;
-			stack = c;
-			
-			c = next;
+		for (Node* child = node->child ; child != nullptr ; ){
+			Node* next = child->next;
+			child->next = stack;
+			stack = child;
+			child = next;
 		}
 		
-		// Skip destructor
-		node->removeAttributes();
-		_free_name(*node);
-		Node::operator delete(node);
+		// Delete attributes
+		for (Attr* attr = node->attribute ; attr != nullptr ; ){
+			Attr* next = attr->next;
+			_free_name(*root.charAlloc, *attr);
+			_free_value(*root.charAlloc, *attr);
+			root.attrAlloc->dealloc(attr);
+			attr = next;
+		}
+		
+		_free_name(*root.charAlloc, *node);
+		root.nodeAlloc->dealloc(node);
 	}
-	
+	this->child = nullptr;
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void Attr::value(nullptr_t){
-	_free_value(*this);
+void Attr::value(Document& root, nullptr_t) noexcept {
+	_free_value(*root.charAlloc, *this);
 	value_p = nullptr;
 	value_len = 0;
 }
 
 
-void Attr::value(string_view str){
-	_free_value(*this);
+void Attr::value(Document& root, string_view str) noexcept {
+	_free_value(*root.charAlloc, *this);
 	value_p = str.data();
 	value_len = uint32_t(min(str.length(), size_t(UINT32_MAX)));
 }
 
 
-void Attr::value(char* str, size_t len){
-	_free_value<false>(*this);
+void Attr::value(Document& root, char* str, size_t len) noexcept {
+	_free_value(*root.charAlloc, *this);
 	options |= NodeOptions::OWNED_VALUE;
 	value_p = str;
 	value_len = uint32_t(min(len, size_t(UINT32_MAX)));
 }
 
 
-void Attr::name(nullptr_t){
-	_free_name(*this);
+void Attr::name(Document& root, nullptr_t) noexcept {
+	_free_name(*root.charAlloc, *this);
 	name_p = nullptr;
 	name_len = 0;
 }
 
 
-void Attr::name(string_view str){
-	_free_name(*this);
+void Attr::name(Document& root, string_view str) noexcept {
+	_free_name(*root.charAlloc, *this);
 	name_p = str.data();
-	name_len = uint32_t(min(str.length(), size_t(UINT16_MAX)));
+	name_len = uint16_t(min(str.length(), size_t(UINT16_MAX)));
 }
 
 
-void Attr::name(char* str, size_t len){
-	_free_name<false>(*this);
+void Attr::name(Document& root, char* str, size_t len) noexcept {
+	_free_name(*root.charAlloc, *this);
 	options |= NodeOptions::OWNED_NAME;
 	name_p = str;
-	name_len = uint32_t(min(len, size_t(UINT16_MAX)));
+	name_len = uint16_t(min(len, size_t(UINT16_MAX)));
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Attr& Node::appendAttribute(){
-	assert(!(this->options % NodeOptions::LIST_FORWARDS));
-	Attr* a = new Attr();
-	a->next = this->attribute;
-	this->attribute = a;
-	return *a;
+Attr* Node::appendAttribute(Attr* attr) noexcept {
+	assert(attr != nullptr);
+	attr->next = this->attribute;
+	this->attribute = attr;
+	return attr;
 }
 
 
 Attr* Node::extractAttr(Attr* attr) noexcept {
+	assert(attr != nullptr);
 	Attr* prev = nullptr;
 	Attr* curr = this->attribute;
-	
-	if (attr == nullptr){
-		return nullptr;
-	}
 	
 	// Find previous attribute
 	while (curr != attr){
@@ -240,7 +219,7 @@ Attr* Node::extractAttr(Attr* attr) noexcept {
 }
 
 
-static Attr* extractAttr(Node& self, string_view name){
+static Attr* extractAttr(Node& self, string_view name) noexcept {
 	Attr* prev = nullptr;
 	Attr* attr = self.attribute;
 	
@@ -264,53 +243,26 @@ static Attr* extractAttr(Node& self, string_view name){
 }
 
 
-bool Node::removeAttr(Attr* attr){
-	attr = extractAttr(attr);
-	delete attr;
-	return attr != nullptr;
-}
-
-
-bool Node::removeAttr(string_view name){
+bool Node::removeAttr(Document& root, string_view name) noexcept {
 	Attr* attr = ::extractAttr(*this, name);
-	delete attr;
-	return attr != nullptr;
+	if (attr != nullptr){
+		attr->clear(root);
+		root.attrAlloc->dealloc(attr);
+		return true;
+	}
+	return false;
 }
 
 
-void Node::removeAttributes(){
+void Node::removeAttributes(Document& root) noexcept {
 	for (Attr* attr = this->attribute ; attr != nullptr ; ){
 		Attr* next = attr->next;
-		
-		// Skip destructor
-		_free_value(*attr);
-		_free_name(*attr);
-		Attr::operator delete(attr);
-		
+		_free_name(*root.charAlloc, *attr);
+		_free_value(*root.charAlloc, *attr);
+		root.attrAlloc->dealloc(attr);
 		attr = next;
 	}
 	this->attribute = nullptr;
-}
-
-
-// ---------------------------------- [ Constructors ] -------------------------------------- //
-
-
-Node::~Node(){
-	assert(this->next == nullptr);
-	assert(this->parent == nullptr);
-	
-	this->removeChildren();
-	this->removeAttributes();
-	_free_name<false>(*this);
-}
-
-
-Attr::~Attr(){
-	assert(this->next == nullptr);
-	
-	_free_value<false>(*this);
-	_free_name<false>(*this);
 }
 
 

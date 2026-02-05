@@ -3,36 +3,30 @@
 
 using namespace std;
 using namespace html;
-using namespace MacroEngine;
 
+using Branch = MacroEngine::Branch;
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Branch MacroEngine::check_attr_if(const Node& op, const Attr& attr){
+Branch MacroEngine::try_eval_attr_if_elif_else(const Node& op, const Attr& attr){
+	assert(macro != nullptr);
 	string_view name = attr.name();
 	
-	switch(name.length()){
-		case 2:
-			if (name == "IF")
-				goto _if;
-			else
-				return Branch::NONE;
-		case 4:
-			if (name == "ELIF")
-				goto _elif;
-			else if (name == "ELSE")
-				goto _else;
-			else
-				return Branch::NONE;
-		default:
-			return Branch::NONE;
-	} assert(false);
+	if (name == "IF"){
+		goto _if;
+	} else if (name == "ELIF"){
+		goto _elif;
+	} else if (name == "ELSE"){
+		goto _else;
+	} else {
+		return Branch::NONE;
+	}
 	
 	// -------------------------------- //
 	_else:
 	if (attr.value_len > 0){
-		HERE(warn_ignored_attr_value(op, attr));
+		HERE(warn_ignored_attr_value(*macro, attr));
 	}
 	
 	switch (MacroEngine::currentBranch_inline){
@@ -42,9 +36,9 @@ Branch MacroEngine::check_attr_if(const Node& op, const Attr& attr){
 		case Branch::PASSED:
 			return Branch::FAILED;
 		case Branch::NONE:
-			HERE(error_missing_preceeding_if_attr(op, attr));
+			HERE(error_missing_preceeding_if_attr(*macro, op, attr));
 			return Branch::FAILED;
-	} assert(false);
+	}
 	
 	// -------------------------------- //
 	_elif:
@@ -54,9 +48,9 @@ Branch MacroEngine::check_attr_if(const Node& op, const Attr& attr){
 		case Branch::PASSED:
 			return Branch::FAILED;
 		case Branch::NONE:
-			HERE(error_missing_preceeding_if_attr(op, attr));
+			HERE(error_missing_preceeding_if_attr(*macro, op, attr));
 			return Branch::FAILED;
-	} assert(false);
+	}
 	
 	// -------------------------------- //
 	
@@ -65,72 +59,72 @@ Branch MacroEngine::check_attr_if(const Node& op, const Attr& attr){
 	
 	// Check and warn
 	if (expr_str.empty()){
-		HERE(warn_missing_attr_value(op, attr));
+		HERE(error_missing_attr_value(*macro, attr));
 		return MacroEngine::currentBranch_inline = Branch::FAILED;
 	} else if (!(attr.options % NodeOptions::SINGLE_QUOTE)){
-		HERE(warn_attr_double_quote(op, attr));
+		HERE(warn_expected_attr_single_quote(*macro, attr));
 	}
 	
-	const NodeDebugger dbg = NodeDebugger(op);
-	const Expression expr = Expression::parse(expr_str, dbg);
-	if (expr == nullptr){
+	const Expression expr = Expression::parse(expr_str, macro);
+	if (!expr){
 		return MacroEngine::currentBranch_inline = Branch::FAILED;
 	}
 	
-	const bool b = expr.eval(MacroEngine::variables, dbg).toBool();
-	return MacroEngine::currentBranch_inline = b ? Branch::PASSED : Branch::FAILED;
+	const bool b = expr.eval(*variables).toBool();
+	return MacroEngine::currentBranch_inline = (b ? Branch::PASSED : Branch::FAILED);
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 bool MacroEngine::eval_attr_bool(const Node& op, const Attr& attr, bool& value){
+	assert(macro != nullptr);
 	string_view expr_str = attr.value();
 	
 	if (expr_str.empty()){
-		HERE(warn_missing_attr_value(op, attr));
+		HERE(error_missing_attr_value(*macro, attr));
 		return false;
 	} else if (!(attr.options % NodeOptions::SINGLE_QUOTE)){
-		HERE(warn_attr_double_quote(op, attr));
+		HERE(warn_expected_attr_single_quote(*macro, attr));
 	}
 	
-	Expression expr = Expression::parse(expr_str, NodeDebugger(op));
-	if (expr == nullptr){
+	Expression expr = Expression::parse(expr_str, macro);
+	if (!expr){
 		return false;
 	}
 	
-	value = expr.eval(MacroEngine::variables, NodeDebugger(op)).toBool();
+	value = expr.eval(*variables).toBool();
 	return true;
 }
 
 bool MacroEngine::eval_attr_true(const Node& op, const Attr& attr){
 	bool b;
-	if (!eval_attr_bool(op, attr, b))
-		return false;
-	return b;
+	return eval_attr_bool(op, attr, b) && b;
 }
 
 bool MacroEngine::eval_attr_false(const Node& op, const Attr& attr){
 	bool b;
-	if (!eval_attr_bool(op, attr, b))
-		return false;
-	return !b;
+	return eval_attr_bool(op, attr, b) && !b;
 }
 
 
-bool MacroEngine::eval_attr_value(const html::Node& op, const html::Attr& attr, Value& out_result){
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, Value& out_result){
 	if (attr.value_p == nullptr){
 		return false;
 	}
 	
 	// Evaluate expression
 	else if (attr.options % NodeOptions::SINGLE_QUOTE){
-		const NodeDebugger dbg = NodeDebugger(op);
-		
-		Expression expr = Expression::parse(attr.value(), dbg);
-		if (expr == nullptr){
+		Expression expr = Expression::parse(attr.value(), macro);
+		if (!expr){
 			return false;
 		}
 		
-		out_result = expr.eval(MacroEngine::variables, dbg);
+		out_result = expr.eval(*variables);
 	}
 	
 	// Interpolate
@@ -159,14 +153,12 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff
 	
 	// Evaluate expression
 	else if (attr.options % NodeOptions::SINGLE_QUOTE){
-		const NodeDebugger dbg = NodeDebugger(op);
-		
-		Expression expr = Expression::parse(attr.value(), dbg);
-		if (expr == nullptr){
+		Expression expr = Expression::parse(attr.value(), macro);
+		if (!expr){
 			return false;
 		}
 		
-		expr.eval(MacroEngine::variables, dbg).toStr(buff);
+		expr.eval(*variables).toStr(buff);
 		result = buff;
 	}
 	
@@ -190,9 +182,10 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff
 
 
 bool MacroEngine::eval_string_interpolate(const Node& op, string_view str, string& buff){
+	assert(macro != nullptr);
+	
 	const char* const end = str.end();
 	const char* beg = str.begin();
-	const NodeDebugger dbg = NodeDebugger(op);
 	
 	while (beg != end){
 		const char* a;	// expr begin
@@ -221,7 +214,7 @@ bool MacroEngine::eval_string_interpolate(const Node& op, string_view str, strin
 			if (*b == '}'){
 				break;
 			} else if (*b == '\n'){
-				HERE(error_newline(op, b));
+				HERE(error_string_interpolation_newline(*macro, b));
 				return false;
 			}
 			b++;
@@ -237,10 +230,10 @@ bool MacroEngine::eval_string_interpolate(const Node& op, string_view str, strin
 		
 		// Evaluate expression
 		assert(*a == '{' && *b == '}');
-		Expression expr = Expression::parse(string_view(a+1, b), dbg);
+		Expression expr = Expression::parse(string_view(a+1, b), macro);
 		
-		if (expr != nullptr){
-			expr.eval(MacroEngine::variables, dbg).toStr(buff);
+		if (expr){
+			expr.eval(*variables).toStr(buff);
 		} else {
 			return false;
 		}
@@ -249,6 +242,62 @@ bool MacroEngine::eval_string_interpolate(const Node& op, string_view str, strin
 	}
 	
 	return true;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+Branch MacroEngine::attr_equals_variable(const Node& op, const Attr& attr){
+	string_view var_name = attr.name();
+	const Value* var = variables->get(var_name);
+	
+	bool pass;
+	
+	// Variable exists or is empty
+	if (attr.value_p == nullptr){
+		pass = (var != nullptr && var->toBool());
+	}
+	
+	// Evaluate expression
+	else if (attr.options % NodeOptions::SINGLE_QUOTE){
+		Expression expr = Expression::parse(attr.value(), macro);
+		if (!expr){
+			return MacroEngine::Branch::NONE;
+		}
+		
+		Value val = expr.eval(*variables);
+		pass = (var == nullptr && !val.toBool()) || (*var == val);
+	}
+	
+	// Interpolate
+	else if (attr.options % NodeOptions::INTERPOLATE){
+		if (var != nullptr && var->type != Value::Type::STRING){
+			pass = false;
+		}
+		
+		// Compare only strings
+		else {
+			string buff;
+			if (!MacroEngine::eval_string_interpolate(op, attr.value(), buff))
+				return MacroEngine::Branch::NONE;
+			pass = (var == nullptr && buff.empty()) || (var->sv() == buff);
+		}
+	
+	}
+	
+	// Plain text
+	else {
+		string_view buff = attr.value();
+		if (var == nullptr)
+			pass = buff.empty();
+		else if (var->type == Value::Type::STRING)
+			pass = (var->sv() == buff);
+		else
+			pass = false;
+	}
+	
+	return (pass) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
 }
 
 

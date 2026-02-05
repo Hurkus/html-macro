@@ -1,6 +1,5 @@
 #include "MacroEngine.hpp"
 #include "Debug.hpp"
-#include "Debugger.hpp"
 
 using namespace std;
 using namespace html;
@@ -9,146 +8,29 @@ using namespace html;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-#define IS_TYPE(e, t)	(std::is_same_v<std::decay_t<decltype(e)>, t>)
-#define IS_STR(e)		(IS_TYPE(e, string))
-
-constexpr bool isUpper(char c){
-	return 'A' <= c && c <= 'Z';
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-void MacroEngine::set(const Node& op){
-	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		string_view name = attr->name();
-		string_view value = attr->value();
-		
-		if (name.empty()){
-			assert(!name.empty());
-			continue;
-		}
-		
-		// Check IF, ELIF, ELSE
-		switch (check_attr_if(op, *attr)){
-			case Branch::FAILED: return;
-			case Branch::PASSED: continue;
-			case Branch::NONE: break;
-		}
-		
-		// Expression
-		if (attr->options % NodeOptions::SINGLE_QUOTE){
-			const NodeDebugger dbg = NodeDebugger(op);
-			
-			Expression expr = Expression::parse(value, dbg);
-			if (expr == nullptr){
-				return;
-			}
-			
-			MacroEngine::variables.insert(name, expr.eval(MacroEngine::variables, dbg));
-		}
-		
-		// Interpolate
-		else if (attr->options % NodeOptions::INTERPOLATE){
-			string buff;
-			if (!eval_string_interpolate(op, attr->value(), buff)){
-				return;
-			}
-			
-			MacroEngine::variables.insert(name, move(buff));
-		}
-		
-		// Plain text
-		else {
-			MacroEngine::variables.insert(name, attr->value());
-		}
-		
-	}
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-static MacroEngine::Branch attr_equals_variable(const Node& op, const Attr& attr){
-	string_view var_name = attr.name();
-	const Value* var = MacroEngine::variables.get(var_name);
-	
-	bool pass;
-	
-	// Variable exists or is empty
-	if (attr.value_p == nullptr){
-		pass = (var != nullptr && var->toBool());
-	}
-	
-	// Evaluate expression
-	else if (attr.options % NodeOptions::SINGLE_QUOTE){
-		const NodeDebugger dbg = NodeDebugger(op);
-		
-		Expression expr = Expression::parse(attr.value(), dbg);
-		if (expr == nullptr){
-			return MacroEngine::Branch::NONE;
-		}
-		
-		Value val = expr.eval(MacroEngine::variables, dbg);
-		pass = (var == nullptr && !val.toBool()) || (*var == val);
-	}
-	
-	// Interpolate
-	else if (attr.options % NodeOptions::INTERPOLATE){
-		if (var != nullptr && var->type != Value::Type::STRING){
-			pass = false;
-		}
-		
-		// Compare only strings
-		else {
-			string buff;
-			if (!MacroEngine::eval_string_interpolate(op, attr.value(), buff))
-				return MacroEngine::Branch::NONE;
-			pass = (var == nullptr && buff.empty()) || (var->sv() == buff);
-		}
-	
-	}
-	
-	// Plain text
-	else {
-		string_view buff = attr.value();
-		if (var == nullptr)
-			pass = buff.empty();
-		else if (var->type == Value::Type::STRING)
-			pass = (var->sv() == buff);
-		else
-			pass = false;
-	}
-	
-	return (pass) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;
-}
-
-
 void MacroEngine::branch_if(const Node& op, Node& dst){
+	assert(macro != nullptr);
+	
 	// Chain of `&&` statements
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
 		string_view name = attr->name();
+		assert(!name.empty());
 		
-		if (name.empty()){
-			continue;
-		} else if (!isUpper(name[0])){
-			goto cmp_var;
-		}
-		
-		else if (name == "TRUE"){
+		// Check if expression evaluates to `true`
+		if (name == "TRUE"){
 			if (!eval_attr_true(op, *attr))
 				goto fail;
 			continue;
-		} else if (name == "FALSE"){
+		}
+		
+		// Check if expression evaluates to `false`
+		else if (name == "FALSE"){
 			if (!eval_attr_false(op, *attr))
 				goto fail;
 			continue;
 		}
 		
 		// Compare attribute to variable
-		cmp_var:
 		switch (attr_equals_variable(op, *attr)){
 			case Branch::NONE:
 			case Branch::FAILED:
@@ -160,7 +42,7 @@ void MacroEngine::branch_if(const Node& op, Node& dst){
 	}
 	
 	// pass:
-	runChildren(op, dst);
+	evalChildren(op, dst);
 	MacroEngine::currentBranch_block = Branch::PASSED;
 	return;
 	
@@ -170,21 +52,26 @@ void MacroEngine::branch_if(const Node& op, Node& dst){
 
 
 void MacroEngine::branch_elif(const Node& op, Node& dst){
+	assert(macro != nullptr);
+	
 	switch (MacroEngine::currentBranch_block){
 		case Branch::NONE:
-			HERE(error_missing_preceeding_if_node(op));
+			HERE(error_missing_preceeding_if_node(*macro, op));
 		case Branch::PASSED:
 			return;
 		case Branch::FAILED:
 			branch_if(op, dst);
 	}
+	
 }
 
 
 void MacroEngine::branch_else(const Node& op, Node& dst){
+	assert(macro != nullptr);
+	
 	switch (MacroEngine::currentBranch_block){
 		case Branch::NONE:
-			HERE(error_missing_preceeding_if_node(op));
+			HERE(error_missing_preceeding_if_node(*macro, op));
 		case Branch::PASSED:
 			MacroEngine::currentBranch_block = Branch::NONE;
 			return;
@@ -193,11 +80,11 @@ void MacroEngine::branch_else(const Node& op, Node& dst){
 	}
 	
 	for (const Attr* attr = op.attribute ; attr != nullptr ; attr = attr->next){
-		HERE(warn_ignored_attribute(op, *attr));
+		HERE(warn_ignored_attr(*macro, *attr));
 	}
 	
 	// Run
-	runChildren(op, dst);
+	evalChildren(op, dst);
 	MacroEngine::currentBranch_block = Branch::NONE;
 }
 
@@ -206,6 +93,9 @@ void MacroEngine::branch_else(const Node& op, Node& dst){
 
 
 long MacroEngine::loop_for(const Node& op, Node& dst){
+	assert(macro != nullptr);
+	assert(variables != nullptr);
+	
 	bool cond_expected = true;
 	const Attr* attr_setup = nullptr;
 	const Attr* attr_cond = nullptr;
@@ -215,7 +105,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 		string_view name = attr->name();
 		
 		// Check IF, ELIF, ELSE
-		switch (check_attr_if(op, *attr)){
+		switch (try_eval_attr_if_elif_else(op, *attr)){
 			case Branch::FAILED: return 0;
 			case Branch::PASSED: continue;
 			case Branch::NONE: break;
@@ -226,7 +116,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 			cond_expected = (name[0] != 'F');
 			
 			if (attr_cond != nullptr){
-				HERE(error_duplicate_attr(op, *attr_cond, *attr));
+				HERE(error_duplicate_attr(*macro, *attr_cond, *attr));
 				return 0;
 			}
 			
@@ -236,7 +126,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 		// First argument: setup
 		else if (attr_cond == nullptr){
 			if (attr_setup != nullptr){
-				HERE(error_duplicate_attr(op, *attr_setup, *attr));
+				HERE(error_duplicate_attr(*macro, *attr_setup, *attr));
 				return 0;
 			}
 			attr_setup = attr;
@@ -245,7 +135,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 		// Third argument: increment
 		else {
 			if (attr_inc != nullptr){
-				HERE(error_duplicate_attr(op, *attr_inc, *attr));
+				HERE(error_duplicate_attr(*macro, *attr_inc, *attr));
 				return 0;
 			}
 			attr_inc = attr;
@@ -255,63 +145,61 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	}
 	
 	// Parse expressions
-	const NodeDebugger dbg = NodeDebugger(op);
 	Expression expr_setup = {};
 	Expression expr_cond = {};
 	Expression expr_inc = {};
 	
 	if (attr_setup != nullptr){
 		if (attr_setup->options % NodeOptions::SINGLE_QUOTE == false){
-			HERE(warn_attr_double_quote(op, *attr_setup));
+			HERE(warn_expected_attr_single_quote(*macro, *attr_setup));
 		}
 		
-		expr_setup = Expression::parse(attr_setup->value(), dbg);
-		if (expr_setup == nullptr){
+		expr_setup = Expression::parse(attr_setup->value(), macro);
+		if (!expr_setup){
 			return 0;
 		}
 	}
 	
 	if (attr_cond != nullptr){
 		if (attr_cond->options % NodeOptions::SINGLE_QUOTE == false){
-			HERE(warn_attr_double_quote(op, *attr_cond));
+			HERE(warn_expected_attr_single_quote(*macro, *attr_cond));
 		}
 		
-		expr_cond = Expression::parse(attr_cond->value(), dbg);
-		if (expr_cond == nullptr){
+		expr_cond = Expression::parse(attr_cond->value(), macro);
+		if (!expr_cond){
 			return 0;
 		}
 		
 	} else {
-		HERE(error_missing_attr(op, "TRUE"));
+		HERE(error_missing_attr(*macro, op, "TRUE"));
 		return 0;
 	}
 	
 	if (attr_inc != nullptr){
 		if (attr_inc->options % NodeOptions::SINGLE_QUOTE == false){
-			HERE(warn_attr_double_quote(op, *attr_inc));
+			HERE(warn_expected_attr_single_quote(*macro, *attr_inc));
 		}
 		
-		expr_inc = Expression::parse(attr_inc->value(), dbg);
-		if (expr_inc == nullptr){
+		expr_inc = Expression::parse(attr_inc->value(), macro);
+		if (!expr_inc){
 			return 0;
 		}
 		
 	}
 	
 	// Run setup
-	if (expr_setup != nullptr){
-		variables.insert(attr_setup->name(), expr_setup.eval(variables, dbg));
+	if (expr_setup){
+		variables->insert(attr_setup->name(), expr_setup.eval(*variables));
 	}
 	
 	// Run loop
 	long i = 0;
-	assert(expr_cond != nullptr);
-	while (expr_cond.eval(variables, dbg).toBool() == cond_expected){
-		runChildren(op, dst);
+	while (expr_cond.eval(*variables).toBool() == cond_expected){
+		evalChildren(op, dst);
 		
 		// Increment
-		if (expr_inc != nullptr){
-			variables.insert(attr_inc->name(), expr_inc.eval(variables, dbg));
+		if (expr_inc){
+			variables->insert(attr_inc->name(), expr_inc.eval(*variables));
 		}
 		
 		i++;
@@ -323,6 +211,9 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 
 
 long MacroEngine::loop_while(const Node& op, Node& dst){
+	assert(macro != nullptr);
+	assert(variables != nullptr);
+	
 	bool cond_expected = true;
 	const Attr* attr_cond = nullptr;
 	
@@ -331,7 +222,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 		string_view name = attr->name();
 		
 		// Check IF, ELIF, ELSE
-		switch (check_attr_if(op, *attr)){
+		switch (try_eval_attr_if_elif_else(op, *attr)){
 			case Branch::FAILED: return 0;
 			case Branch::PASSED: continue;
 			case Branch::NONE: break;
@@ -341,7 +232,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 			cond_expected = (name[0] == 'T');
 			
 			if (attr_cond != nullptr){
-				HERE(error_duplicate_attr(op, *attr_cond, *attr));
+				HERE(error_duplicate_attr(*macro, *attr_cond, *attr));
 				return 0;
 			}
 			
@@ -349,36 +240,34 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 		}
 		
 		else {
-			HERE(warn_ignored_attribute(op, *attr));
+			HERE(warn_ignored_attr(*macro, *attr));
 		}
 		
 		continue;
 	}
 	
 	// Parse expressions
-	const NodeDebugger dbg = NodeDebugger(op);
 	Expression expr_cond = {};
 	
 	if (attr_cond != nullptr){
 		if (attr_cond->options % NodeOptions::SINGLE_QUOTE == false){
-			HERE(warn_attr_double_quote(op, *attr_cond));
+			HERE(warn_expected_attr_single_quote(*macro, *attr_cond));
 		}
 		
-		expr_cond = Expression::parse(attr_cond->value(), dbg);
-		if (expr_cond == nullptr){
+		expr_cond = Expression::parse(attr_cond->value(), macro);
+		if (!expr_cond){
 			return 0;
 		}
 		
 	} else {
-		HERE(error_missing_attr(op, "TRUE"));
+		HERE(error_missing_attr(*macro, op, "TRUE"));
 		return 0;
 	}
 	
 	// Run
 	long i = 0;
-	assert(expr_cond != nullptr);
-	while (expr_cond.eval(variables, dbg).toBool() == cond_expected){
-		runChildren(op, dst);
+	while (expr_cond.eval(*variables).toBool() == cond_expected){
+		evalChildren(op, dst);
 		i++;
 	}
 	

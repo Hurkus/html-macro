@@ -19,7 +19,7 @@ bool test_macro_MACRO_name(){
 		"<MACRO NAME=\"hello\"/>" NL
 	);
 	string_view err = (
-		"/tmp/html-macro-test/file.html:1:2: warn: Tag <MACRO> missing attribute `NAME`." NL
+		"/tmp/html-macro-test/file.html:1:2: warn: Element <MACRO> missing attribute `NAME`." NL
 		"    1 | <MACRO/>" NL
 		"      |  ^~~~~" NL
 		"/tmp/html-macro-test/file.html:2:8: error: Attribute `NAME` missing value." NL
@@ -90,7 +90,7 @@ bool test_macro_CALL_name(){
 		"<CALL NAME=\"g\"/>" NL
 	);
 	string_view err = string_view(
-		"/tmp/html-macro-test/file.html:2:2: error: Tag <CALL> missing attribute `NAME`." NL
+		"/tmp/html-macro-test/file.html:2:2: error: Element <CALL> missing attribute `NAME`." NL
 		"    2 | <CALL/>" NL
 		"      |  ^~~~" NL
 		"/tmp/html-macro-test/file.html:3:7: error: Attribute `NAME` missing value." NL

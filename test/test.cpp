@@ -1,28 +1,22 @@
 #include "test.hpp"
 #include <cassert>
-#include <vector>
 #include <fstream>
+#include <future>
+#include <fcntl.h>
+#include <sys/wait.h>
 
-extern "C" {
-	#include <poll.h>
-	#include <fcntl.h>
-	#include <sys/wait.h>
-}
 
 using namespace std;
 
-
-#define R(s)	ANSI_RED s ANSI_RESET
-#define G(s)	ANSI_GREEN s ANSI_RESET
-#define Y(s)	ANSI_YELLOW s ANSI_RESET
-#define P(s)	ANSI_PURPLE s ANSI_RESET
-#define B(s)	ANSI_BOLD s ANSI_RESET
 #define RB(s)	ANSI_BOLD ANSI_RED s ANSI_RESET
 #define GB(s)	ANSI_BOLD ANSI_GREEN s ANSI_RESET
 
 
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
+
+bool stderr_isTTY = true;
+bool stdout_isTTY = true;
 
 constexpr const char* ENV_HTML_MACRO = "PROG";
 filepath html_macro = "./bin/html-macro";
@@ -35,17 +29,17 @@ TestList* tests;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool slurp(int fd, string& buff){
-	vector<char> chunk = vector<char>(4096);
+bool slurp(int fd, string& output){
+	char buff[4096];
 	
 	while (true){
-		const ssize_t n = read(fd, chunk.data(), chunk.size());
+		const ssize_t n = read(fd, buff, sizeof(buff));
 		if (n < 0)
 			return false;
 		else if (n == 0)
 			return true;
 		else
-			buff.append(chunk.data(), size_t(n));
+			output.append(buff, size_t(n));
 	}
 	
 	return false;
@@ -53,14 +47,10 @@ bool slurp(int fd, string& buff){
 
 
 bool slurp(const filepath& path, string& buff){
-	const int fd = open(path.c_str(), O_RDONLY);
-	if (fd < 0){
+	fs::FileDesc fd = open(path.c_str(), O_RDONLY);
+	if (fd < 0)
 		return false;
-	}
-	
-	bool err = slurp(fd, buff);
-	close(fd);
-	return err;
+	return slurp(fd, buff);
 }
 
 
@@ -108,116 +98,69 @@ struct _TmpFile_static_t {
 
 
 int exe(const vector<string>& args, string& out, string& err){
-	int p_stdout[2];
-	int p_stderr[2];
+	fs::FileDesc out0;
+	fs::FileDesc out1;
+	fs::FileDesc err0;
+	fs::FileDesc err1;
 	
-	if (pipe(p_stdout) != 0){
-		fprintf(stderr, RB("error: ") "Internal error when creating a pipe.\n");
-		return 1;
-	} else if (pipe(p_stderr) != 0){
-		close(p_stdout[0]);
-		close(p_stdout[1]);
-		fprintf(stderr, RB("error: ") "Internal error when creating a pipe.\n");
-		return 1;
+	if (!fs::pipe(out0, out1) || !fs::pipe(err0, err1)){
+		ERROR("Internal error when creating a pipe.");
+		return 100;
 	}
 	
 	const pid_t pid = fork();
 	
 	// Child
 	if (pid == 0){
-		close(0);
-		
-		dup2(p_stdout[1], 1);
-		close(p_stdout[0]);
-		close(p_stdout[1]);
-		
-		dup2(p_stderr[1], 2);
-		close(p_stderr[0]);
-		close(p_stderr[1]);
+		dup2(out1, 1);
+		dup2(err1, 2);
+		out0.close();
+		out1.close();
+		err0.close();
+		err1.close();
 		
 		// Build argument array
-		vector<const char*> _args;
-		_args.emplace_back(html_macro.c_str());
+		vector<const char*> argv;
+		argv.emplace_back(html_macro.c_str());
 		for (const string& arg : args)
-			_args.emplace_back(arg.c_str());
-		_args.emplace_back(nullptr);
+			argv.emplace_back(arg.c_str());
+		argv.emplace_back(nullptr);
 		
-		execvp(html_macro.c_str(), (char**)_args.data());
+		execvp(html_macro.c_str(), (char**)argv.data());
 		exit(1);
 	}
 	
 	// Parent
 	else if (pid > 0){
-		close(p_stdout[1]);
-		close(p_stderr[1]);
+		out1.close();
+		err1.close();
 		
-		vector<pollfd> info = {
-			pollfd {
-				.fd = p_stdout[0],
-				.events = POLLIN
-			},
-			pollfd {
-				.fd = p_stderr[0],
-				.events = POLLIN
-			}
-		};
+		future reader1 = async(launch::async, [&](){
+			slurp(out0, out);
+		});
+		future reader2 = async(launch::async, [&](){
+			slurp(err0, err);
+		});
 		
-		fcntl(info[0].fd, F_SETFL, fcntl(info[0].fd, F_GETFL, 0) | O_NONBLOCK);
-		fcntl(info[1].fd, F_SETFL, fcntl(info[1].fd, F_GETFL, 0) | O_NONBLOCK);
-		
-		while (!info.empty()){
-			if (poll(info.data(), info.size(), 1000) <= 0){
-				break;
-			}
+		bool ok = true;
+		ok &= (reader1.wait_for(1s) == future_status::ready);
+		ok &= (reader2.wait_for(1s) == future_status::ready);
+		out0.close();
+		out1.close();
 			
-			for (int i = int(info.size()) - 1 ; i >= 0 ; i--){
-				
-				// Read input
-				if (bool(info[i].revents & POLLIN)){
-					if (info[i].fd == p_stdout[0])
-						slurp(info[i].fd, out);
-					else if (info[i].fd == p_stderr[0])
-						slurp(info[i].fd, err);
-				}
-				
-				// Close
-				if (bool(info[i].revents & (POLLHUP | POLLERR))){
-					info.erase(info.begin() + i);
-				}
-				
-			}
-			
+		if (!ok){
+			fprintf(stderr, RB("error: ") "Timeout.\n");
+			kill(pid, SIGKILL);
+			reader1.wait_for(1s);
+			reader2.wait_for(1s);
 		}
 		
-		close(p_stdout[0]);
-		close(p_stderr[0]);
-		
-		// Get return status of child.
-		int err = 0;
-		for (int ms = 0 ; ms < 500 ; ms++){
-			
-			if (waitpid(pid, &err, WNOHANG) == 0){
-				usleep(1000);
-				continue;
-			}
-			
-			// ok
-			return WEXITSTATUS(err);
-		}
-		
-		// Timeout
-		fprintf(stderr, RB("error: ") "Timeout.\n");
-		kill(pid, SIGKILL);
-		waitpid(pid, &err, 0);
-		return 1;
+		int status;
+		waitpid(pid, &status, 0);
+		return WEXITSTATUS(status);
 	}
 	
-	// Error
-	close(p_stdout[0]);
-	close(p_stdout[1]);
-	close(p_stderr[0]);
-	close(p_stderr[1]);
-	return 1;
+	return 100;
 }
 
 
@@ -286,7 +229,6 @@ void fmt_expected(const string& expected, const string& recieved){
 	const char* e2 = recieved.end().base();
 	
 	while (p2 != e2){
-		const char* b1 = p1;
 		const char* b2 = p2;
 		const char* m = nullptr;
 		
@@ -333,12 +275,14 @@ static bool run(){
 	int total = 0;
 	int passed = 0;
 	
-	const TestList* test = tests;
-	while (test != nullptr){
+	for (const TestList* test = tests ; test != nullptr ; test = test->next){
 		if (test->func == nullptr){
-			test = test->next;
 			continue;
 		}
+		
+		// if (string_view(test->name) != "doc_macro_SHELL"){
+		// 	continue;
+		// }
 		
 		try {
 			if (test->func()){
@@ -350,7 +294,7 @@ static bool run(){
 		}
 		catch (const shell_exception& e){
 			printf(RB("FAIL: ") "%s ~ %s:%ld\n", test->name, test->file, test->line);
-			printf("Program exited with status " P("%d") ", expected " P("%d") ".\n", e.status, e.expected);
+			printf("Program exited with status " PURPLE("%d") ", expected " PURPLE("%d") ".\n", e.status, e.expected);
 			// printf("%s", e.err.c_str());
 		}
 		catch (const output_exception& e){
@@ -360,14 +304,13 @@ static bool run(){
 		}
 		
 		total++;
-		test = test->next;
 	}
 	
 	printf("--------------------------------\n");
 	if (passed == total)
-		printf("Passed " G("%ld") "/" G("%ld") " ~ " G("%.0f%%") " of tests.\n", passed, total, 100.0f*passed/total);
+		printf("Passed " GREEN("%i") "/" GREEN("%i") " ~ " GREEN("%.0f%%") " of tests.\n", passed, total, 100.0f*passed/total);
 	else
-		printf("Passed " Y("%ld") "/" G("%ld") " ~ " Y("%.0f%%") " of tests.\n", passed, total, 100.0f*passed/total);
+		printf("Passed " YELLOW("%i") "/" GREEN("%i") " ~ " YELLOW("%.0f%%") " of tests.\n", passed, total, 100.0f*passed/total);
 	printf("--------------------------------\n");
 	
 	return passed == total;
@@ -383,8 +326,8 @@ int main(int argc, char const* const* argv){
 		html_macro = prog_cpath;
 	}
 	
-	if (!filesystem::exists(html_macro)){
-		fprintf(stderr, RB("error: ") "Program '%s' does not exist.\n", html_macro.c_str());
+	if (!fs::is_file(html_macro)){
+		fprintf(stderr, RB("error: ") "Program " PURPLE("`%s`") " does not exist.\n", html_macro.c_str());
 		return 1;
 	}
 	

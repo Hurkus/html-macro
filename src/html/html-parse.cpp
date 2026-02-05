@@ -1,60 +1,64 @@
 #include "html.hpp"
-#include <vector>
-
-#include "fs.hpp"
 
 using namespace std;
 using namespace html;
 
+using Status = ParseResult::Status;
+
 
 // ----------------------------------- [ Structures ] --------------------------------------- //
+namespace {
 
 
 struct Parser {
-	Node* current;				// Current parsing parent node.
-	vector<Node*> lastChild;	// Stack of last child of `current`.
+	Document& doc;
+	Node* current = nullptr;	// Current parsing parent node.
+	vector<Node*> lastChild;	// Stack of last child of `current`. `null` if no children.
 	vector<Node*> macros;		// <MACRO> nodes
+	
+	Node* node(NodeType);
+	Attr* attr();
+	Node* addChild(Node*) noexcept;
+	Node* push(Node*);
+	Node* pop() noexcept;
 };
 
 
-struct ParseError {
-	ParseStatus status = ParseStatus::ERROR;
+struct Error {
+	Status status = Status::ERROR;
 	string_view mark;
 };
 
 
+}
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-const char* html::errstr(ParseStatus status) noexcept {
+const char* ParseResult::msg(Status status) noexcept {
 	switch (status){
-		case ParseStatus::OK:
+		case Status::OK:
 			return "";
-		case ParseStatus::ERROR:
+		case Status::ERROR:
 			return "Internal error.";
-		case ParseStatus::MEMORY:
+		case Status::MEMORY:
 			return "Out of memory.";
-		case ParseStatus::IO:
-			return "Failed to read file.";
-		case ParseStatus::UNEXPECTED_CHAR:
+		case Status::UNEXPECTED_CHAR:
 			return "Unexpected character.";
-		case ParseStatus::UNCLOSED_TAG:
+		case Status::UNCLOSED_TAG:
 			return "Missing closing bracket '>'.";
-		case ParseStatus::UNCLOSED_STRING:
+		case Status::UNCLOSED_STRING:
 			return "Unterminated string. Multiline strings are not permitted.";
-		case ParseStatus::UNCLOSED_QUESTION:
-			return "Missing end bracket '?>' for processing instruction.";
-		case ParseStatus::UNCLOSED_COMMENT:
+		case Status::UNCLOSED_COMMENT:
 			return "Missing end bracket '-->' for comment.";
-		case ParseStatus::INVALID_TAG_NAME:
+		case Status::INVALID_TAG_NAME:
 			return "Invalid character in tag name.";
-		case ParseStatus::INVALID_TAG_CHAR:
+		case Status::INVALID_TAG_CHAR:
 			return "Invalid character in tag.";
-		case ParseStatus::MISSING_END_TAG:
+		case Status::MISSING_END_TAG:
 			return "Missing end tag.";
-		case ParseStatus::INVALID_END_TAG:
+		case Status::INVALID_END_TAG:
 			return "Invalid end tag doesn't close any opened tag.";
-		case ParseStatus::MISSING_ATTR_VALUE:
+		case Status::MISSING_ATTR_VALUE:
 			return "Missing value of attribute.";
 	}
 	assert(false);
@@ -65,45 +69,50 @@ const char* html::errstr(ParseStatus status) noexcept {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-inline Attr* allocAttr(){
-	Attr* a = new Attr();
-	a->options |= NodeOptions::LIST_FORWARDS;
-	return a;
-}
-
-inline Node* allocNode(NodeType type){
-	Node* node = new Node();
-	node->type = type;
-	node->options |= NodeOptions::LIST_FORWARDS;
-	return node;
+Node* Parser::node(NodeType type){
+	assert(doc.nodeAlloc != nullptr);
+	Node* p = doc.nodeAlloc->create();
+	p->type = type;
+	return p;
 }
 
 
-inline Node* addChild(Parser& state, Node* node) noexcept {
-	node->parent = state.current;
+Attr* Parser::attr(){
+	assert(doc.attrAlloc != nullptr);
+	return doc.attrAlloc->create();
+}
+
+
+Node* Parser::addChild(Node* node) noexcept {
+	node->parent = current;
+	
+	assert(!lastChild.empty());
+	Node*& prev = lastChild.back();
 	
 	// Append sibling
-	Node*& prev_sibling = state.lastChild.back();
-	if (prev_sibling != nullptr)
-		prev_sibling->next = node;
+	if (prev != nullptr)
+		prev->next = node;
 	else
 		node->parent->child = node;
 
-	prev_sibling = node;
+	prev = node;
 	return node;
 }
 
 
-inline Node* push(Parser& state, Node* node){
-	state.lastChild.emplace_back(node->child);
-	state.current = node;
+Node* Parser::push(Node* node){
+	current = node;
+	lastChild.emplace_back(node->child);
 	return node;
 }
 
 
-inline void pop(Parser& state) noexcept {
-	state.current = state.current->parent;
-	state.lastChild.pop_back();
+Node* Parser::pop() noexcept {
+	assert(current->parent != nullptr);
+	Node* n = current;
+	current = current->parent;
+	lastChild.pop_back();
+	return n;
 }
 
 
@@ -157,7 +166,7 @@ constexpr bool isQuote(char c) noexcept {
 }
 
 // [a-zA-Z:_-]
-bool isTagChar(char c){
+constexpr bool isTagChar(char c){
 	constexpr uint64_t MASK_1 = mask("0123456789-:");
 	constexpr uint64_t MASK_2 = []() consteval {
 		uint64_t m = mask("_");
@@ -203,8 +212,8 @@ constexpr const char* parseWhitespace(const char* s, const char* end) noexcept {
 
 
 // Text untill next HTML element
-static const char* parse_pcData(Parser& state, const char* beg, const char* s, const char* end){
-	NodeOptions opts = {};
+static const char* parse_pcData(Parser& ctx, const char* beg, const char* s, const char* end){
+	NodeOptions opts = NodeOptions::NONE;
 	
 	// Parse all plaintext.
 	while (true){
@@ -217,7 +226,7 @@ static const char* parse_pcData(Parser& state, const char* beg, const char* s, c
 	
 	// Append text nodes
 	while (beg != s){
-		Node* txt = addChild(state, allocNode(NodeType::TEXT));
+		Node* txt = ctx.addChild(ctx.node(NodeType::TEXT));
 		txt->options |= opts;
 		
 		// Text chunk
@@ -233,7 +242,7 @@ static const char* parse_pcData(Parser& state, const char* beg, const char* s, c
 
 
 // Raw text untill closing tag from `parent`
-static const char* parse_rawpcData(Parser& state, Node* parent, const char* const beg, const char* const end){
+static const char* parse_rawpcData(Parser& ctx, Node* parent, const char* const beg, const char* const end){
 	assert(parent != nullptr);
 	assert(parent->value_p != nullptr && parent->value_len > 0);
 	
@@ -275,7 +284,7 @@ static const char* parse_rawpcData(Parser& state, Node* parent, const char* cons
 		}
 		
 		err_no_end:
-		throw ParseError(ParseStatus::MISSING_END_TAG, string_view(name, name_len));
+		throw Error(Status::MISSING_END_TAG, string_view(name, name_len));
 	}
 	
 	assert(s != end && *s == '>');
@@ -291,7 +300,7 @@ static const char* parse_rawpcData(Parser& state, Node* parent, const char* cons
 	
 	// Append text nodes back to front
 	while (totalLen > 0){
-		Node* txt = allocNode(NodeType::TEXT);
+		Node* txt = ctx.node(NodeType::TEXT);
 		txt->next = parent->child;
 		parent->child = txt;
 		txt->parent = parent;
@@ -317,7 +326,7 @@ inline const char* parse_string(Parser& state, const char* s, const char* end, N
 	s++;
 	while (true){
 		if (s == end)
-			throw ParseError(ParseStatus::UNCLOSED_STRING, string_view(beg, s));
+			throw Error(Status::UNCLOSED_STRING, string_view(beg, s));
 		else if (*s == quote)
 			break;
 		else if (*s == '{')
@@ -330,7 +339,7 @@ inline const char* parse_string(Parser& state, const char* s, const char* end, N
 }
 
 
-static const char* parse_comment(Parser& state, const char* s, const char* end){
+static const char* parse_comment(Parser& ctx, const char* s, const char* end){
 	assert(s != end && s+1 != end && s+2 != end && s+3 != end);
 	assert(s[0] == '<' && s[1] == '!' && s[2] == '-' && s[3] == '-');
 	
@@ -339,7 +348,7 @@ static const char* parse_comment(Parser& state, const char* s, const char* end){
 	
 	while (true){
 		if (s == end || s+1 == end || s+2 == end)
-			throw ParseError(ParseStatus::UNCLOSED_COMMENT, string_view(beg, s));
+			throw Error(Status::UNCLOSED_COMMENT, string_view(beg, s));
 		else if (s[0] == '-' && s[1] == '-' && s[2] == '>')
 			break;
 		s++;
@@ -350,20 +359,20 @@ static const char* parse_comment(Parser& state, const char* s, const char* end){
 	s += 2;
 	assert(s != end && *s == '>');
 	
-	Node* node = addChild(state, allocNode(NodeType::COMMENT));
+	Node* node = ctx.addChild(ctx.node(NodeType::COMMENT));
 	node->value_len = clampLen<uint32_t>(beg, s-2);
 	node->value_p = beg;
 	return s + 1;
 }
 
 
-static const char* parse_exclamation(Parser& state, const char* s, const char* end){
+static const char* parse_exclamation(Parser& ctx, const char* s, const char* end){
 	assert(s != end && s[0] == '<');
 	assert(s+1 != end && s[1] == '!');
 	
 	// Parse comment
 	if (s+2 != end && s+3 != end && s[2] == '-' && s[3] == '-'){
-		return parse_comment(state, s, end);
+		return parse_comment(ctx, s, end);
 	}
 	
 	// Parse directive
@@ -373,17 +382,17 @@ static const char* parse_exclamation(Parser& state, const char* s, const char* e
 	
 	while (true){
 		if (s == end)
-			throw ParseError(ParseStatus::UNCLOSED_TAG, string_view(beg - 1, 2));
+			throw Error(Status::UNCLOSED_TAG, string_view(beg - 1, 2));
 		else if (*s == '>')
 			break;
 		else if (isQuote(*s))
-			s = parse_string(state, s, end, __trash);
+			s = parse_string(ctx, s, end, __trash);
 		s++;
 	}
 	
 	assert(s != end && *s == '>');
 	
-	Node* node = addChild(state, allocNode(NodeType::DIRECTIVE));
+	Node* node = ctx.addChild(ctx.node(NodeType::DIRECTIVE));
 	node->value_len = clampLen<uint32_t>(beg, s);
 	node->value_p = beg;
 	return s + 1;
@@ -409,7 +418,7 @@ static const char* parse_attribute(Parser& state, const char* s, const char* end
 	
 	s = parseWhitespace(s+1, end);
 	if (s == end){
-		throw ParseError(ParseStatus::MISSING_ATTR_VALUE, string_view(attr.name_p, attr.name_len));
+		throw Error(Status::MISSING_ATTR_VALUE, string_view(attr.name_p, attr.name_len));
 	}
 	
 	// Parse value
@@ -422,14 +431,14 @@ static const char* parse_attribute(Parser& state, const char* s, const char* end
 			attr.value_len = clampLen<uint32_t>(attr.value_p, s - 1);
 			break;
 		default:
-			throw ParseError(ParseStatus::MISSING_ATTR_VALUE, string_view(attr.name_p, attr.name_len));
+			throw Error(Status::MISSING_ATTR_VALUE, string_view(attr.name_p, attr.name_len));
 	}
 	
 	return s;
 }
 
 
-static const char* parse_openTag(Parser& state, const char* const beg, const char* const end, NodeOptions options){
+static const char* parse_openTag(Parser& ctx, const char* const beg, const char* const end, NodeOptions options){
 	assert(beg != end && beg[0] == '<');
 	assert(beg+1 != end && isTagChar(beg[1]));
 	const char* s = beg + 2;
@@ -440,13 +449,13 @@ static const char* parse_openTag(Parser& state, const char* const beg, const cha
 	}
 	
 	Attr* lastAttr = nullptr;
-	html::Node* node = addChild(state, allocNode(NodeType::TAG));
+	Node* node = ctx.addChild(ctx.node(NodeType::TAG));
 	node->options |= options;
 	node->value_len = clampLen<uint32_t>(beg + 1, s);
 	node->value_p = beg + 1;
 	
 	if (s == end){ err_unclosed:
-		throw ParseError(ParseStatus::UNCLOSED_TAG, string_view(beg, node->name().end()));
+		throw Error(Status::UNCLOSED_TAG, string_view(beg, node->name().end()));
 	}
 	
 	// Self close
@@ -464,7 +473,7 @@ static const char* parse_openTag(Parser& state, const char* const beg, const cha
 		}
 		
 		if (node->name() == "MACRO"){
-			state.macros.emplace_back(node);
+			ctx.macros.emplace_back(node);
 		}
 		
 		return s; 
@@ -514,12 +523,12 @@ static const char* parse_openTag(Parser& state, const char* const beg, const cha
 		}
 		
 		raw_pcdata:
-		return parse_rawpcData(state, node, s, end);
+		return parse_rawpcData(ctx, node, s, end);
 		
 		macro_tag:
-		state.macros.emplace_back(node);
+		ctx.macros.emplace_back(node);
 		regular_tag:
-		push(state, node);
+		ctx.push(node);
 		return s;
 		
 		void_tag:
@@ -529,7 +538,7 @@ static const char* parse_openTag(Parser& state, const char* const beg, const cha
 	
 	// Check for attributes
 	else if (!isWhitespace(s[0])){ err_unexpected_char:
-		throw ParseError(ParseStatus::UNEXPECTED_CHAR, string_view(s, 1));
+		throw Error(Status::UNEXPECTED_CHAR, string_view(s, 1));
 	}
 	
 	s++;
@@ -550,7 +559,7 @@ static const char* parse_openTag(Parser& state, const char* const beg, const cha
 		assert(isTagChar(*s));
 		
 		// Append attribute
-		Attr* attr = allocAttr();
+		Attr* attr = ctx.attr();
 		if (node->attribute == nullptr){
 			node->attribute = attr;
 			lastAttr = attr;
@@ -559,7 +568,7 @@ static const char* parse_openTag(Parser& state, const char* const beg, const cha
 			lastAttr = attr;
 		}
 		
-		s = parse_attribute(state, s, end, *attr);
+		s = parse_attribute(ctx, s, end, *attr);
 	}
 	
 	assert(false);
@@ -567,22 +576,22 @@ static const char* parse_openTag(Parser& state, const char* const beg, const cha
 }
 
 
-static const char* parse_closeTag(Parser& state, const char* s, const char* end){
+static const char* parse_closeTag(Parser& ctx, const char* s, const char* end){
 	assert(s != end && s[0] == '<');
 	assert(s+1 != end && s[1] == '/');
-	assert(state.current != nullptr);
+	assert(ctx.current != nullptr);
 	
 	const char* const beg = s;
 	s += 2;
 	
-	Node* node = state.current;
+	Node* node = ctx.current;
 	const size_t name_len = node->value_len;
 	const char* const name_p = node->value_p;
 	
 	// Report invalid end tag name
 	if (name_len <= 0 || s == end){
 		while (s != end && isTagChar(*s)) s++;
-		throw ParseError(ParseStatus::INVALID_END_TAG, string_view(beg, s));
+		throw Error(Status::INVALID_END_TAG, string_view(beg, s));
 	}
 	
 	for (size_t i = 0 ; i < name_len ; i++){
@@ -595,9 +604,9 @@ static const char* parse_closeTag(Parser& state, const char* s, const char* end)
 	
 	// '>'
 	if (s == end){
-		throw ParseError(ParseStatus::INVALID_END_TAG, string_view(beg, s));
+		throw Error(Status::INVALID_END_TAG, string_view(beg, s));
 	} else if (*s == '>') [[likely]] {
-		pop(state);
+		ctx.pop();
 		s++;
 		goto suffix;
 	}
@@ -609,12 +618,12 @@ static const char* parse_closeTag(Parser& state, const char* s, const char* end)
 		s = parseWhitespace(s+1, end);
 		
 		if (s != end && *s == '>'){
-			pop(state);
+			ctx.pop();
 			s++;
 			goto suffix;
 		}
 		
-		throw ParseError(ParseStatus::INVALID_END_TAG, string_view(beg, s));
+		throw Error(Status::INVALID_END_TAG, string_view(beg, s));
 	}
 	
 	check_void_tag: {
@@ -629,18 +638,18 @@ static const char* parse_closeTag(Parser& state, const char* s, const char* end)
 		} else if (isWhitespace(*s)){
 			s = parseWhitespace(s, end);
 			if (s == end)
-				throw ParseError(ParseStatus::INVALID_END_TAG, string_view(beg, name_end));
+				throw Error(Status::INVALID_END_TAG, string_view(beg, name_end));
 		}
 		
 		if (*s != '>'){
-			throw ParseError(ParseStatus::UNEXPECTED_CHAR, string_view(s, s+1));
+			throw Error(Status::UNEXPECTED_CHAR, string_view(s, s+1));
 		} else if (isVoidTag(string_view(beg + 2, name_end))){
 			s++;
 			goto suffix;
 		}
 		
 		err_invalid_end:
-		throw ParseError(ParseStatus::INVALID_END_TAG, string_view(beg, s));
+		throw Error(Status::INVALID_END_TAG, string_view(beg, s));
 	}
 	
 	suffix:
@@ -672,7 +681,7 @@ const char* parse_all(Parser& state, const char* s, const char* end){
 		}
 		
 		else if (s+1 == end){
-			throw ParseError(ParseStatus::INVALID_TAG_NAME, string_view(s, s+1));
+			throw Error(Status::INVALID_TAG_NAME, string_view(s, s+1));
 		}
 		
 		// Tag
@@ -693,13 +702,13 @@ const char* parse_all(Parser& state, const char* s, const char* end){
 			continue;
 		}
 		
-		throw ParseError(ParseStatus::INVALID_TAG_NAME, string_view(s, s+2));
+		throw Error(Status::INVALID_TAG_NAME, string_view(s, s+2));
 	}
 	
 	// Check if parsed completely
 	if (state.current->parent != nullptr){
 		assert(state.current != nullptr && state.current->value_p != nullptr);
-		throw ParseError(ParseStatus::MISSING_END_TAG, state.current->value());
+		throw Error(Status::MISSING_END_TAG, state.current->value());
 	}
 	
 	return s;
@@ -709,10 +718,16 @@ const char* parse_all(Parser& state, const char* s, const char* end){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static ParseResult parse(Document& doc, string_view txt){
+ParseResult Document::parse(const shared_ptr<const string>& buff) noexcept {
+	assert(buff != nullptr);
+	
+	this->buffer = buff;
+	string_view txt = string_view(*buff);
+	
 	try {
 		Parser parser = {
-			.current = &doc,
+			.doc = *this,
+			.current = this,
 			.lastChild = {nullptr},	// Initial root child.
 			.macros = {}
 		};
@@ -720,47 +735,21 @@ static ParseResult parse(Document& doc, string_view txt){
 		parse_all(parser, txt.begin(), txt.end());
 		
 		return ParseResult {
-			.status = ParseStatus::OK,
+			.status = Status::OK,
+			.mark = txt,
 			.macros = move(parser.macros)
 		};
 		
 	}
 	catch (const bad_alloc&){
-		return ParseResult(ParseStatus::MEMORY);
+		return ParseResult(Status::MEMORY);
 	}
-	catch (const ParseError& err){
+	catch (const Error& err){
 		return ParseResult(err.status, err.mark);
 	}
 	catch (...){}
 	
-	return ParseResult(ParseStatus::ERROR);
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-ParseResult Document::parseBuff(shared_ptr<const string> buff){
-	reset();
-	this->buffer = move(buff);
-	return parse(*this, string_view(*this->buffer));
-}
-
-
-ParseResult Document::parseFile(shared_ptr<const filesystem::path> path){
-	assert(path != nullptr);
-	unique_ptr<string> buff = make_unique<string>();
-	
-	if (!fs::readFile(*path, *buff)){
-		return ParseResult {
-			.status = ParseStatus::IO
-		};
-	}
-	
-	reset();
-	this->buffer = move(buff);
-	this->srcFile = move(path);
-	return parse(*this, string_view(*this->buffer));
+	return ParseResult(Status::ERROR);
 }
 
 

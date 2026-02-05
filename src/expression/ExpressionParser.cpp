@@ -6,16 +6,18 @@
 #include <charconv>
 
 #include "Debug.hpp"
+#include "DebugSource.hpp"
 
 using namespace std;
 using Operation = Expression::Operation;
 using Allocator = Expression::Allocator;
+using Status = Expression::Status;
 
 
 // ----------------------------------- [ Structures ] --------------------------------------- //
 
 
-enum class Status {
+enum class Expression::Status {
 	UNEXPECTED_SYMBOL,
 	UNCLOSED_STRING,			// Missing quote "
 	UNCLOSED_EXPRESSION,		// Missing bracket )
@@ -31,7 +33,7 @@ enum class Status {
 
 struct Error {
 	Status status;
-	std::string_view mark;
+	string_view mark;
 };
 
 
@@ -82,7 +84,7 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 
 static const char* parse_num(const char* s, const char* end, Allocator& alc, Operation*& out){
 	assert(s != nullptr && end != nullptr && s != end);
-	const char* beg = s;
+	const char* const beg = s;
 	
 	if (*s == '+' || *s == '-'){
 		s++;
@@ -106,8 +108,10 @@ static const char* parse_num(const char* s, const char* end, Allocator& alc, Ope
 	}
 	
 	if (dot){
-		Double* c = (Double*&)out = alc.alloc<Double>();
+		Double* c = alc.alloc<Double>();
+		out = c;
 		c->type = Operation::Type::DOUBLE;
+		
 		from_chars_result res = from_chars(beg, s, c->n);
 		
 		if (res.ec != errc()){
@@ -115,8 +119,10 @@ static const char* parse_num(const char* s, const char* end, Allocator& alc, Ope
 		}
 		
 	} else {
-		Long* c = (Long*&)out = alc.alloc<Long>();
+		Long* c = alc.alloc<Long>();
+		out = c;
 		c->type = Operation::Type::LONG;
+		
 		from_chars_result res = from_chars(beg, s, c->n);
 		
 		if (res.ec != errc()){
@@ -125,6 +131,8 @@ static const char* parse_num(const char* s, const char* end, Allocator& alc, Ope
 		
 	}
 	
+	out->len = s - beg;
+	out->pos = beg;
 	return s;
 }
 
@@ -133,7 +141,7 @@ static const char* parse_str(const char* s, const char* end, Allocator& alc, Ope
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(isQuot(*s));
 	
-	const char* beg = s;
+	const char* const beg = s;
 	const char quot = *beg;
 	bool escape = false;
 	
@@ -154,12 +162,16 @@ static const char* parse_str(const char* s, const char* end, Allocator& alc, Ope
 		
 	}
 	
-	assert(isQuot(*beg) && *beg == *s);
-	String* c = (String*&)out = alc.alloc<String>();
-	c->type = Operation::Type::STRING;
-	c->s = string_view(beg + 1, s);
+	assert(isQuot(*beg) && isQuot(*s) && *beg == *s);
+	s++;
 	
-	return s + 1;
+	String* c = alc.alloc<String>();
+	c->type = Operation::Type::STRING;
+	c->len = s - beg;
+	c->pos = beg;
+	
+	out = c;
+	return s;
 }
 
 
@@ -170,7 +182,7 @@ static const char* parse_unaryExpression(const char* s, const char* end, Allocat
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(isUnaryOp(*s));
 	
-	const char* beg = s;
+	const char* const beg = s;
 	const char op = *s;
 	
 	s = parseWhitespace(s + 1, end);
@@ -198,6 +210,8 @@ static const char* parse_unaryExpression(const char* s, const char* end, Allocat
 			break;
 	}
 	
+	unop->len = s - beg;
+	unop->pos = beg;
 	out = unop;
 	return s;
 }
@@ -282,6 +296,8 @@ inline BinaryOperation* _binop(Allocator& alc, Operation* a, Operation* b, Opera
 	assert(a != nullptr && b != nullptr);
 	BinaryOperation* binop = alc.alloc<BinaryOperation>();
 	binop->type = type;
+	binop->len = (b->pos + b->len) - (a->pos);
+	binop->pos = a->pos;
 	binop->arg_1 = a;
 	binop->arg_2 = b;
 	return binop;
@@ -311,7 +327,7 @@ constexpr int _bindPower(Operation::Type type){
 }
 
 
-Operation* prattBinopTree(Allocator& alc, vector<Operation*>& args, vector<Operation::Type>& ops){
+static Operation* prattBinopTree(Allocator& alc, vector<Operation*>& args, vector<Operation::Type>& ops){
 	if (args.size() == 0){
 		return nullptr;
 	}
@@ -452,11 +468,11 @@ static const char* parse_func(const char* s, const char* end, Allocator& alc, st
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(*s == '(');
 	
-	Function::Arg argv[Function::MAX_ARGS];
+	Operation* argv[Function::MAX_ARGS];
 	int argc = 0;
 	
 	// Parse arguments
-	const char* beg = s++;
+	const char* const beg = s++;
 	while (true){
 		s = parseWhitespace(s, end);
 		
@@ -486,24 +502,25 @@ static const char* parse_func(const char* s, const char* end, Allocator& alc, st
 		if (argc >= Function::MAX_ARGS){
 			throw Error(Status::FUNC_ARG_OVERFLOW, string_view(arg_beg, s));
 		} else {
-			argv[argc++] = Function::Arg {
-				.mark = string_view(arg_beg, s),
-				.expr = arg
-			};
+			argv[argc++] = arg;
 		}
 		
 	}
 	
+	assert(*s == ')');
+	s++;
+	
 	// Create function
 	Function* f = static_cast<Function*>(alc.alloc(sizeof(Function) + sizeof(*Function::argv)*argc));
 	f->type = Operation::Type::FUNC;
-	f->name = name;
+	f->len = s - name.begin();
+	f->pos = name.begin();
+	f->name_len = uint32_t(name.length());
 	f->argc = argc;
 	copy(argv, argv + argc, f->argv);
 	
-	assert(*s == ')');
 	out = f;
-	return s + 1;
+	return s;
 }
 
 
@@ -525,7 +542,8 @@ static const char* parse_varOrFunc(const char* s, const char* end, Allocator& al
 	else {
 		Variable* var = alc.alloc<Variable>();
 		var->type = Operation::Type::VAR;
-		var->name = id;
+		var->len = uint32_t(id.length());
+		var->pos = id.begin();
 		out = var;
 	}
 	
@@ -572,47 +590,53 @@ static const char* parse_singleExpression(const char* s, const char* end, Alloca
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static void report(const Error& err, const Debugger& dbg){
-	#define P(s) ANSI_PURPLE s ANSI_RESET
-	const string_view& m = err.mark;
+static void report(const Macro* origin, const Error& err){
+	if (origin == nullptr){
+		return;
+	}
+	
+	linepos pos = findLine(*origin, err.mark.begin());
+	print(pos);
+	LOG_STDERR(ANSI_BOLD ANSI_RED "error: " ANSI_RESET);
 	
 	switch (err.status){
 		case Status::UNEXPECTED_SYMBOL:
-			HERE(dbg.error(m, "Unexpected symbol " P("`%.*s`") " in expression.\n", int(m.length()), m.data()));
+			LOG_STDERR("Unexpected symbol: " PURPLE("`%.*s`") "\n", VA_STRV(err.mark));
 			break;
 		case Status::UNCLOSED_STRING:
-			HERE(dbg.error(m, "Unterminated string literal in expression.\n"));
+			LOG_STDERR("Unterminated string literal in expression.\n");
 			break;
 		case Status::UNCLOSED_EXPRESSION:
-			HERE(dbg.error(m, "Missing closing bracket " P("`(`") " in expression.\n"));
+			LOG_STDERR("Missing closing bracket " PURPLE("`(`") " in expression.\n");
 			break;
 		case Status::INVALID_BINARY_EXPRESSION:
-			HERE(dbg.error(m, "Missing second operand in binary epxression.\n"));
+			LOG_STDERR("Missing second operand in binary epxression.\n");
 			break;
 		case Status::INVALID_INT:
-			HERE(dbg.error(m, "Failed to parse integer.\n"));
+			LOG_STDERR("Failed to parse integer.\n");
 			break;
 		case Status::INVALID_FLOAT:
-			HERE(dbg.error(m, "Failed to parse float.\n"));
+			LOG_STDERR("Failed to parse float.\n");
 			break;
 		case Status::INVALID_UNARY_EXPRESSION:
-			HERE(dbg.error(m, "Missing operand in unary expression.\n"));
+			LOG_STDERR("Missing operand in unary expression.\n");
 			break;
 		case Status::FUNC_ARG_OVERFLOW:
-			HERE(dbg.error(m, "Too many arguments in function. Maximum allowed is %d.\n", Function::MAX_ARGS));
+			LOG_STDERR("Too many arguments in function. Maximum allowed is: " PURPLE("%d") "\n", Function::MAX_ARGS);
 			break;
 		case Status::MEMORY:
-			HERE(dbg.error(m, "Ran out of memory when parsing expression.\n"));
+			LOG_STDERR("Ran out of memory when parsing expression.\n");
 			break;
 		case Status::ERROR:
-			HERE(dbg.error(m, "Failed to parse expression.\n"));
+			LOG_STDERR("Failed to parse expression.\n");
 			break;
 	}
 	
+	printCodeView(pos, err.mark, ANSI_RED);
 }
 
 
-Expression Expression::parse(string_view str, const Debugger& dbg) noexcept {
+Expression Expression::parse(string_view str, const shared_ptr<Macro>& origin) noexcept {
 	if (str.empty()){
 		return {};
 	}
@@ -620,11 +644,16 @@ Expression Expression::parse(string_view str, const Debugger& dbg) noexcept {
 	try {
 		Expression expr;
 		expr.alloc = new Expression::Allocator();
+		expr.origin = origin;
 		
 		const char* s = str.begin();
 		const char* end = str.end();
 		
 		s = parseWhitespace(s, end);
+		if (s == end){
+			return expr;
+		}
+		
 		s = parse_binaryExpressionChain(s, end, *expr.alloc, expr.op);
 		s = parseWhitespace(s, end);
 		assert(expr.op != nullptr);
@@ -635,11 +664,11 @@ Expression Expression::parse(string_view str, const Debugger& dbg) noexcept {
 		
 		return expr;
 	} catch (const Error& e){
-		report(e, dbg);
+		report(origin.get(), e);
 	} catch (const bad_alloc&){
-		report(Error(Status::MEMORY, str), dbg);
+		report(origin.get(), Error(Status::MEMORY, str));
 	}catch (...){
-		report(Error(Status::ERROR, str), dbg);
+		report(origin.get(), Error(Status::ERROR, str));
 	}
 	
 	return {};

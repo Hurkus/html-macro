@@ -4,6 +4,8 @@
 template<typename E>
 inline constexpr bool has_enum_operators = false;
 
+#define ENUM_OPERATORS(T) template<> inline constexpr bool has_enum_operators<T> = true;
+
 template<typename E> requires(has_enum_operators<E>)
 constexpr E operator ~(E a){
 	return E(~(std::underlying_type_t<E>)a);

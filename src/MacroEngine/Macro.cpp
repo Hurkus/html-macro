@@ -1,7 +1,5 @@
 #include "Macro.hpp"
-#include <unordered_map>
-
-#include "fs.hpp"
+#include "str_map.hpp"
 #include "Debug.hpp"
 #include "DebugSource.hpp"
 
@@ -23,15 +21,15 @@ This means that all raw pointers remain valid, since at least 1 macro (root) kee
 // ----------------------------------- [ Variables ] ---------------------------------------- //
 
 
-static unordered_map<string_view,shared_ptr<Macro>> macroFileCache;
-static unordered_map<string_view,shared_ptr<Macro>> macroNameCache;
+static str_map<shared_ptr<Macro>> macroFileCache;
+static str_map<shared_ptr<Macro>> macroNameCache;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
 Macro::Type Macro::getType(const filepath& path){
-	const filepath ext = path.extension();
+	const string ext = path.extension().string();
 	if (ext == ".html"sv || ext == ".svg"sv || ext == ".xml"sv)
 		return Type::HTML;
 	else if (ext == ".css"sv)
@@ -46,60 +44,75 @@ Macro::Type Macro::getType(const filepath& path){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool registerChildMacro(const Macro& parent, Node&& macroNode){
+static unique_ptr<Document> split(Document& srcDoc, Node* node){
+	assert(node != nullptr);
+	
+	unique_ptr<Document> newDoc = make_unique<Document>();
+	srcDoc.extractChild(node);
+	assert(node->parent == nullptr);
+	assert(node->next == nullptr);
+	
+	// Clone shared storage
+	newDoc->buffer = shared_ptr(srcDoc.buffer);
+	newDoc->nodeAlloc = shared_ptr(srcDoc.nodeAlloc);
+	newDoc->attrAlloc = shared_ptr(srcDoc.attrAlloc);
+	newDoc->charAlloc = shared_ptr(srcDoc.charAlloc);
+	
+	// Clone node properties
+	newDoc->options   = node->options;
+	newDoc->type      = NodeType::ROOT;
+	newDoc->value_len = node->value_len;
+	newDoc->value_p   = node->value_p;
+	newDoc->attribute = node->attribute;
+	newDoc->parent    = nullptr;
+	newDoc->child     = node->child;
+	newDoc->next      = nullptr;
+	
+	// Adjust children
+	for (Node* child = newDoc->child ; child != nullptr ; child = child->next){
+		child->parent = newDoc.get();
+	}
+	
+	assert(srcDoc.nodeAlloc);
+	srcDoc.nodeAlloc->dealloc(node);
+	return newDoc;
+}
+
+
+static bool registerChildMacro(const Macro& srcMacro, unique_ptr<Document>&& doc){
+	assert(doc != nullptr);
 	const Attr* name_attr = nullptr;
 	
 	// Find name
-	for (const Attr* attr = macroNode.attribute ; attr != nullptr ; attr = attr->next){
+	for (const Attr* attr = doc->attribute ; attr != nullptr ; attr = attr->next){
 		if (attr->name() == "NAME"sv){
 			if (name_attr == nullptr)
 				name_attr = attr;
 			else
-				HERE(warn_duplicate_attr(macroNode, *name_attr, *attr));
+				HERE(warn_duplicate_attr(srcMacro, *name_attr, *attr));
 			continue;
 		}
 	}
 	
 	if (name_attr == nullptr){
-		HERE(warn_missing_attr(macroNode, "NAME"));
+		HERE(warn_missing_attr(srcMacro, *doc, "NAME"));
 		return false;
 	} else if (name_attr->value_len <= 0){
-		HERE(error_missing_attr_value(macroNode, *name_attr));
+		HERE(error_missing_attr_value(srcMacro, *name_attr));
 		return false;
 	} else if (name_attr->options % NodeOptions::SINGLE_QUOTE){
-		HERE(warn_attr_single_quote(macroNode, *name_attr));
-	}
-	
-	// Transfer node to root of new document
-	unique_ptr<Document> newDoc = make_unique<Document>();
-	{
-		assert(parent.html != nullptr);
-		newDoc->buffer = shared_ptr(parent.html->buffer);
-		newDoc->srcFile = shared_ptr(parent.html->srcFile);
-		
-		Node& root = *newDoc;
-		swap(macroNode.options,   root.options);
-		swap(macroNode.value_len, root.value_len);
-		swap(macroNode.value_p,   root.value_p);
-		swap(macroNode.attribute, root.attribute);
-		swap(macroNode.child,     root.child);
-		
-		for (Node* child = root.child ; child != nullptr ; child = child->next){
-			child->parent = &root;
-		}
-		
-		assert(macroNode.child == nullptr);
+		HERE(warn_expected_attr_double_quote(srcMacro, *name_attr));
 	}
 	
 	unique_ptr<Macro> m = make_unique<Macro>();
 	m->name = name_attr->value();
-	m->srcFile = shared_ptr(parent.srcFile);
-	m->srcDir = shared_ptr(parent.srcDir);
+	m->srcFile = shared_ptr(srcMacro.srcFile);
+	m->srcDir = shared_ptr(srcMacro.srcDir);
 	m->type = Macro::Type::HTML;
-	m->html = move(newDoc);
+	m->html = move(doc);
 	
 	// Register new macro
-	macroNameCache.emplace(m->name, move(m));
+	macroNameCache.insert(m->name, move(m));
 	return true;
 }
 
@@ -111,54 +124,44 @@ bool Macro::parseHTML(){
 		return false;
 	}
 	
-	unique_ptr<html::Document> doc = make_unique<html::Document>();
-	ParseResult res = doc->parseBuff(this->txt);
+	unique_ptr<Document> doc = make_unique<Document>();
+	ParseResult res = doc->parse(this->txt);
 	
 	// Report parsing error
 	switch (res.status){
-		case ParseStatus::OK:
+		case ParseResult::Status::OK:
 			break;
 
-		case ParseStatus::IO:
-		case ParseStatus::MEMORY:
-			ERROR("%s", html::errstr(res.status));
+		case ParseResult::Status::MEMORY:
+			ERROR("%s", res.msg());
 			break;
 		
 		default: {
 			string_view buff = string_view(*doc->buffer);
-			linepos pos = findLine(buff.begin(), buff.end(), res.pos.data());
+			linepos pos = findLine(buff.begin(), buff.end(), res.mark.data());
 			pos.file = (this->srcFile != nullptr) ? this->srcFile->c_str() : "-";
 			
 			HERE(print(pos));
-			printErrTag();
-			LOG_STDERR("%s\n", html::errstr(res.status));
-			printCodeView(pos, res.pos, ANSI_RED);
+			LOG_STDERR(ANSI_BOLD ANSI_RED "error: " ANSI_RESET "%s\n", res.msg());
+			printCodeView(pos, res.mark, ANSI_RED);
 			return false;
 		}
 		
 	}
 	
-	doc->srcFile = this->srcFile;
-	this->html = move(doc);
-	
 	// Extract and register all child <MACRO> nodes.
-	for (Node* m : res.macros){
-		assert(m != nullptr && m->parent != nullptr);
-		
-		registerChildMacro(*this, move(*m));
-		bool remd = m->parent->removeChild(m);
-		
-		assert(remd);
+	for (Node* mnode : res.macros){
+		assert(mnode != nullptr && mnode->parent != nullptr);
+		unique_ptr<Document> mdoc = split(*doc, mnode);
+		registerChildMacro(*this, move(mdoc));
 	}
 	
+	this->html = move(doc);
 	return true;
 };
 
 
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
-bool Macro::parse(){
+bool Macro::parse(Type type){
 	switch (type){
 		case Type::HTML:
 			return parseHTML();
@@ -171,15 +174,15 @@ bool Macro::parse(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-Macro* MacroCache::get(string_view name) noexcept {
-	auto p = macroNameCache.find(name);
-	if (p != macroNameCache.end())
-		return p->second.get();
+shared_ptr<Macro> MacroCache::get(string_view name) noexcept {
+	const shared_ptr<Macro>* p = macroNameCache.get(name);
+	if (p != nullptr)
+		return *p;
 	return nullptr;
 }
 
 
-Macro* MacroCache::load(filepath& path){
+shared_ptr<Macro> MacroCache::load(filepath& path){
 	if (!Paths::resolve(path)){
 		return nullptr;
 	}
@@ -187,9 +190,9 @@ Macro* MacroCache::load(filepath& path){
 	const string_view path_sv = path.c_str();
 	
 	// Check if cached files.
-	auto p = macroFileCache.find(path_sv);
-	if (p != macroFileCache.end()){
-		return p->second.get();
+	const shared_ptr<Macro>* p = macroFileCache.get(path_sv);
+	if (p != nullptr){
+		return *p;
 	}
 	
 	// Load new file
@@ -198,17 +201,16 @@ Macro* MacroCache::load(filepath& path){
 		return nullptr;
 	}
 	
-	shared_ptr<Macro> macro = make_shared<Macro>();
+	unique_ptr<Macro> macro = make_unique<Macro>();
 	macro->name = path.filename().string();
 	macro->srcFile = make_shared<filepath>(path);
-	macro->srcDir = make_shared<filepath>(path.remove_filename());
-	macro->type = Macro::getType(*macro->srcFile);
+	macro->srcDir = make_shared<filepath>(path.parent_path());
+	macro->type = Macro::getType(path);
 	macro->txt = move(txt);
 	
 	// Store macro
 	string_view key = string_view(macro->srcFile->c_str());
-	const auto& x = macroFileCache.emplace(key, move(macro));
-	return x.first->second.get();
+	return macroFileCache.insert(key, move(macro));
 }
 
 

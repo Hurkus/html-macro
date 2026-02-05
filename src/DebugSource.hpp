@@ -9,8 +9,8 @@
 struct linepos {
 	const char* file = nullptr;
 	std::string_view line;
-	long row = -1;
-	long col = -1;
+	size_t row = 0;
+	size_t col = 0;
 };
 
 
@@ -18,7 +18,14 @@ struct linepos {
 
 
 inline void print(const linepos& lp){
-	printErrSrc(lp.file, lp.row, lp.col);
+	if (lp.file != nullptr && lp.file[0] != 0){
+		if (lp.row > 0 && lp.col > 0)
+			LOG_STDERR(BOLD("%s:%ld:%ld: "), lp.file, lp.row, lp.col);
+		else if (lp.row > 0)
+			LOG_STDERR(BOLD("%s:%ld: "), lp.file, lp.row);
+		else
+			LOG_STDERR(BOLD("%s: "), lp.file);
+	}
 }
 
 
@@ -32,6 +39,17 @@ inline void print(const linepos& lp){
  * @return Line, row number of `p` and colum number of `p` or empty if not found.
  */
 linepos findLine(const char* beg, const char* end, const char* p) noexcept;
+
+
+/**
+ * @brief Find line containing `p` relative to beggining of the macro's source `txt` buffer.
+ *        This function is very slow (iterates over the whole buffer).
+ * @note Recommended for error reporting only.
+ * @param macro The macro holding the buffer from which `p` originates.
+ * @param p Pointer to character within the `macro.txt` buffer for which to find line information.
+ * @return Line, row number of `p` and colum number of `p` or empty if not found.
+ */
+linepos findLine(const Macro& macro, const char* p) noexcept;
 
 
 /**

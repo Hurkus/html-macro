@@ -1,4 +1,5 @@
 #pragma once
+#include "ANSI.h"
 
 
 // Storage for two variants of a format string: colored and uncolored

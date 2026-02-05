@@ -1,20 +1,8 @@
 #include "MacroEngine.hpp"
-#include <cmath>
-
 #include "Debug.hpp"
 
 using namespace std;
 using namespace html;
-using namespace MacroEngine;
-
-
-// ----------------------------------- [ Variables ] ---------------------------------------- //
-
-
-VariableMap MacroEngine::variables;
-
-Branch MacroEngine::currentBranch_block = Branch::NONE;
-Branch MacroEngine::currentBranch_inline = Branch::NONE;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -32,23 +20,47 @@ constexpr bool isMacroChar(char c){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::setVariableConstants(){
-	MacroEngine::variables["false"] = 0L;
-	MacroEngine::variables["true"] = 1L;
-	MacroEngine::variables["pi"] = M_PI;
+Node* MacroEngine::newNode(NodeType type){
+	assert(macro != nullptr);
+	assert(macro->html != nullptr);
+	assert(macro->html->nodeAlloc != nullptr);
+	Node* node = macro->html->nodeAlloc->create();
+	node->type = type;
+	return node;
+}
+
+Attr* MacroEngine::newAttr(){
+	assert(macro != nullptr);
+	assert(macro->html != nullptr);
+	assert(macro->html->attrAlloc != nullptr);
+	return macro->html->attrAlloc->create();
+}
+
+char* MacroEngine::newStr(size_t len){
+	assert(macro != nullptr);
+	assert(macro->html != nullptr);
+	assert(macro->html->charAlloc != nullptr);
+	return macro->html->charAlloc->alloc(len);
+}
+
+char* MacroEngine::newStr(string_view str){
+	assert(macro != nullptr);
+	assert(macro->html != nullptr);
+	assert(macro->html->charAlloc != nullptr);
+	return macro->html->charAlloc->create(str);
 }
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void MacroEngine::run(const Node& op, Node& dst){
+void MacroEngine::eval(const Node& op, Node& dst){
 	switch (op.type){
 		case NodeType::TAG:
 			goto tag;
 		
 		case NodeType::ROOT:
-			runChildren(op, dst);
+			evalChildren(op, dst);
 			return;
 		
 		case NodeType::DIRECTIVE:
@@ -58,7 +70,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 			return;
 		
 		default:
-			HERE(error_unsupported_type(op));
+			HERE(error_unsupported_type(*macro, op));
 			return;
 	}
 	
@@ -77,7 +89,7 @@ void MacroEngine::run(const Node& op, Node& dst){
 	
 	// User macro
 	else if (!isUpperCase(name[0])){ user_macro:
-		userElementMacro(op, dst);
+		call_userElementMacro(op, dst);
 		return;
 	}
 	
@@ -157,14 +169,14 @@ void MacroEngine::run(const Node& op, Node& dst){
 }
 
 
-void MacroEngine::runChildren(const Node& macroParent, Node& dst){
+void MacroEngine::evalChildren(const Node& parent, Node& dst){
 	auto _branch_1 = MacroEngine::currentBranch_block;
 	auto _branch_2 = MacroEngine::currentBranch_inline;
 	MacroEngine::currentBranch_block = Branch::NONE;
 	MacroEngine::currentBranch_inline = Branch::NONE;
 	
-	for (const Node* child = macroParent.child ; child != nullptr ; child = child->next){
-		run(*child, dst);
+	for (const Node* child = parent.child ; child != nullptr ; child = child->next){
+		eval(*child, dst);
 	}
 	
 	MacroEngine::currentBranch_block = _branch_1;
@@ -172,26 +184,25 @@ void MacroEngine::runChildren(const Node& macroParent, Node& dst){
 }
 
 
-void MacroEngine::exec(const Macro& macro, Node& dst){
-	if (macro.html == nullptr){
-		assert(macro.html != nullptr);
-		return;
+void MacroEngine::exec(const shared_ptr<Macro>& macro, Node& dst){
+	assert(variables != nullptr);
+	assert(macro != nullptr);
+	assert(macro->html != nullptr);
+	
+	// Clone engine
+	MacroEngine engine = MacroEngine();
+	engine.variables = shared_ptr(this->variables);
+	engine.macro = shared_ptr(macro);
+	
+	// Backup cwd
+	auto _cwd = Paths::cwd;
+	if (macro->srcDir != nullptr){
+		Paths::cwd = macro->srcDir;
 	}
 	
-	// Backup state
-	auto _cwd = move(Paths::cwd);
+	engine.evalChildren(*macro->html, dst);
 	
-	// Set new state
-	if (macro.srcDir != nullptr){
-		Paths::cwd = macro.srcDir;
-	} else {
-		assert(macro.srcDir != nullptr);
-		Paths::cwd = _cwd;
-	}
-	
-	runChildren(*macro.html, dst);
-	
-	// Restore state
+	// Resotre cwd
 	Paths::cwd = move(_cwd);
 }
 

@@ -1,5 +1,5 @@
 SHELL := /usr/bin/env bash
-config = release
+config = debug
 
 CC = g++
 
@@ -46,7 +46,7 @@ clean:
 
 bin/test-$(EXE): $(wildcard test/*.cpp) $(wildcard test/*.hpp) | bin/
 	@basename "$@"
-	@$(CXX) $(filter %.cpp, $^) $(CXXFLAGS) $(INCLUDES) -g -o "$@"
+	@$(CXX) $(filter %.cpp, $^) $(CFLAGS) $(INCLUDES) -g -o "$@"
 
 .PHONY: test
 test: bin/$(EXE) bin/test-$(EXE)

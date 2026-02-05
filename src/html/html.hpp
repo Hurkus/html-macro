@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <filesystem>
 
-#include "html-allocator.hpp"
+#include "allocator.hpp"
+#include "charalloc.hpp"
 #include "EnumOperators.hpp"
 
 
@@ -13,33 +13,12 @@ namespace html {
 	enum class NodeType : uint8_t;
 	enum class NodeOptions : uint8_t;
 	
-	enum class ParseStatus;
 	struct ParseResult;
-	
 	struct Node;
 	struct Attr;
 	class Document;
-	
-	const char* errstr(ParseStatus status) noexcept;
 }
 
-
-enum class html::ParseStatus {
-	OK,
-	ERROR,					// Unknown error.
-	MEMORY,					// Out of memory.
-	IO,						// Failed to read file.
-	UNEXPECTED_CHAR,
-	UNCLOSED_TAG,			// ...>
-	UNCLOSED_STRING,		// ..."
-	UNCLOSED_QUESTION,		// ...?>
-	UNCLOSED_COMMENT,		// ...-->
-	INVALID_TAG_NAME,		// <...
-	INVALID_TAG_CHAR,		// <...>
-	MISSING_END_TAG,		// Some tags are unclosed: </tag>
-	INVALID_END_TAG,		// Too many </tag>.
-	MISSING_ATTR_VALUE		// attr=
-};
 
 
 enum class html::NodeType : uint8_t {
@@ -53,23 +32,58 @@ enum class html::NodeType : uint8_t {
 
 enum class html::NodeOptions : uint8_t {
 	NONE          = 0,
-	LIST_FORWARDS = 1 << 0,	// Direction of node child linked list and attribute linked list.
-	OWNED_NAME    = 1 << 1,
-	OWNED_VALUE   = 1 << 2,
-	INTERPOLATE   = 1 << 3,	// Text content of `value` should be interpolated for expressions `{}`.
-	SINGLE_QUOTE  = 1 << 4, // Attribute value is in single quotes.
-	SELF_CLOSE    = 1 << 5, // <tag/>
-	SPACE_BEFORE  = 1 << 6, // Node is prefixed (before opening tag) with whitespace.
-	SPACE_AFTER   = 1 << 7, // Node is suffixed (after closing tag) with whitespace.
+	OWNED_NAME    = 1 << 0,	// Name belongs to the Document str buffer; should be deleted on destruction.
+	OWNED_VALUE   = 1 << 1,	// Value belongs to the Document str buffer; should be deleted on destruction.
+	INTERPOLATE   = 1 << 2,	// Text content of `value` should be interpolated for expressions `{}`.
+	SINGLE_QUOTE  = 1 << 3, // Attribute value is in single quotes.
+	SELF_CLOSE    = 1 << 4, // <tag/>
+	SPACE_BEFORE  = 1 << 5, // Node is prefixed (before opening tag) with whitespace.
+	SPACE_AFTER   = 1 << 6, // Node is suffixed (after closing tag) with whitespace.
 };
-template<> inline constexpr bool has_enum_operators<html::NodeOptions> = true;
+ENUM_OPERATORS(html::NodeOptions);
+
 
 
 struct html::ParseResult {
-	ParseStatus status;
-	std::string_view pos;			// Last parsing context.
+// -------------------------------- //
+public:
+	enum class Status {
+		OK,
+		ERROR,					// Unknown error.
+		MEMORY,					// Out of memory.
+		UNEXPECTED_CHAR,
+		UNCLOSED_TAG,			// ...>
+		UNCLOSED_STRING,		// ..."
+		UNCLOSED_COMMENT,		// ...-->
+		INVALID_TAG_NAME,		// <...
+		INVALID_TAG_CHAR,		// <...>
+		MISSING_END_TAG,		// Some tags are unclosed: </tag>
+		INVALID_END_TAG,		// Too many </tag>.
+		MISSING_ATTR_VALUE		// attr=
+	};
+	
+// -------------------------------- //
+public:
+	Status status;
+	std::string_view mark;			// Substring that caused an error.
 	std::vector<Node*> macros;		// Pointers to nodes `<MACRO>`
+	
+// -------------------------------- //
+public:
+	static const char* msg(Status status) noexcept;
+	
+	const char* msg() const noexcept {
+		return msg(status);
+	}
+	
+public:
+	explicit operator bool() const {
+		return status == Status::OK;
+	}
+	
+// -------------------------------- //
 };
+
 
 
 struct html::Node {
@@ -87,10 +101,6 @@ public:
 	
 	Attr* attribute = nullptr;		// First/last attribute in linked list.
 	
-// ---------------------------------- [ Constructors ] -------------------------------------- //
-public:
-	~Node();
-	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	// Get node value.
@@ -99,13 +109,15 @@ public:
 	}
 	
 	// Remove (maybe deallocate) value string.
-	void value(nullptr_t);
+	void value(Document& root, nullptr_t) noexcept;
 	
-	// Set value to const string.
-	void value(std::string_view str);
+	// Set value to const string, or something not allocated by the document's char allocator.
+	// `str` will have to be deleted manualy after the node goes out of scope
+	void value(Document& root, std::string_view str) noexcept;
 	
-	// Set value to owned string.
-	void value(char* str, size_t len);
+	// Set value to owned string allocated by the document's char allocator.
+	// `str` will be deleted after the node goes ouf of scope.
+	void value(Document& root, char* str, size_t len) noexcept;
 	
 public:
 	// Get node name
@@ -114,42 +126,43 @@ public:
 	}
 	
 	// Remove (maybe deallocate) name string.
-	void name(nullptr_t){
-		this->value(nullptr);
+	void name(Document& root, nullptr_t) noexcept {
+		this->value(root, nullptr);
 	}
 	
-	// Set name to const string.
-	void name(std::string_view str){
-		this->value(str);
+	// Set name to const string, or something not allocated by the document's char allocator.
+	// `str` will have to be deleted manualy after the node goes out of scope
+	void name(Document& root, std::string_view str) noexcept {
+		this->value(root, str);
 	}
 	
-	// Set name to const string.
-	void name(char* str, size_t len){
-		this->value(str, len);
+	// Set name to owned string allocated by the document's char allocator.
+	// `str` will be deleted after the node goes ouf of scope.
+	void name(Document& root, char* str, size_t len) noexcept {
+		this->value(root, str, len);
 	}
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	Node& appendChild(NodeType type = NodeType::TAG);
-	void appendChild(Node* child) noexcept;
+	// Extract from parent (can be null) and then deallocate.
+	void remove(Document& root) noexcept;
 	
+public:
+	Node* appendChild(Node* child) noexcept;
 	Node* extractChild(Node* child) noexcept;
-	bool removeChild(Node* child);
-	void removeChildren();
+	void removeChildren(Document& root) noexcept;
 	
 public:
-	Attr& appendAttribute();
-	
-	Attr* extractAttr(Attr* attr) noexcept;
-	bool removeAttr(Attr* attr);
-	bool removeAttr(std::string_view name);
-	void removeAttributes();
+	Attr* appendAttribute(Attr*) noexcept;
+	Attr* extractAttr(Attr*) noexcept;
+	bool removeAttr(Document& root, std::string_view name) noexcept;
+	void removeAttributes(Document& root) noexcept;
 	
 public:
-	void clear(){
-		removeChildren();
-		removeAttributes();
-		value(nullptr);
+	void clear(Document& root) noexcept {
+		removeChildren(root);
+		removeAttributes(root);
+		value(root, nullptr);
 	}
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -158,23 +171,19 @@ public:
 		if (parent != nullptr)
 			return parent->root();
 		assert(type == NodeType::ROOT);
-		return *(Document*)this;
+		return *reinterpret_cast<Document*>(this);
 	}
 	
 	const Document& root() const {
 		if (parent != nullptr)
 			return parent->root();
 		assert(type == NodeType::ROOT);
-		return *(Document*)this;
+		return *reinterpret_cast<const Document*>(this);
 	}
-	
-// ----------------------------------- [ Operators ] ---------------------------------------- //
-public:
-	static void* operator new(size_t size);
-	static void operator delete(void*) noexcept;
 	
 // ------------------------------------------------------------------------------------------ //
 };
+
 
 
 struct html::Attr {
@@ -189,10 +198,6 @@ public:
 	
 	Attr* next = nullptr;	// Linked list.
 	
-// ---------------------------------- [ Constructors ] -------------------------------------- //
-public:
-	~Attr();
-	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	// Get node value.
@@ -201,13 +206,15 @@ public:
 	}
 	
 	// Remove (maybe deallocate) value string.
-	void value(nullptr_t);
+	void value(Document& root, nullptr_t) noexcept;
 	
-	// Set value to const string.
-	void value(std::string_view str);
+	// Set value to const string, or something not allocated by the document's char allocator.
+	// `str` will have to be deleted manualy after the node goes out of scope
+	void value(Document& root, std::string_view str) noexcept;
 	
-	// Set value to owned string.
-	void value(char* str, size_t len);
+	// Set value to owned string allocated by the document's char allocator.
+	// `str` will be deleted after the node goes ouf of scope.
+	void value(Document& root, char* str, size_t len) noexcept;
 	
 public:
 	// Get node name
@@ -216,28 +223,37 @@ public:
 	}
 	
 	// Remove (maybe deallocate) name string.
-	void name(nullptr_t);
+	void name(Document& root, nullptr_t) noexcept;
 	
-	// Set name to const string.
-	void name(std::string_view str);
+	// Set name to const string, or something not allocated by the document's char allocator.
+	// `str` will have to be deleted manualy after the node goes out of scope
+	void name(Document& root, std::string_view str) noexcept;
 	
-	// Set name to const string.
-	void name(char* str, size_t len);
+	// Set name to owned string allocated by the document's char allocator.
+	// `str` will be deleted after the node goes ouf of scope.
+	void name(Document& root, char* str, size_t len) noexcept;
 	
-// ----------------------------------- [ Operators ] ---------------------------------------- //
+// ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	static void* operator new(size_t size);
-	static void operator delete(void*) noexcept;
+	void clear(Document& root) noexcept {
+		name(root, nullptr);
+		value(root, nullptr);
+	}
 	
 // ------------------------------------------------------------------------------------------ //
 };
 
 
-class html::Document : public Node {
+
+class html::Document : public html::Node {
 // ------------------------------------[ Properties ] --------------------------------------- //
 public:
-	std::shared_ptr<const std::string> buffer;				// Source text.
-	std::shared_ptr<const std::filesystem::path> srcFile;	// Path to source file.
+	std::shared_ptr<const std::string> buffer;	// Source text.
+	
+public:
+	std::shared_ptr<Allocator<Node>> nodeAlloc = std::make_shared<Allocator<Node>>();
+	std::shared_ptr<Allocator<Attr>> attrAlloc = std::make_shared<Allocator<Attr>>();
+	std::shared_ptr<CharAllocator> charAlloc = std::make_shared<CharAllocator>();
 	
 // ---------------------------------- [ Constructors ] -------------------------------------- //
 public:
@@ -246,61 +262,47 @@ public:
 	}
 	
 	Document(Document&& o){
-		std::swap(*this, o);
+		swap(*this, o);
 	}
 	
-	Document& operator=(Document&& o){
-		std::swap(*this, o);
-		return *this;
-	}
-	
-	~Document(){
-		Node::clear();
+	void operator=(Document&& o){
+		swap(*this, o);
 	}
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	/**
-	 * @brief Parse HTML from string.
+	 * @brief Delete all data (child nodes, buffer, etc.).
+	 *        All objects are considered to be either foreign owned,
+	 *        or allocated with `nodeAlloc`, `attrAlloc` or `charAlloc`.
+	 */
+	void clear(){
+		(Node&)(*this) = Node();
+		Node::type = NodeType::ROOT;
+		nodeAlloc = std::make_shared<Allocator<Node>>();
+		attrAlloc = std::make_shared<Allocator<Attr>>();
+		charAlloc = std::make_shared<CharAllocator>();
+		buffer = {};
+	}
+	
+public:
+	/**
+	 * @brief Parse html from string.
+	 *        The document should first be `clear()` if it has been used before.
 	 * @param buff String buffer. Must not change while `this` object is valid.
 	 * @return `parse_result` containing parsing status.
 	 */
-	ParseResult parseBuff(std::shared_ptr<const std::string> buff);
+	ParseResult parse(const std::shared_ptr<const std::string>& buff) noexcept;
 	
-	/**
-	 * @brief Open file from `path` and parse HTML.
-	 * @param path Path to file.
-	 * @return `parse_result` containing parsing status.
-	 */
-	ParseResult parseFile(std::shared_ptr<const std::filesystem::path> path);
-	
+// ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	/**
-	 * @brief Delete/reset all owned data (child nodes, buffer, etc.).
-	 */
-	void reset(){
-		Node::clear();
-		buffer.reset();
-		srcFile.reset();
+	friend void swap(Document& a, Document& b) noexcept {
+		std::swap((Node&)a, (Node&)b);
+		std::swap(a.buffer, b.buffer);
+		std::swap(a.nodeAlloc, b.nodeAlloc);
+		std::swap(a.attrAlloc, b.attrAlloc);
+		std::swap(a.charAlloc, b.charAlloc);
 	}
-	
-	/**
-	 * @brief Disown all child nodes without freeing memory (leak memory).
-	 * @note Really think about it before using this.
-	 */
-	// void releaseMemory(){
-	// 	this->child = nullptr;
-	// 	this->attribute = nullptr;
-	// 	this->value_p = nullptr;
-	// 	this->value_len = 0;
-	// 	this->next = nullptr;
-	// }
-	
-// ----------------------------------- [ Operators ] ---------------------------------------- //
-public:
-	static void* operator new(size_t size);
-	static void operator delete(void*) noexcept;
-	
 	
 // ------------------------------------------------------------------------------------------ //
 };

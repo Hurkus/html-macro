@@ -84,7 +84,7 @@ static bool onOption(OptId id, const char* value){
 				opt.inFileType = Macro::Type::TXT;
 			else {
 				opt.inFileType = Macro::Type::NONE;
-				ERROR("Invalid option value " PURPLE("`%s`") ". Valid values are " CYAN("`html`") ", " CYAN("`css`") ", " CYAN("`js`") " or " CYAN("`txt`") ".", value);
+				ERROR("Invalid option value: " PURPLE("`%s`") ". Valid values are " CYAN("`html`") ", " CYAN("`css`") ", " CYAN("`js`") " or " CYAN("`txt`") ".", value);
 				return false;
 			}
 			return true;

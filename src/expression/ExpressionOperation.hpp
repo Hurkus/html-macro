@@ -6,7 +6,7 @@
 
 
 struct Expression::Operation {
-	enum class Type {
+	enum class Type : uint32_t {
 		ERROR,
 		LONG, DOUBLE, STRING, VAR,
 		NOT, NEG,
@@ -15,24 +15,43 @@ struct Expression::Operation {
 		EQ, NEQ, LT, LTE, GT, GTE,
 		FUNC,
 	} type;
+	
+	uint32_t len;		// Length of `pos`.
+	const char* pos;	// Position in the source text.
+	
+	std::string_view view() const {
+		return std::string_view(pos, len);
+	}
+	
 };
+
+
+// ----------------------------------- [ Structures ] --------------------------------------- //
 
 
 struct Long : public Expression::Operation {
 	long n;
 };
 
+
 struct Double : public Expression::Operation {
 	double n;
 };
 
+
 struct String : public Expression::Operation {
-	std::string_view s;
+	std::string_view str() const {
+		if (len < 2)
+			return {};
+		return std::string_view(pos + 1, len - 2);
+	}
 };
 
 
 struct Variable : public Expression::Operation {
-	std::string_view name;
+	std::string_view name() const {
+		return std::string_view(pos, len);
+	}
 };
 
 
@@ -48,15 +67,16 @@ struct BinaryOperation : public Expression::Operation {
 
 
 struct Function : public Expression::Operation {
-	int argc;	// Must be first so that it aligns with Operation::type and packs 8 bytes.
-	std::string_view name;
-	
-	struct Arg {
-		std::string_view mark;
-		Operation* expr;
-	} argv[];
+	uint32_t name_len;
+	uint32_t argc;
+	Operation* argv[];
 	
 	static constexpr int MAX_ARGS = 8;
+	
+	std::string_view name() const {
+		return std::string_view(pos, name_len);
+	}
+	
 };
 
 

@@ -9,8 +9,6 @@
 #include "Debug.hpp"
 
 using namespace std;
-using namespace html;
-using namespace MacroEngine;
 
 
 // ----------------------------------- [ Prototypes ] --------------------------------------- //
@@ -27,9 +25,9 @@ bool printDependencies(const char* path);
 #define C(s)		ANSI_CYAN s ANSI_RESET
 
 #if DEBUG
-	#define VERSION 	"Version 0.12 (Debug)"
+	#define VERSION 	"Version 0.13 (Alpha) (Debug)"
 #else
-	#define VERSION 	"Version 0.12"
+	#define VERSION 	"Version 0.13"
 #endif
 
 
@@ -63,7 +61,7 @@ void help(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool setDefinedVariables(const vector<const char*>& defines){
+static bool setDefinedVariables(const vector<const char*>& defines, VariableMap& vars){
 	for (const char* s : defines){
 		const char* name_beg = s;
 		const char* name_end = nullptr;
@@ -90,7 +88,7 @@ static bool setDefinedVariables(const vector<const char*>& defines){
 		s++;
 		
 		const char* val_beg = s;
-		MacroEngine::variables.insert(string_view(name_beg, name_end), val_beg);
+		vars.insert(string_view(name_beg, name_end), val_beg);
 	}
 	return true;
 }
@@ -99,64 +97,75 @@ static bool setDefinedVariables(const vector<const char*>& defines){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool execMacro(Macro& macro, ostream* out){
-	Macro::Type type = (opt.inFileType == Macro::Type::NONE) ? macro.type : opt.inFileType;
+static bool execMacro(shared_ptr<Macro>&& macro, ostream* out){
+	assert(macro != nullptr);
+	Macro::Type type = (opt.inFileType != Macro::Type::NONE) ? opt.inFileType : macro->type;
+	
 	switch (type){
+		case Macro::Type::HTML: {
+			if (macro->html == nullptr && !macro->parseHTML()){
+				return false;
+			}
+			
+			// Setup engine
+			MacroEngine engine = {};
+			engine.variables = make_shared<VariableMap>();
+			engine.setVariableConstants();
+			if (!setDefinedVariables(opt.defines, *engine.variables)){
+				return false;
+			}
+			
+			html::Document doc = {};
+			engine.exec(macro, doc);
+			
+			if (out != nullptr){
+				return write(*out, doc, opt.compress);
+			}
+			
+			return true;
+		}
+		
 		case Macro::Type::CSS: {
-			if (macro.txt == nullptr){
-				assert(macro.txt != nullptr);
+			if (macro->txt == nullptr){
 				return false;
 			} else if (out == nullptr){
 				return true;
 			}
 			
-			string_view txt = *macro.txt;
+			string_view txt = *macro->txt;
 			if (opt.compress % WriteOptions::COMPRESS_CSS){
 				return compressCSS(*out, txt.begin(), txt.end());
 			} else {
-				return bool(*out << txt);
-			}
-			
-		}
-		
-		case Macro::Type::HTML: {
-			if (!macro.parseHTML()){
-				return false;
-			}
-			
-			html::Document doc = {};
-			MacroEngine::exec(macro, doc);
-			
-			if (out != nullptr){
-				return write(*out, doc, opt.compress);
+				*out << txt;
+				return bool(out);
 			}
 			
 		}
 		
 		case Macro::Type::JS:
 		case Macro::Type::TXT: {
-			assert(macro.txt != nullptr);
-			if (macro.txt == nullptr)
+			if (macro->txt == nullptr)
 				return false;
 			else if (out == nullptr)
 				return true;
-			else
-				return bool(*out << *macro.txt);
+			
+			*out << *macro->txt;
+			return bool(out);
 		}
 		
-		default: {
-			ERROR("Unsupported input type.");
-			return false;
-		}
+		case Macro::Type::NONE:
+			break;
 		
 	}
+	
+	ERROR("Unsupported input type.");
+	return false;
 }
 
 
 static bool run(){
-	MacroEngine::reset();
 	MacroCache::clear();
-	Paths::cwd = make_unique<filepath>(fs::current_path());
+	Paths::cwd = make_unique<filepath>(fs::cwd());
 	
 	ostream* out = (opt.outFilePath != nullptr && opt.outFilePath == "-"sv ? &cout : nullptr);
 	ofstream outf;
@@ -179,25 +188,20 @@ static bool run(){
 		return false;
 	}
 	
-	if (!setDefinedVariables(opt.defines)){
-		return false;
-	}
-	
 	// Load input file
-	Macro* root_macro = MacroCache::load(src_path);
+	shared_ptr<Macro> root_macro = MacroCache::load(src_path);
 	if (root_macro == nullptr){
 		ERROR("Failed to read file: " PURPLE("`%s`"), src_path.c_str());
 		return false;
 	}
 	
-	bool ret = execMacro(*root_macro, out);
+	bool ret = execMacro(move(root_macro), out);
 	if (out != nullptr){
 		out->flush();
 	}
 	
 	// Cleanup
 	MacroCache::clear();
-	assert(html::assertDeallocations());
 	return ret;
 }
 
@@ -209,20 +213,18 @@ int main(int argc, char const* const* argv){
 	stdout_isTTY = (isatty(fileno(stdout)) == 1);
 	stderr_isTTY = (isatty(fileno(stderr)) == 1);
 	
-	// #if DEBUG
-	// 	const char* _argv[] = {
-	// 		argv[0],
-	// 		"test/test-0.html",
-	// 		// "test/test-2.in.html",
-	// 		// "-c", "css",
-	// 		// "-c", "html",
-	// 		"-c", "all",
-	// 	};
-	// 	if (argc < 2){
-	// 		argv = _argv;
-	// 		argc = sizeof(_argv) / sizeof(*_argv);
-	// 	}
-	// #endif
+	#if DEBUG
+		const char* _argv[] = {
+			argv[0],
+			"test/test-0.html",
+			// "test/test-6.in.html",
+			// "-c", "all",
+		};
+		if (argc < 2){
+			argv = _argv;
+			argc = sizeof(_argv) / sizeof(*_argv);
+		}
+	#endif
 	
 	if (argc < 2){
 		help();

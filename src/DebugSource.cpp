@@ -1,8 +1,9 @@
 #include "DebugSource.hpp"
 #include "Debug.hpp"
+#include "Macro.hpp"
+
 #include <cassert>
 #include <string>
-#include "ANSI.h"
 
 using namespace std;
 
@@ -11,12 +12,14 @@ using namespace std;
 
 
 linepos findLine(const char* beg, const char* end, const char* p) noexcept {
-	if (beg == nullptr || end == nullptr || end <= beg || p == nullptr || p < beg || p >= end){
+	if (end <= beg || p == nullptr || p < beg || p >= end){
 		return {};
+	} else {
+		assert(beg != nullptr && end != nullptr);
 	}
 	
-	long col = 1;
-	long row = 1;
+	size_t col = 1;
+	size_t row = 1;
 	bool tabs = false;
 	const char* line_beg = beg;
 	
@@ -58,6 +61,19 @@ linepos findLine(const char* beg, const char* end, const char* p) noexcept {
 		.row = row,
 		.col = col,
 	};
+}
+
+
+linepos findLine(const Macro& origin, const char* p) noexcept {
+	linepos l = {};
+	
+	if (origin.txt != nullptr){
+		string_view buff = string_view(*origin.txt);
+		l = findLine(buff.begin(), buff.end(), p);
+	}
+	
+	l.file = (origin.srcFile != nullptr) ? origin.srcFile->c_str() : nullptr;
+	return l;
 }
 
 

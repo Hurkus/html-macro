@@ -1,9 +1,9 @@
 #include "Write.hpp"
-#include <vector>
-#include <cstring>
-
 #include "html.hpp"
 #include "Debug.hpp"
+
+#include <vector>
+#include <cstring>
 
 using namespace std;
 using namespace html;
@@ -13,6 +13,7 @@ using namespace html;
 
 
 #define TAB_4		"\t\t\t\t"
+#define TAB_16		TAB_4 TAB_4 TAB_4 TAB_4
 #define SPACE_4		"    "
 #define SPACE_16	SPACE_4 SPACE_4 SPACE_4 SPACE_4
 
@@ -42,7 +43,7 @@ constexpr string_view trim_nl_suffix(string_view s){
 
 
 constexpr string_view tabs(int tab){
-	constexpr string_view TABS = TAB_4 TAB_4 TAB_4 TAB_4;
+	constexpr string_view TABS = TAB_16;
 	return TABS.substr(0, tab);
 	// constexpr string_view TABS = SPACE_16 SPACE_16 SPACE_16 SPACE_16;
 	// return TABS.substr(0, tab*4);
@@ -169,7 +170,6 @@ static bool writeUncompressedHTML(ostream& out, const Document& doc, WriteOption
 	bool skip_space = false;
 	
 	// Push children of root element (reverse list)
-	assert(!(doc.options % NodeOptions::LIST_FORWARDS));
 	for (const Node* child = doc.child ; child != nullptr ; child = child->next){
 		node_stack.emplace_back(child);
 	}
@@ -260,7 +260,6 @@ static bool writeUncompressedHTML(ostream& out, const Document& doc, WriteOption
 			
 			// Enqueue children
 			if (node->child != nullptr){
-				assert(!(node->options % NodeOptions::LIST_FORWARDS));
 				
 				// Directly compress CSS
 				if (node->name() == "style"sv && options % WriteOptions::COMPRESS_CSS){
@@ -387,7 +386,6 @@ static bool writeCompressedHTML(ostream& out, const Document& doc, WriteOptions 
 	int preserveSpaceIdx = 0;
 	
 	// Push children of root element (reverse list)
-	assert(!(doc.options % NodeOptions::LIST_FORWARDS));
 	for (const Node* child = doc.child ; child != nullptr ; child = child->next){
 		node_stack.emplace_back(child);
 	}

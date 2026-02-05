@@ -1,7 +1,6 @@
 #include "fs.hpp"
 #include <cassert>
 #include <array>
-#include <string>
 #include <fstream>
 
 using namespace std;
@@ -64,6 +63,14 @@ bool fs::readFile(const filepath& path, string& buff){
 	
 	buff.resize(count);
 	return true;
+}
+
+
+string fs::readFile(const filepath& path){
+	string buff;
+	if (!readFile(path, buff))
+		buff.clear();
+	return buff;
 }
 
 

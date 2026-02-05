@@ -13,13 +13,14 @@
 		<ul>
 			<li>
 				<code>[cmd]</code> represents the command that will be passed to a shell.
-				The command is not interpolated for any expressions.
+				The command is <u>not</u> interpolated for any expressions.
 			</li>
 		</ul>
 	</p>
 	<br/>
 	<p>
 		The underlying shell for executing the command is <a href="https://www.man7.org/linux/man-pages/man1/bash.1.html">bash</a>.
+		If the shell exits with a status that is not <code>0</code>, the <i>stdout</i> stream is discarded.
 	</p>
 	<br/>
 	<p>
@@ -29,7 +30,7 @@
 				<code>VARS="[name,...]"</code>
 				Set shell environment variables to the comma-separated-list of variable names.
 				This is the only way to share variables, as the command <code>[cmd]</code> is not interpolated.
-				Listed variables are accessed by the <code>$[name]</code> operator.
+				Listed variables are accessed by the bash <code>$\{name}</code> operator.
 			</li>
 			<li>
 				<code>STDOUT="[VOID|TEXT|[variable]]"</code>

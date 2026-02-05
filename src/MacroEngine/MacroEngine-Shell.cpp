@@ -1,20 +1,13 @@
 #include "MacroEngine.hpp"
-#include <cstring>
-#include <cstdlib>
-#include <vector>
-#include <iostream>
-#include <sstream>
+#include <thread>
+#include <sys/wait.h>
 
-extern "C" {
-	#include <sys/wait.h>
-}
-
+#include "fd.hpp"
 #include "Paths.hpp"
 #include "Debug.hpp"
 
 using namespace std;
 using namespace html;
-using namespace MacroEngine;
 
 
 // ----------------------------------- [ Structures ] --------------------------------------- //
@@ -40,7 +33,7 @@ struct ShellCmd {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static void _slurp(int fd, str_chunks& out_chunks){
+static void slurp(int fd, str_chunks& out_chunks){
 	out_chunks.chunks.reserve(4);
 	
 	while (true){
@@ -83,9 +76,9 @@ static size_t concat(const vector<vector<char>>& chunks, char* buff, size_t buff
 }
 
 
-static string_view trim_whitespace(string_view s){
+constexpr string_view trim(string_view s) noexcept {
 	const char* beg = s.begin();
-	const char* end = beg + s.length();
+	const char* end = s.end();
 	
 	while (beg != end && isspace(beg[+0])) beg++;
 	while (end != beg && isspace(end[-1])) end--;
@@ -135,57 +128,91 @@ static void _setEnv(const VariableMap& vars, const vector<string_view>& env){
 }
 
 
-static int _shell(const ShellCmd& cmd) noexcept {
+static int _shell(const ShellCmd& cmd){
 	assert(Paths::cwd != nullptr);
-	assert(filesystem::is_directory(*Paths::cwd));
-	assert(!cmd.cmd.empty());
+	assert(fs::is_dir(*Paths::cwd));
 	
 	if (cmd.cmd.empty()){
+		assert(!cmd.cmd.empty());
 		return 0;
 	}
 	
-	int fd[2];
-	if (cmd.capture != nullptr){
-		if (pipe(fd) != 0)
-			return 100;
+	fs::FileDesc in0;
+	fs::FileDesc in1;
+	fs::FileDesc out0;
+	fs::FileDesc out1;
+	if (!fs::pipe(in0, in1)){
+		return 100;
+	} else if (cmd.capture != nullptr && !fs::pipe(out0, out1)){
+		return 100;
 	}
 	
-	const int pid = fork();
+	const pid_t pid = fork();
 	
 	// Child
 	if (pid == 0){
-		
-		if (cmd.capture != nullptr){
-			if (dup2(fd[1], 1) == -1){
-				exit(101);
-			}
-			
-			close(fd[0]);
-			close(fd[1]);
+		if (dup2(in0, 0) < 0){
+			exit(101);
+		} else if (cmd.capture == nullptr){
+			close(1);
+			close(2);
+		} else if (dup2(out1, 1) < 0){
+			exit(101);
 		}
 		
+		in0.close();
+		in1.close();
+		out0.close();
+		out1.close();
+		
 		// Set current directory
-		try {
-			filesystem::current_path(*Paths::cwd);
-		} catch (const exception&) {
+		if (!fs::cwd(*Paths::cwd)){
 			exit(102);
 		}
 		
+		// Set environment variables
 		if (cmd.env != nullptr && cmd.vars != nullptr){
 			_setEnv(*cmd.vars, *cmd.env);
 		}
 		
-		string cmd_s = string(trim_whitespace(cmd.cmd));
-		execlp("bash", "bash", "-c", cmd_s.c_str(), NULL);
+		// Input comes on stdin
+		execlp("bash", "bash", NULL);
 		exit(1);
 	}
 	
 	// Parent
 	else if (pid > 0){
+		in0.close();
+		out1.close();
+		
+		// Thread capturing output while main writes
+		thread reader;
+		
 		if (cmd.capture != nullptr){
-			close(fd[1]);
-			_slurp(fd[0], *cmd.capture);
-			close(fd[0]);
+			reader = thread([&](){
+				slurp(out0, *cmd.capture);
+			});
+		}
+		
+		// Write command to stdin of bash
+		{
+			const char* p = cmd.cmd.data();
+			const size_t total = cmd.cmd.length();
+			size_t wcount = 0;
+			
+			while (wcount < total){
+				ssize_t n = write(in1, p + wcount, total - wcount);
+				if (n < 0)
+					break;
+				wcount += size_t(n);
+			}
+			
+			in1.close();
+		}
+		
+		if (out0.isOpen()){
+			reader.join();
+			out0.close();
 		}
 		
 		// Exit child
@@ -194,9 +221,8 @@ static int _shell(const ShellCmd& cmd) noexcept {
 		return WEXITSTATUS(err);
 	}
 	
+	// Error
 	else {
-		close(fd[0]);
-		close(fd[1]);
 		assert(false);
 		return 105;
 	}
@@ -239,19 +265,22 @@ static void _extractVars(string_view csv, vector<string_view>& vars){
 
 
 void MacroEngine::shell(const Node& op, Node& dst){
+	assert(macro != nullptr);
+	assert(macro->html != nullptr);
+	assert(variables != nullptr);
+	
 	// Verify command text exists
 	Node* content = op.child;
-	if (content == nullptr){
-		HERE(warn_text_missing(op));
+	if (content == nullptr || content->type != NodeType::TEXT){
+		HERE(error_missing_text(*macro, op));
 		return;
-	} else if (content->type != NodeType::TEXT){
-		HERE(warn_text_missing(op));
-		return;
+	} else if (content->next != nullptr){
+		HERE(warn_ignored_child(*macro, op, content->next));
 	}
 	
-	string_view cmdtxt = trim_whitespace(content->value());
+	string_view cmdtxt = trim(content->value());
 	if (cmdtxt.empty()){
-		HERE(warn_text_missing(op));
+		HERE(error_missing_text(*macro, op));
 		return;
 	}
 	
@@ -284,27 +313,32 @@ void MacroEngine::shell(const Node& op, Node& dst){
 		}
 		
 		// Check IF, ELIF, ELSE
-		switch (check_attr_if(op, *attr)){
+		switch (try_eval_attr_if_elif_else(op, *attr)){
 			case Branch::FAILED: return;
 			case Branch::PASSED: continue;
 			case Branch::NONE: break;
 		}
 		
-		HERE(warn_ignored_attribute(op, *attr));
+		HERE(warn_ignored_attr(*macro, *attr));
 	}
 	
 	// Run command
 	str_chunks result;
 	ShellCmd cmd = {
 		.cmd = cmdtxt,
-		.vars = &MacroEngine::variables,
+		.vars = variables.get(),
 		.env = &vars,
 		.capture = (capture != Capture::VOID) ? &result : nullptr
 	};
 	
-	int status = _shell(cmd);
-	if (status != 0){
-		HERE(warn_shell_exit(op, status));
+	try {
+		int status = _shell(cmd);
+		if (status != 0){
+			HERE(warn_shell_exit(*macro, op, status));
+			return;
+		}
+	} catch (...){
+		HERE(warn_shell_exit(*macro, op, -1));
 		return;
 	}
 	
@@ -316,10 +350,7 @@ void MacroEngine::shell(const Node& op, Node& dst){
 		
 		case Capture::TEXT: {
 			if (result.total > 0){
-				Node& txt = dst.appendChild(NodeType::TEXT);
-				txt.options |= (op.options & (NodeOptions::SPACE_BEFORE | NodeOptions::SPACE_AFTER));
-				
-				char* s = html::newStr(result.total + 1);
+				char* s = newStr(result.total + 1);
 				size_t n = concat(result.chunks, s, result.total);
 				s[n] = 0;
 				
@@ -328,14 +359,17 @@ void MacroEngine::shell(const Node& op, Node& dst){
 					s[--n] = 0;
 				}
 				
-				txt.value(s, n);
+				Node& txt = *dst.appendChild(newNode(NodeType::TEXT));
+				txt.options = op.options & (NodeOptions::SPACE_BEFORE | NodeOptions::SPACE_AFTER);
+				txt.value_len = n;
+				txt.value_p = s;
 			}
 		} break;
 		
 		case Capture::VAR: {
-			const size_t len = min(result.total, size_t(UINT32_MAX));
+			size_t len = min(result.total, size_t(UINT32_MAX));
 			if (len <= 0){
-				variables.insert(captureVar, ""sv);
+				variables->insert(captureVar, ""sv);
 				break;
 			}
 			
@@ -348,7 +382,8 @@ void MacroEngine::shell(const Node& op, Node& dst){
 				s[--n] = 0;
 			}
 			
-			variables.insert(captureVar, s, (uint32_t)min(n, size_t(UINT32_MAX)));
+			assert(n <= UINT32_MAX);
+			variables->insert(captureVar, s, uint32_t(n));
 		} break;
 		
 	}
