@@ -67,11 +67,23 @@ linepos findLine(const char* beg, const char* end, const char* p) noexcept {
 linepos findLine(const Macro& origin, const char* p) noexcept {
 	linepos l = {};
 	
+	// Try HTML buffer
+	if (origin.html != nullptr && origin.html->buffer != nullptr){
+		string_view buff = string_view(*origin.html->buffer);
+		l = findLine(buff.begin(), buff.end(), p);
+		if (l.row > 0)
+			goto end;
+	}
+	
+	// Try plain text buffer
 	if (origin.txt != nullptr){
 		string_view buff = string_view(*origin.txt);
 		l = findLine(buff.begin(), buff.end(), p);
+		if (l.row > 0)
+			goto end;
 	}
 	
+	end:
 	l.file = (origin.srcFile != nullptr) ? origin.srcFile->c_str() : nullptr;
 	return l;
 }

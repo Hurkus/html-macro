@@ -1,16 +1,10 @@
-<SET t='0' fmt="%d/%m/%Y" />
-<p>
-	The world was created on:
-	<SHELL VARS="t,fmt">date -d "@$t" +"$fmt"</SHELL>
-</p>
+<!DOCTYPE html>
+<SET i="4"/>
 
-<INCLUDE SRC="test-5.inc.html" HEADER/>
+<FUNC/>
 
-<html>
-	<X/>
-	<CALL NAME="extern-macro"/>
-</html>
-
-<MACRO NAME="X">
-	<p>HELLO</p>
+<MACRO NAME="FUNC">
+	<IF TRUE="i > 0">
+		<p>YES</p>
+	</IF>
 </MACRO>
