@@ -41,15 +41,15 @@ bool test_macro_MACRO_name(){
 
 REGISTER2(macro_MACRO_customElement);
 bool test_macro_MACRO_customElement(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"FUNC\" x>" NL
-		"	<SET x='x+2' y='y+2'/>" NL
-		"	<p>A: (x,y) is ({x}, {y})</p>" NL
-		"</MACRO>" NL
-		"" NL
-		"<SET x='10'/>" NL
-		"<FUNC y='20'/>" NL
-	);
+	TmpFile in = TmpFile(R"(
+		<MACRO NAME="FUNC" x>
+			<SET x='x+2' y='y+2'/>
+			<p>A: (x,y) is ({x}, {y})</p>
+		</MACRO>
+		
+		<SET x='10'/>
+		<FUNC y='20'/>
+	)");
 	string_view out = (
 		NL
 		"<p>A: (x,y) is (12, 22)</p>" NL
@@ -60,14 +60,14 @@ bool test_macro_MACRO_customElement(){
 
 REGISTER2(macro_MACRO_customAttribute);
 bool test_macro_MACRO_customAttribute(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"FUNC\">" NL
-		"	<SET-ATTR href='VALUE'/>" NL
-		"	<SET-ATTR class=\"link\"/>" NL
-		"</MACRO>" NL
-		"" NL
-		"<a FUNC=\"https://github.com/Hurkus/html-macro/\">repo</a>" NL
-	);
+	TmpFile in = TmpFile(R"(
+		<MACRO NAME="FUNC">
+			<SET-ATTR href='VALUE'/>
+			<SET-ATTR class="link"/>
+		</MACRO>
+		
+		<a FUNC="https://github.com/Hurkus/html-macro/">repo</a>
+	)");
 	string_view out = (
 		NL
 		"<a href=\"https://github.com/Hurkus/html-macro/\" class=\"link\">repo</a>" NL
@@ -145,12 +145,12 @@ bool test_macro_parameters_1(){
 
 REGISTER2(macro_parameters_2);
 bool test_macro_parameters_2(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"f\">{x}</MACRO>" NL
-		"<SET x='10'/>" NL
-		"<CALL NAME=\"f\" x='20'/>" NL
-		"{x}" NL
-	);
+	TmpFile in = TmpFile(R"(
+		<MACRO NAME="f">{x}</MACRO>
+		<SET x='10'/>
+		<CALL NAME="f" x='20'/>
+		{x}
+	)");
 	string_view out = (
 		"20" NL
 		"10" NL
@@ -161,16 +161,16 @@ bool test_macro_parameters_2(){
 
 REGISTER2(macro_parameters_3);
 bool test_macro_parameters_3(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"f\">" NL
-		"	<p>{x}</p>" NL
-		"	<SET x='20'/>" NL
-		"</MACRO>" NL
-		"" NL
-		"<SET x='10'/>" NL
-		"<CALL NAME=\"f\"/>" NL
-		"<p>{x}</p>" NL
-	);
+	TmpFile in = TmpFile(R"(
+		<MACRO NAME="f">
+			<p>{x}</p>
+			<SET x='20'/>
+		</MACRO>
+		
+		<SET x='10'/>
+		<CALL NAME="f"/>
+		<p>{x}</p>
+	)");
 	string_view out = (
 		NL
 		"<p>10</p>" NL
@@ -182,16 +182,16 @@ bool test_macro_parameters_3(){
 
 REGISTER2(macro_parameters_4);
 bool test_macro_parameters_4(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"f\">" NL
-		"	<p>{x}</p>" NL
-		"	<SET x='20'/>" NL
-		"</MACRO>" NL
-		"" NL
-		"<SET x='10'/>" NL
-		"<CALL NAME=\"f\" x='30'/>" NL
-		"<p>{x}</p>" NL
-	);
+	TmpFile in = TmpFile(R"(
+		<MACRO NAME="f">
+			<p>{x}</p>
+			<SET x='20'/>
+		</MACRO>
+		
+		<SET x='10'/>
+		<CALL NAME="f" x='30'/>
+		<p>{x}</p>
+	)");
 	string_view out = (
 		NL
 		"<p>30</p>" NL
@@ -275,6 +275,75 @@ bool test_macro_INCLUDE_header(){
 		"	<h1>Title</h1>" NL
 		"	<p>Lorem ipsum, etc.</p>" NL
 		"</body>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+REGISTER2(macro_IF);
+bool test_macro_IF(){
+	TmpFile in = TmpFile(R"(
+		<SET lang="en"/>
+		<IF lang="en">
+			<p>ENGLISH</p>
+		</IF>
+		<ELIF lang="de">
+			<p>GERMAN</p>
+		</ELIF>
+		<ELSE>
+			<p>NOTHING</p>
+		</ELSE>
+	)");
+	string_view out = (
+		NL
+		"<p>ENGLISH</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(macro_ELIF);
+bool test_macro_ELIF(){
+	TmpFile in = TmpFile(R"(
+		<SET lang="de"/>
+		<IF lang="en">
+			<p>ENGLISH</p>
+		</IF>
+		<ELIF lang="de">
+			<p>GERMAN</p>
+		</ELIF>
+		<ELSE>
+			<p>NOTHING</p>
+		</ELSE>
+	)");
+	string_view out = (
+		NL
+		"<p>GERMAN</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(macro_ELSE);
+bool test_macro_ELSE(){
+	TmpFile in = TmpFile(R"(
+		<SET lang="fr"/>
+		<IF lang="en">
+			<p>ENGLISH</p>
+		</IF>
+		<ELIF lang="de">
+			<p>GERMAN</p>
+		</ELIF>
+		<ELSE>
+			<p>NOTHING</p>
+		</ELSE>
+	)");
+	string_view out = (
+		NL
+		"<p>NOTHING</p>" NL
 	);
 	return run({in}, out, "", 0);
 }

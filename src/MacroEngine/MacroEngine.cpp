@@ -83,13 +83,8 @@ void MacroEngine::eval(const Node& op, Node& dst){
 	
 	// Regular tag
 	else if (!isMacroChar(name[0])){
+		regular_tag:
 		tag(op, dst);
-		return;
-	}
-	
-	// User macro
-	else if (!isUpperCase(name[0])){ user_macro:
-		call_userElementMacro(op, dst);
 		return;
 	}
 	
@@ -166,6 +161,15 @@ void MacroEngine::eval(const Node& op, Node& dst){
 	}
 	
 	return;
+	
+	user_macro:
+	if (MacroCache::get(op.name()) != nullptr){
+		call_userElementMacro(op, dst);
+		return;
+	}
+	
+	warn_unknown_element_macro(*macro, op);
+	goto regular_tag;
 }
 
 
