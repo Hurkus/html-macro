@@ -32,4 +32,27 @@ bool test_invalid_end_tag(){
 }
 
 
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+REGISTER2(output_compress_css);
+bool test_output_compress_css(){
+	TmpFile in = TmpFile(R"(
+		<style>
+		@font-face {
+			font-family: "Noto Sans";
+			src:url("NotoSans.woff2") format("woff2"),
+				url("NotoSans.otf") format("opentype");
+		}
+		</style>
+	)");
+	string out = (
+		NL
+		R"(<style>@font-face {font-family:"Noto Sans";src:url("NotoSans.woff2")format("woff2"),url("NotoSans.otf")format("opentype");}</style>)"
+		NL
+	);
+	return run({in, "--compress=css"}, out, "", 0);
+}
+
+
 // ------------------------------------------------------------------------------------------ //

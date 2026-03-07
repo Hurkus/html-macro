@@ -60,11 +60,11 @@ constexpr const char* skipString(const char* s, const char* end) noexcept {
 	const char quot = *s;
 	
 	s++;
-	while (s != end && *s != quot){
-		if (*s == '\\'){
-			if (++s == end)
-				break;
-		}
+	while (s != end){
+		if (*s == quot)
+			return s + 1;
+		else if (*s == '\\' && ++s == end)
+			break;
 		s++;
 	}
 	

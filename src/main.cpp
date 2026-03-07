@@ -217,6 +217,7 @@ int main(int argc, char const* const* argv){
 		const char* _argv[] = {
 			argv[0],
 			"test/test-0.html",
+			"--compress=css",
 			// "test/test-6.in.html",
 			// "-c", "all",
 		};
