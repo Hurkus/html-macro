@@ -1,9 +1,9 @@
 #include "Write.hpp"
-#include "html.hpp"
-#include "Debug.hpp"
-
 #include <vector>
 #include <cstring>
+
+#include "html/html.hpp"
+#include "Debug.hpp"
 
 using namespace std;
 using namespace html;

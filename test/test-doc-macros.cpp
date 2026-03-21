@@ -9,20 +9,23 @@ using namespace std;
 
 
 REGISTER2(doc_macro_MACRO_1);
-bool test_doc_macro_MACRO_1(){
-	TmpFile in = TmpFile(
-		"<ul>" NL
-		"	<FOR i='0' TRUE='i<3' i='i+1' >" NL
-		"		<CALL NAME=\"func\"/>" NL
-		"	</FOR>" NL
-		"</ul>" NL
-		NL
-		"<MACRO NAME=\"func\">" NL
-		"<SET col='if(i == 1, \"red\", \"green\")' />" NL
-		"<li style=\"color:{col};\">Line #{i}</li>" NL
-		"</MACRO>" NL
+Result test_doc_macro_MACRO_1(){
+	TmpFile in = TmpFile("doc_macro_MACRO_1.html",
+		R"|(
+			<ul>
+				<FOR i='0' TRUE='i<3' i='i+1'>
+					<CALL NAME="func"/>
+				</FOR>
+			</ul>
+			
+			<MACRO NAME="func">
+				<SET col='if(i == 1, "red", "green")' />
+				<li style="color:{col};">Line #{i}</li>
+			</MACRO>
+		)|"
 	);
 	string_view out = (
+		NL
 		"<ul>" NL
 		"	<li style=\"color:green;\">Line #0</li>" NL
 		"	<li style=\"color:red;\">Line #1</li>" NL
@@ -34,16 +37,18 @@ bool test_doc_macro_MACRO_1(){
 
 
 REGISTER2(doc_macro_MACRO_2);
-bool test_doc_macro_MACRO_2(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"func\" x y='0'>" NL
-		"	<SET x='x+2' y='y+2' z='z+2'/>" NL
-		"	<p>A: (x,y,z) is ({x}, {y}, {z})</p>" NL
-		"</MACRO>" NL
-		"" NL
-		"<SET x='10' y='20' z='30'/>" NL
-		"<CALL NAME=\"func\"/>" NL
-		"<p>B: (x,y,z) is ({x}, {y}, {z})</p>" NL
+Result test_doc_macro_MACRO_2(){
+	TmpFile in = TmpFile("doc_macro_MACRO_2.html",
+		R"(
+			<MACRO NAME="func" x y='0'>
+				<SET x='x+2' y='y+2' z='z+2'/>
+				<p>A: (x,y,z) is ({x}, {y}, {z})</p>
+			</MACRO>
+			
+			<SET x='10' y='20' z='30'/>
+			<CALL NAME="func"/>
+			<p>B: (x,y,z) is ({x}, {y}, {z})</p>
+		)"
 	);
 	string_view out = (
 		NL
@@ -55,21 +60,23 @@ bool test_doc_macro_MACRO_2(){
 
 
 REGISTER2(doc_macro_MACRO_3);
-bool test_doc_macro_MACRO_3(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"F1\">" NL
-		"	<h1>Book named {book}</h1>" NL
-		"</MACRO>" NL
-		"<MACRO NAME=\"F2\">" NL
-		"	<SET-ATTR href=\"#{VALUE}\"/>" NL
-		"	{VALUE}" NL
-		"</MACRO>" NL
-		"" NL
-		"<F1 book=\"Unnamed\"/>" NL
-		"<p>" NL
-		"	Go to chapter" NL
-		"	<a F2=\"main\" class=\"box\"/>" NL
-		"</p>" NL
+Result test_doc_macro_MACRO_3(){
+	TmpFile in = TmpFile("doc_macro_MACRO_3.html",
+		R"(
+			<MACRO NAME="F1">
+				<h1>Book named {book}</h1>
+			</MACRO>
+			<MACRO NAME="F2">
+				<SET-ATTR href="#{VALUE}"/>
+				{VALUE}
+			</MACRO>
+			
+			<F1 book="Unnamed"/>
+			<p>
+				Go to chapter
+				<a F2="main" class="box"/>
+			</p>
+		)"
 	);
 	string_view out = (
 		NL
@@ -89,32 +96,38 @@ bool test_doc_macro_MACRO_3(){
 
 
 REGISTER2(doc_macro_INCLUDE);
-bool test_doc_macro_INCLUDE(){
-	TmpFile in = TmpFile(
-		"<SET name=\"cookbook\"/>" NL
-		"<body>" NL
-		"	<INCLUDE SRC=\"header.html\"/>" NL
-		"	<p>Amazing content!</p>" NL
-		"	<INCLUDE SRC=\"footer.html\"/>" NL
-		"</body>" NL
+Result test_doc_macro_INCLUDE(){
+	TmpFile in = TmpFile("doc_macro_INCLUDE.html",
+		R"(
+			<SET name="cookbook"/>
+			<body>
+				<INCLUDE SRC="doc_macro_INCLUDE-header.html"/>
+				<p>Amazing content!</p>
+				<INCLUDE SRC="doc_macro_INCLUDE-footer.html"/>
+			</body>
+		)"
 	);
 	
-	TmpFile header = TmpFile("header.html",
-		"<style>" NL
-		"	#header {" NL
-		"		color: red;" NL
-		"	}" NL
-		"</style>" NL
-		"<div id=\"header\">" NL
-		"	<h1>Yet another {name}</h1>" NL
-		"</div>" NL
+	TmpFile header = TmpFile("doc_macro_INCLUDE-header.html",
+		R"(
+			<style>
+				#header {
+					color: red;
+				}
+			</style>
+			<div id="header">
+				<h1>Yet another {name}</h1>
+			</div>
+		)"
 	);
 	
-	TmpFile footer = TmpFile("footer.html",
-		"<div id=\"footer\">" NL
-		"	<p>Contacts: none</p>" NL
-		"	<p>Last edited on: 14/10/2025</p>" NL
-		"</div>" NL
+	TmpFile footer = TmpFile("doc_macro_INCLUDE-footer.html",
+		R"(
+			<div id="footer">
+				<p>Contacts: none</p>
+				<p>Last edited on: 14/10/2025</p>
+			</div>
+		)"
 	);
 	
 	string_view out = (
@@ -135,34 +148,39 @@ bool test_doc_macro_INCLUDE(){
 		"	</div>" NL
 		"</body>" NL
 	);
+	
 	return run({in}, out, "", 0);
 }
 
 
 REGISTER2(doc_attr_macro_INCLUDE);
-bool test_doc_attr_macro_INCLUDE(){
-	TmpFile content = TmpFile("content.html",
-		"<IF lang=\"de\">" NL
-		"	<p IF='i==1'>Ein</p>" NL
-		"	<p ELIF='i==2'>Zwei</p>" NL
-		"	<p ELIF='i==3'>Drei</p>" NL
-		"</IF>" NL
-		"<ELSE>" NL
-		"	<p IF='i==1'>One</p>" NL
-		"	<p ELIF='i==2'>Two</p>" NL
-		"	<p ELIF='i==3'>Three</p>" NL
-		"</ELSE>" NL
+Result test_doc_attr_macro_INCLUDE(){
+	TmpFile in = TmpFile("doc_attr_macro_INCLUDE.html",
+		R"(
+			<SET lang="en"/>
+			<body lang="{lang}">
+				<ol>
+					<FOR i='1' TRUE='i<=3' i='i+1'>
+						<li INCLUDE="doc_attr_macro_INCLUDE-content.html"/>
+					</FOR>
+				</ol>
+			</body>
+		)"
 	);
 	
-	TmpFile in = TmpFile(
-		"<SET lang=\"en\"/>" NL
-		"<body lang=\"{lang}\">" NL
-		"	<ol>" NL
-		"		<FOR i='1' TRUE='i<=3' i='i+1'>" NL
-		"			<li INCLUDE=\"content.html\"/>" NL
-		"		</FOR>" NL
-		"	</ol>" NL
-		"</body>" NL
+	TmpFile content = TmpFile("doc_attr_macro_INCLUDE-content.html",
+		R"(
+			<IF lang="de">
+				<p IF='i==1'>Ein</p>
+				<p ELIF='i==2'>Zwei</p>
+				<p ELIF='i==3'>Drei</p>
+			</IF>
+			<ELSE>
+				<p IF='i==1'>One</p>
+				<p ELIF='i==2'>Two</p>
+				<p ELIF='i==3'>Three</p>
+			</ELSE>
+		)"
 	);
 	
 	string_view out = (
@@ -189,16 +207,18 @@ bool test_doc_attr_macro_INCLUDE(){
 
 
 REGISTER2(doc_macro_CALL_1);
-bool test_doc_macro_CALL_1(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"f\">" NL
-		"	<SET x='x+2'/>" NL
-		"	<p>x1 is {x}</p>" NL
-		"</MACRO>" NL
-		"" NL
-		"<SET x='10'/>" NL
-		"<CALL NAME=\"f\" x/>" NL
-		"<p>x2 is {x}</p>" NL
+Result test_doc_macro_CALL_1(){
+	TmpFile in = TmpFile("doc_macro_CALL_1.html",
+		R"(
+			<MACRO NAME="f">
+				<SET x='x+2'/>
+				<p>x1 is {x}</p>
+			</MACRO>
+			
+			<SET x='10'/>
+			<CALL NAME="f" x/>
+			<p>x2 is {x}</p>
+		)"
 	);
 	string_view out = (
 		"" NL
@@ -210,16 +230,18 @@ bool test_doc_macro_CALL_1(){
 
 
 REGISTER2(doc_macro_CALL_2);
-bool test_doc_macro_CALL_2(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"f\" y='200'>" NL
-		"	<SET y='y+2'/>" NL
-		"	<p>y1 is {y}</p>" NL
-		"</MACRO>" NL
-		"" NL
-		"<SET y='20'/>" NL
-		"<CALL NAME=\"f\"/>" NL
-		"<p>y2 is {y}</p>" NL
+Result test_doc_macro_CALL_2(){
+	TmpFile in = TmpFile("doc_macro_CALL_2.html",
+		R"(
+			<MACRO NAME="f" y='200'>
+				<SET y='y+2'/>
+				<p>y1 is {y}</p>
+			</MACRO>
+			
+			<SET y='20'/>
+			<CALL NAME="f"/>
+			<p>y2 is {y}</p>
+		)"
 	);
 	string_view out = (
 		NL
@@ -231,16 +253,18 @@ bool test_doc_macro_CALL_2(){
 
 
 REGISTER2(doc_macro_CALL_3);
-bool test_doc_macro_CALL_3(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"f\">" NL
-		"	<SET z='z+2'/>" NL
-		"	<p>z1 is {z}</p>" NL
-		"</MACRO>" NL
-		"" NL
-		"<SET z='30'/>" NL
-		"<CALL NAME=\"f\" z='300'/>" NL
-		"<p>z2 is {z}</p>" NL
+Result test_doc_macro_CALL_3(){
+	TmpFile in = TmpFile("doc_macro_CALL_3.html",
+		R"(
+			<MACRO NAME="f">
+				<SET z='z+2'/>
+				<p>z1 is {z}</p>
+			</MACRO>
+			
+			<SET z='30'/>
+			<CALL NAME="f" z='300'/>
+			<p>z2 is {z}</p>
+		)"
 	);
 	string_view out = (
 		NL
@@ -255,10 +279,12 @@ bool test_doc_macro_CALL_3(){
 
 
 REGISTER2(doc_macro_SET);
-bool test_doc_macro_SET(){
-	TmpFile in = TmpFile(
-		"<SET x='4' y='6.5' s=\"apples\"/>" NL
-		"<p>I have {int(x*y)} bushels of {s}</p> " NL
+Result test_doc_macro_SET(){
+	TmpFile in = TmpFile("doc_macro_SET.html",
+		R"(
+			<SET x='4' y='6.5' s="apples"/>
+			<p>I have {int(x*y)} bushels of {s}</p> 
+		)"
 	);
 	string_view out = (
 		NL
@@ -269,43 +295,54 @@ bool test_doc_macro_SET(){
 
 
 REGISTER2(doc_macro_IF);
-bool test_doc_macro_IF(){
-	TmpFile in1 = TmpFile(
-		"<IF TRUE='6>3'>" NL
-		"	<p>6 is greater than 3</p>" NL
-		"</IF>" NL
+Result test_doc_macro_IF(){
+	TmpFile in1 = TmpFile("doc_macro_IF-1.html",
+		R"(
+			<IF TRUE='6>3'>
+				<p>6 is greater than 3</p>
+			</IF>
+		)"
 	);
-	string_view out1 = ( NL
+	string_view out1 = (
+		NL
 		"<p>6 is greater than 3</p>" NL
 	);
-	if (!run({in1}, out1, "", 0)){
-		return false;
+	
+	Result r = run({in1}, out1, "", 0);
+	if (!r){
+		return r;
 	}
 	
-	TmpFile in2 = TmpFile(
-		"<SET lang=\"en\"/>" NL
-		"<IF lang=\"en\">" NL
-		"	<p>English</p>" NL
-		"</IF>" NL
+	TmpFile in2 = TmpFile("doc_macro_IF-2.html",
+		R"(
+			<SET lang="en"/>
+			<IF lang="en">
+				<p>English</p>
+			</IF>
+		)"
 	);
-	string_view out2 = ( NL
+	string_view out2 = (
+		NL
 		"<p>English</p>" NL
 	);
+	
 	return run({in2}, out2, "", 0);
 }
 
 
 REGISTER2(doc_macro_ELIF);
-bool test_doc_macro_ELIF(){
-	TmpFile in = TmpFile(
-		"<SET lang=\"en\"/>" NL
-		"" NL
-		"<IF lang=\"de\">" NL
-		"	<p>Deutsch</p>" NL
-		"</IF>" NL
-		"<ELIF lang=\"en\">" NL
-		"	<p>English</p>" NL
-		"</ELIF>" NL
+Result test_doc_macro_ELIF(){
+	TmpFile in = TmpFile("doc_macro_ELIF.html",
+		R"(
+			<SET lang="en"/>
+			
+			<IF lang="de">
+				<p>Deutsch</p>
+			</IF>
+			<ELIF lang="en">
+				<p>English</p>
+			</ELIF>
+		)"
 	);
 	string_view out = (
 		NL
@@ -316,16 +353,18 @@ bool test_doc_macro_ELIF(){
 
 
 REGISTER2(doc_macro_ELSE);
-bool test_doc_macro_ELSE(){
-	TmpFile in = TmpFile(
-		"<SET lang=\"en\"/>" NL
-		"" NL
-		"<IF lang=\"de\">" NL
-		"	<p>Deutsch</p>" NL
-		"</IF>" NL
-		"<ELSE>" NL
-		"	<p>English</p>" NL
-		"</ELSE>" NL
+Result test_doc_macro_ELSE(){
+	TmpFile in = TmpFile("doc_macro_ELSE.html",
+		R"(
+			<SET lang="en"/>
+			
+			<IF lang="de">
+				<p>Deutsch</p>
+			</IF>
+			<ELSE>
+				<p>English</p>
+			</ELSE>
+		)"
 	);
 	string_view out = (
 		NL
@@ -339,8 +378,8 @@ bool test_doc_macro_ELSE(){
 
 
 REGISTER2(doc_macro_FOR);
-bool test_doc_macro_FOR(){
-	TmpFile in = TmpFile(
+Result test_doc_macro_FOR(){
+	TmpFile in = TmpFile("doc_macro_FOR.html",
 		"<FOR i='0' TRUE='i < 3' i='i+1'>" NL
 		"	<p>{i}</p>" NL
 		"</FOR>" NL
@@ -355,15 +394,18 @@ bool test_doc_macro_FOR(){
 
 
 REGISTER2(doc_macro_WHILE);
-bool test_doc_macro_WHILE(){
-	TmpFile in = TmpFile(
-		"<SET i='0'/>" NL
-		"<WHILE TRUE='i < 3'>" NL
-		"	<p>{i}</p>" NL
-		"	<SET i='i+1'/>" NL
-		"</WHILE>" NL
+Result test_doc_macro_WHILE(){
+	TmpFile in = TmpFile("doc_macro_WHILE.html",
+		R"(
+			<SET i='0'/>
+			<WHILE TRUE='i < 3'>
+				<p>{i}</p>
+				<SET i='i+1'/>
+			</WHILE>
+		)"
 	);
-	string_view out = ( NL
+	string_view out = (
+		NL
 		"<p>0</p>" NL
 		"<p>1</p>" NL
 		"<p>2</p>" NL
@@ -376,8 +418,8 @@ bool test_doc_macro_WHILE(){
 
 
 REGISTER2(doc_macro_SET_TAG);
-bool test_doc_macro_SET_TAG(){
-	TmpFile in = TmpFile(
+Result test_doc_macro_SET_TAG(){
+	TmpFile in = TmpFile("doc_macro_SET_TAG.html",
 		"<div>" NL
 		"	<SET-TAG p/>" NL
 		"	text" NL
@@ -393,8 +435,8 @@ bool test_doc_macro_SET_TAG(){
 
 
 REGISTER2(doc_macro_GET_TAG);
-bool test_doc_macro_GET_TAG(){
-	TmpFile in = TmpFile(
+Result test_doc_macro_GET_TAG(){
+	TmpFile in = TmpFile("doc_macro_GET_TAG.html",
 		"<div>" NL
 		"	<GET-TAG tag/>" NL
 		"	This text is within a {tag} element." NL
@@ -410,8 +452,8 @@ bool test_doc_macro_GET_TAG(){
 
 
 REGISTER2(doc_macro_SET_ATTR);
-bool test_doc_macro_SET_ATTR(){
-	TmpFile in = TmpFile(
+Result test_doc_macro_SET_ATTR(){
+	TmpFile in = TmpFile("doc_macro_SET_ATTR.html",
 		"<div>" NL
 		"	<SET-ATTR title=\"text\"/>" NL
 		"	text" NL
@@ -427,8 +469,8 @@ bool test_doc_macro_SET_ATTR(){
 
 
 REGISTER2(doc_macro_GET_ATTR);
-bool test_doc_macro_GET_ATTR(){
-	TmpFile in = TmpFile(
+Result test_doc_macro_GET_ATTR(){
+	TmpFile in = TmpFile("doc_macro_GET_ATTR.html",
 		"<div id=\"box\">" NL
 		"    <GET-ATTR x=\"id\"/>" NL
 		"    <SET-ATTR class='x'/>" NL
@@ -442,8 +484,8 @@ bool test_doc_macro_GET_ATTR(){
 
 
 REGISTER2(doc_macro_DEL_ATTR);
-bool test_doc_macro_DEL_ATTR(){
-	TmpFile in = TmpFile(
+Result test_doc_macro_DEL_ATTR(){
+	TmpFile in = TmpFile("doc_macro_DEL_ATTR.html",
 		"<div id=\"box\">" NL
 		"    <DEL-ATTR id/>" NL
 		"</div>" NL
@@ -459,13 +501,15 @@ bool test_doc_macro_DEL_ATTR(){
 
 
 REGISTER2(doc_macro_SHELL);
-bool test_doc_macro_SHELL(){
-	TmpFile in = TmpFile(
-		"<SET t='0' fmt=\"%d/%m/%Y\" />" NL
-		"<p>" NL
-		"	The world was created on:" NL
-		"	<SHELL VARS=\"t,fmt\">date -d \"@$t\" +\"$fmt\"</SHELL>" NL
-		"</p>" NL
+Result test_doc_macro_SHELL(){
+	TmpFile in = TmpFile("doc_macro_SHELL.html",
+		R"(
+			<SET t='0' fmt="%d/%m/%Y" />
+			<p>
+				The world was created on:
+				<SHELL VARS="t,fmt">date -d "@$t" +"$fmt"</SHELL>
+			</p>
+		)"
 	);
 	string_view out = (
 		NL
@@ -482,12 +526,14 @@ bool test_doc_macro_SHELL(){
 
 
 REGISTER2(doc_attr_macro_IF);
-bool test_doc_attr_macro_IF(){
-	TmpFile in = TmpFile(
-		"<SET n='1'/>" NL
-		"<p IF='n==1'>one</p>" NL
-		"<p ELIF='n==2'>two</p>" NL
-		"<p ELSE>none</p>" NL
+Result test_doc_attr_macro_IF(){
+	TmpFile in = TmpFile("doc_attr_macro_IF.html",
+		R"(
+			<SET n='1'/>
+			<p IF='n==1'>one</p>
+			<p ELIF='n==2'>two</p>
+			<p ELSE>none</p>
+		)"
 	);
 	string_view out = (
 		NL
@@ -498,12 +544,14 @@ bool test_doc_attr_macro_IF(){
 
 
 REGISTER2(doc_attr_macro_ELIF);
-bool test_doc_attr_macro_ELIF(){
-	TmpFile in = TmpFile(
-		"<SET n='2'/>" NL
-		"<p IF='n==1'>one</p>" NL
-		"<p ELIF='n==2'>two</p>" NL
-		"<p ELSE>none</p>" NL
+Result test_doc_attr_macro_ELIF(){
+	TmpFile in = TmpFile("doc_attr_macro_ELIF.html",
+		R"(
+			<SET n='2'/>
+			<p IF='n==1'>one</p>
+			<p ELIF='n==2'>two</p>
+			<p ELSE>none</p>
+		)"
 	);
 	string_view out = (
 		NL
@@ -514,12 +562,14 @@ bool test_doc_attr_macro_ELIF(){
 
 
 REGISTER2(doc_attr_macro_ELSE);
-bool test_doc_attr_macro_ELSE(){
-	TmpFile in = TmpFile(
-		"<SET n='3'/>" NL
-		"<p IF='n==1'>one</p>" NL
-		"<p ELIF='n==2'>two</p>" NL
-		"<p ELSE>none</p>" NL
+Result test_doc_attr_macro_ELSE(){
+	TmpFile in = TmpFile("doc_attr_macro_ELSE.html",
+		R"(
+			<SET n='3'/>
+			<p IF='n==1'>one</p>
+			<p ELIF='n==2'>two</p>
+			<p ELSE>none</p>
+		)"
 	);
 	string_view out = (
 		NL

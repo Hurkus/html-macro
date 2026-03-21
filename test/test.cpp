@@ -2,9 +2,9 @@
 #include <cassert>
 #include <fstream>
 #include <future>
+#include <thread>
 #include <fcntl.h>
 #include <sys/wait.h>
-
 
 using namespace std;
 
@@ -21,8 +21,10 @@ bool stdout_isTTY = true;
 constexpr const char* ENV_HTML_MACRO = "PROG";
 filepath html_macro = "./bin/html-macro";
 
-filepath TmpFile::dir;
-
+/**
+ * @brief Linked list of test function handles.
+ *        It is constructed at start time.
+ */
 TestList* tests;
 
 
@@ -65,16 +67,17 @@ string slurp(const filepath& path){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-TmpFile::TmpFile(string_view name, string_view content){
-	if (dir.empty()){
-		dir = "/tmp/html-macro-test";
-		filesystem::create_directory(dir);
-	}
+TmpFile::TmpFile(string_view filename, string_view content){
+	filepath path = filepath("/tmp/html-macro-test/") / filename;
+	filepath dir = path.parent_path();
 	
-	path = dir / name;
+	filesystem::create_directories(path.parent_path());
+	
 	ofstream out = ofstream(path);
 	out.write(content.data(), content.length());
 	out.close();
+	
+	this->path = move(path);
 }
 
 
@@ -84,14 +87,6 @@ TmpFile::~TmpFile(){
 		filesystem::remove(path, _err);
 	}
 }
-
-
-struct _TmpFile_static_t {
-	~_TmpFile_static_t(){
-		if (!TmpFile::dir.empty())
-			filesystem::remove_all(TmpFile::dir);
-	}
-} _TmpFile_static;
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -149,7 +144,7 @@ int exe(const vector<string>& args, string& out, string& err){
 		out1.close();
 			
 		if (!ok){
-			fprintf(stderr, RB("error: ") "Timeout.\n");
+			ERROR("Timeout.");
 			kill(pid, SIGKILL);
 			reader1.wait_for(1s);
 			reader2.wait_for(1s);
@@ -167,31 +162,24 @@ int exe(const vector<string>& args, string& out, string& err){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-struct shell_exception {
-	int status = 1;
-	int expected = 0;
-	std::string err;
-};
-
-struct output_exception {
-	std::string expected;
-	std::string recieved;
-};
-
-
-bool run(const vector<string>& args, string_view out, string_view err, int status){
+Result run(const vector<string>& args, string_view out, string_view err, int status){
+	Result res;
 	string out_buff;
 	string err_buff;
 	
-	int _status = exe(args, out_buff, err_buff);
-	if (_status != status)
-		throw shell_exception{_status, status, move(err_buff)};
-	else if (err_buff != err)
-		throw output_exception{string(err), move(err_buff)};
-	else if (out_buff != out)
-		throw output_exception{string(out), move(out_buff)};
+	res.expectedStatus = status;
+	res.recievedStatus = exe(args, out_buff, err_buff);
 	
-	return true;
+	if (out_buff != out){
+		res.expectedStdout = string(out);
+		res.recievedStdout = move(out_buff);
+	}
+	if (err_buff != err){
+		res.expectedStderr = string(err);
+		res.recievedStderr = move(err_buff);
+	}
+	
+	return res;
 }
 
 
@@ -271,49 +259,70 @@ void fmt_expected(const string& expected, const string& recieved){
 
 
 static bool run(){
-	printf("--------------------------------\n");
-	int total = 0;
-	int passed = 0;
+	struct Pair {
+		const TestList* test;
+		Result result;
+		future<Result> fresult;
+	};
 	
+	vector<Pair> results = {};
+	
+	// Launch tests
 	for (const TestList* test = tests ; test != nullptr ; test = test->next){
-		if (test->func == nullptr){
-			continue;
-		}
+		assert(test->func != nullptr);
+		Pair& p = results.emplace_back();
 		
-		// if (string_view(test->name) != "doc_macro_SHELL"){
-		// 	continue;
-		// }
+		p.test = test;
+		p.fresult = async(launch::async, [test](){
+			return test->func();
+		});
 		
-		try {
-			if (test->func()){
-				printf(GB("PASS: ") "%s ~ %s:%ld\n", test->name, test->file, test->line);
-				passed++;
-			} else {
-				printf(RB("FAIL: ") "%s ~ %s:%ld\n", test->name, test->file, test->line);
-			}
-		}
-		catch (const shell_exception& e){
-			printf(RB("FAIL: ") "%s ~ %s:%ld\n", test->name, test->file, test->line);
-			printf("Program exited with status " PURPLE("%d") ", expected " PURPLE("%d") ".\n", e.status, e.expected);
-			// printf("%s", e.err.c_str());
-		}
-		catch (const output_exception& e){
-			printf(RB("FAIL: ") "%s ~ %s:%ld\n", test->name, test->file, test->line);
-			fmt_expected(e.expected, e.recieved);
-			printf(ANSI_PURPLE "FROM: %s ~ %s:%ld" ANSI_RESET "\n", test->name, test->file, test->line);
-		}
-		
-		total++;
 	}
 	
-	printf("--------------------------------\n");
-	if (passed == total)
-		printf("Passed " GREEN("%i") "/" GREEN("%i") " ~ " GREEN("%.0f%%") " of tests.\n", passed, total, 100.0f*passed/total);
-	else
-		printf("Passed " YELLOW("%i") "/" GREEN("%i") " ~ " YELLOW("%.0f%%") " of tests.\n", passed, total, 100.0f*passed/total);
-	printf("--------------------------------\n");
+	printf("----------------------------------------\n");
+	vector<Pair> failed;
+	const size_t total_n = results.size();
+	size_t passed_n = 0;
 	
-	return passed == total;
+	// Collect
+	for (Pair& p : results){
+		p.result = p.fresult.get();
+		
+		if (p.result){
+			passed_n++;
+			printf(GB("PASS: ") "%s ~ %s:%ld\n", p.test->name, p.test->file, p.test->line);
+		} else {
+			failed.emplace_back(move(p));
+		}
+		
+	}
+	
+	
+	// Report failed
+	for (const Pair& p : failed){
+		printf(RB("FAIL: ") "%s ~ %s:%ld\n", p.test->name, p.test->file, p.test->line);
+		
+		const Result& r = p.result;
+		if (r.expectedStatus != r.recievedStatus)
+			printf("Program exited with status " PURPLE("%d") ", expected " PURPLE("%d") ".\n", r.recievedStatus, r.expectedStatus);
+		if (r.recievedStdout != r.expectedStdout)
+			fmt_expected(r.recievedStdout, r.expectedStdout);
+		if (r.recievedStderr != r.expectedStderr)
+			fmt_expected(r.recievedStderr, r.expectedStderr);
+		
+		printf(ANSI_PURPLE "FROM: %s ~ %s:%ld" ANSI_RESET "\n", p.test->name, p.test->file, p.test->line);
+	}
+	
+	const float passed_r = float(passed_n)/float(total_n);
+	
+	printf("----------------------------------------\n");
+	if (passed_n == total_n)
+		printf("Passed " GREEN("%lu") "/" GREEN("%lu") " ~ " GREEN("%i%%") " of tests.\n", passed_n, total_n, int(100*passed_r));
+	else
+		printf("Passed " YELLOW("%lu") "/" GREEN("%lu") " ~ " YELLOW("%i%%") " of tests.\n", passed_n, total_n, int(100*passed_r));
+	printf("----------------------------------------\n");
+	
+	return (passed_n == total_n);
 }
 
 

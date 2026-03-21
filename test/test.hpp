@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <filesystem>
 
 #include "../src/fs.hpp"
 #include "../src/includes/fd.hpp"
@@ -20,7 +19,37 @@ extern TestList* tests;
 // ----------------------------------- [ Structures ] --------------------------------------- //
 
 
-using test_func = bool(*)();
+struct TmpFile {
+	filepath path;
+	
+	TmpFile(std::string_view filename, std::string_view content);
+	~TmpFile();
+	
+	operator std::string() const {
+		return path.string();
+	}
+};
+
+
+struct Result {
+	int recievedStatus = 0;
+	int expectedStatus = 0;
+	std::string expectedStdout;
+	std::string recievedStdout;
+	std::string expectedStderr;
+	std::string recievedStderr;
+	
+	operator bool() const {
+		return (recievedStatus == expectedStatus) && (expectedStdout == recievedStdout) && (expectedStderr == recievedStderr);
+	}
+	
+};
+
+
+// ----------------------------------- [ Structures ] --------------------------------------- //
+
+
+using test_func = Result(*)();
 
 struct TestList {
 	TestList* next = nullptr;
@@ -32,7 +61,7 @@ struct TestList {
 
 
 #define REGISTER(test_name, f)          \
-	bool f();                           \
+	Result f();                         \
 	struct _test_register_t_##f {       \
 		_test_register_t_##f(){         \
 			tests = new TestList {      \
@@ -46,23 +75,6 @@ struct TestList {
 	} _test_register_##f;               \
 
 
-// ----------------------------------- [ Structures ] --------------------------------------- //
-
-
-struct TmpFile {
-	static filepath dir;
-	filepath path;
-	
-	TmpFile(std::string_view name, std::string_view content);
-	TmpFile(std::string_view content) : TmpFile("file.html", content) {}
-	~TmpFile();
-	
-	operator std::string() const {
-		return path.string();
-	}
-};
-
-
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -71,7 +83,7 @@ bool slurp(const filepath& path, std::string& buff);
 std::string slurp(const filepath& path);
 
 int exe(const std::vector<std::string>& args, std::string& out, std::string& err);
-bool run(const std::vector<std::string>& args, std::string_view out, std::string_view err, int status = 0);
+Result run(const std::vector<std::string>& args, std::string_view out, std::string_view err, int status = 0);
 
 
 // ------------------------------------------------------------------------------------------ //

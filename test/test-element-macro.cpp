@@ -8,9 +8,9 @@ using namespace std;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-REGISTER2(macro_MACRO_name);
-bool test_macro_MACRO_name(){
-	TmpFile in = TmpFile(
+REGISTER2(element_macro_MACRO_name);
+Result test_element_macro_MACRO_name(){
+	TmpFile in = TmpFile("element_macro_MACRO_name.html",
 		"<MACRO/>" NL
 		"<MACRO NAME/>" NL
 		"<MACRO NAME=''/>" NL
@@ -19,19 +19,19 @@ bool test_macro_MACRO_name(){
 		"<MACRO NAME=\"hello\"/>" NL
 	);
 	string_view err = (
-		"/tmp/html-macro-test/file.html:1:2: warn: Element <MACRO> missing attribute `NAME`." NL
+		"/tmp/html-macro-test/element_macro_MACRO_name.html:1:2: warn: Element <MACRO> missing attribute `NAME`." NL
 		"    1 | <MACRO/>" NL
 		"      |  ^~~~~" NL
-		"/tmp/html-macro-test/file.html:2:8: error: Attribute `NAME` missing value." NL
+		"/tmp/html-macro-test/element_macro_MACRO_name.html:2:8: error: Attribute `NAME` missing value." NL
 		"    2 | <MACRO NAME/>" NL
 		"      |        ^~~~" NL
-		"/tmp/html-macro-test/file.html:3:14: error: Attribute `NAME` missing value." NL
+		"/tmp/html-macro-test/element_macro_MACRO_name.html:3:14: error: Attribute `NAME` missing value." NL
 		"    3 | <MACRO NAME=''/>" NL
 		"      |             ^~" NL
-		"/tmp/html-macro-test/file.html:4:14: warn: Attribute `NAME` expected double quotes (\"\"). Value is always interpreted as a string." NL
+		"/tmp/html-macro-test/element_macro_MACRO_name.html:4:14: warn: Attribute `NAME` expected double quotes (\"\"). Value is always interpreted as a string." NL
 		"    4 | <MACRO NAME='hello'/>" NL
 		"      |             ^~~~~~~" NL
-		"/tmp/html-macro-test/file.html:5:14: error: Attribute `NAME` missing value." NL
+		"/tmp/html-macro-test/element_macro_MACRO_name.html:5:14: error: Attribute `NAME` missing value." NL
 		"    5 | <MACRO NAME=\"\"/>" NL
 		"      |             ^~" NL
 	);
@@ -39,17 +39,19 @@ bool test_macro_MACRO_name(){
 }
 
 
-REGISTER2(macro_MACRO_customElement);
-bool test_macro_MACRO_customElement(){
-	TmpFile in = TmpFile(R"(
-		<MACRO NAME="FUNC" x>
-			<SET x='x+2' y='y+2'/>
-			<p>A: (x,y) is ({x}, {y})</p>
-		</MACRO>
-		
-		<SET x='10'/>
-		<FUNC y='20'/>
-	)");
+REGISTER2(element_macro_MACRO_customElement);
+Result test_element_macro_MACRO_customElement(){
+	TmpFile in = TmpFile("element_macro_MACRO_customElement.html",
+		R"(
+			<MACRO NAME="FUNC" x>
+				<SET x='x+2' y='y+2'/>
+				<p>A: (x,y) is ({x}, {y})</p>
+			</MACRO>
+			
+			<SET x='10'/>
+			<FUNC y='20'/>
+		)"
+	);
 	string_view out = (
 		NL
 		"<p>A: (x,y) is (12, 22)</p>" NL
@@ -58,16 +60,18 @@ bool test_macro_MACRO_customElement(){
 }
 
 
-REGISTER2(macro_MACRO_customAttribute);
-bool test_macro_MACRO_customAttribute(){
-	TmpFile in = TmpFile(R"(
-		<MACRO NAME="FUNC">
-			<SET-ATTR href='VALUE'/>
-			<SET-ATTR class="link"/>
-		</MACRO>
-		
-		<a FUNC="https://github.com/Hurkus/html-macro/">repo</a>
-	)");
+REGISTER2(element_macro_MACRO_customAttribute);
+Result test_element_macro_MACRO_customAttribute(){
+	TmpFile in = TmpFile("element_macro_MACRO_customAttribute.html",
+		R"(
+			<MACRO NAME="FUNC">
+				<SET-ATTR href='VALUE'/>
+				<SET-ATTR class="link"/>
+			</MACRO>
+			
+			<a FUNC="https://github.com/Hurkus/html-macro/">repo</a>
+		)"
+	);
 	string_view out = (
 		NL
 		"<a href=\"https://github.com/Hurkus/html-macro/\" class=\"link\">repo</a>" NL
@@ -79,9 +83,9 @@ bool test_macro_MACRO_customAttribute(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-REGISTER2(macro_CALL_name);
-bool test_macro_CALL_name(){
-	TmpFile in = TmpFile(
+REGISTER2(element_macro_CALL_name);
+Result test_element_macro_CALL_name(){
+	TmpFile in = TmpFile("element_macro_CALL_name.html",
 		"<MACRO NAME=\"g\"/>" NL
 		"<CALL/>" NL
 		"<CALL NAME/>" NL
@@ -90,16 +94,16 @@ bool test_macro_CALL_name(){
 		"<CALL NAME=\"g\"/>" NL
 	);
 	string_view err = string_view(
-		"/tmp/html-macro-test/file.html:2:2: error: Element <CALL> missing attribute `NAME`." NL
+		"/tmp/html-macro-test/element_macro_CALL_name.html:2:2: error: Element <CALL> missing attribute `NAME`." NL
 		"    2 | <CALL/>" NL
 		"      |  ^~~~" NL
-		"/tmp/html-macro-test/file.html:3:7: error: Attribute `NAME` missing value." NL
+		"/tmp/html-macro-test/element_macro_CALL_name.html:3:7: error: Attribute `NAME` missing value." NL
 		"    3 | <CALL NAME/>" NL
 		"      |       ^~~~" NL
-		"/tmp/html-macro-test/file.html:4:13: error: Attribute `NAME` missing value." NL
+		"/tmp/html-macro-test/element_macro_CALL_name.html:4:13: error: Attribute `NAME` missing value." NL
 		"    4 | <CALL NAME=\"\"/>" NL
 		"      |            ^~" NL
-		"/tmp/html-macro-test/file.html:5:13: error: Macro `f` not found." NL
+		"/tmp/html-macro-test/element_macro_CALL_name.html:5:13: error: Macro `f` not found." NL
 		"    5 | <CALL NAME=\"f\"/>" NL
 		"      |             ^" NL
 		""
@@ -108,14 +112,16 @@ bool test_macro_CALL_name(){
 }
 
 
-REGISTER2(macro_CALL_name_expression);
-bool test_macro_CALL_name_expression(){
-	TmpFile in = TmpFile(
-		"<SET s=\"f\"/>" NL
-		"<MACRO NAME=\"func1\">a</MACRO>" NL
-		"<MACRO NAME=\"func2\">b</MACRO>" NL
-		"<CALL NAME='s + \"unc\" + 1'/>" NL
-		"<CALL NAME='s + \"unc\" + 2'/>" NL
+REGISTER2(element_macro_CALL_name_expr);
+Result test_element_macro_CALL_name_expr(){
+	TmpFile in = TmpFile("element_macro_CALL_name_expr.html",
+		R"(
+			<SET s="f"/>
+			<MACRO NAME="func1">a</MACRO>
+			<MACRO NAME="func2">b</MACRO>
+			<CALL NAME='s + "unc" + 1'/>
+			<CALL NAME='s + "unc" + 2'/>
+		)"
 	);
 	string_view out = (
 		"ab"
@@ -127,13 +133,15 @@ bool test_macro_CALL_name_expression(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-REGISTER2(macro_parameters_1);
-bool test_macro_parameters_1(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"f\">{x}</MACRO>" NL
-		"<SET x='10'/>" NL
-		"<CALL NAME=\"f\"/>" NL
-		"{x}" NL
+REGISTER2(element_macro_parameters_1);
+Result test_element_macro_parameters_1(){
+	TmpFile in = TmpFile("element_macro_parameters-1.html",
+		R"(
+			<MACRO NAME="f">{x}</MACRO>
+			<SET x='10'/>
+			<CALL NAME="f"/>
+			{x}
+		)"
 	);
 	string_view out = (
 		"10" NL
@@ -143,14 +151,16 @@ bool test_macro_parameters_1(){
 }
 
 
-REGISTER2(macro_parameters_2);
-bool test_macro_parameters_2(){
-	TmpFile in = TmpFile(R"(
-		<MACRO NAME="f">{x}</MACRO>
-		<SET x='10'/>
-		<CALL NAME="f" x='20'/>
-		{x}
-	)");
+REGISTER2(element_macro_parameters_2);
+Result test_element_macro_parameters_2(){
+	TmpFile in = TmpFile("element_macro_parameters-2.html",
+		R"(
+			<MACRO NAME="f">{x}</MACRO>
+			<SET x='10'/>
+			<CALL NAME="f" x='20'/>
+			{x}
+		)"
+	);
 	string_view out = (
 		"20" NL
 		"10" NL
@@ -159,18 +169,20 @@ bool test_macro_parameters_2(){
 }
 
 
-REGISTER2(macro_parameters_3);
-bool test_macro_parameters_3(){
-	TmpFile in = TmpFile(R"(
-		<MACRO NAME="f">
+REGISTER2(element_macro_parameters_3);
+Result test_element_macro_parameters_3(){
+	TmpFile in = TmpFile("element_macro_parameters-3.html",
+		R"(
+			<MACRO NAME="f">
+				<p>{x}</p>
+				<SET x='20'/>
+			</MACRO>
+			
+			<SET x='10'/>
+			<CALL NAME="f"/>
 			<p>{x}</p>
-			<SET x='20'/>
-		</MACRO>
-		
-		<SET x='10'/>
-		<CALL NAME="f"/>
-		<p>{x}</p>
-	)");
+		)"
+	);
 	string_view out = (
 		NL
 		"<p>10</p>" NL
@@ -180,18 +192,20 @@ bool test_macro_parameters_3(){
 }
 
 
-REGISTER2(macro_parameters_4);
-bool test_macro_parameters_4(){
-	TmpFile in = TmpFile(R"(
-		<MACRO NAME="f">
+REGISTER2(element_macro_parameters_4);
+Result test_element_macro_parameters_4(){
+	TmpFile in = TmpFile("element_macro_parameters-4.html",
+		R"(
+			<MACRO NAME="f">
+				<p>{x}</p>
+				<SET x='20'/>
+			</MACRO>
+			
+			<SET x='10'/>
+			<CALL NAME="f" x='30'/>
 			<p>{x}</p>
-			<SET x='20'/>
-		</MACRO>
-		
-		<SET x='10'/>
-		<CALL NAME="f" x='30'/>
-		<p>{x}</p>
-	)");
+		)"
+	);
 	string_view out = (
 		NL
 		"<p>30</p>" NL
@@ -204,21 +218,21 @@ bool test_macro_parameters_4(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-REGISTER2(macro_INCLUDE_wrap);
-bool test_macro_INCLUDE_wrap(){
-	TmpFile txt = TmpFile("text.txt",
+REGISTER2(element_macro_INCLUDE_wrap);
+Result test_element_macro_INCLUDE_wrap(){
+	TmpFile txt = TmpFile("element_macro_INCLUDE_wrap-text.txt",
 		"Lorem ipsum, etc."
 	);
-	TmpFile css = TmpFile("style.css",
+	TmpFile css = TmpFile("element_macro_INCLUDE_wrap-style.css",
 		"div { color: red; }"
 	);
-	TmpFile js = TmpFile("script.js",
+	TmpFile js = TmpFile("element_macro_INCLUDE_wrap-script.js",
 		"function f(){ return 10; }"
 	);
-	TmpFile in = TmpFile(
-		"<INCLUDE SRC=\"text.txt\"/>" NL
-		"<INCLUDE SRC=\"style.css\"/>" NL
-		"<INCLUDE SRC=\"script.js\"/>" NL
+	TmpFile in = TmpFile("element_macro_INCLUDE_wrap.html",
+		"<INCLUDE SRC=\"element_macro_INCLUDE_wrap-text.txt\"/>" NL
+		"<INCLUDE SRC=\"element_macro_INCLUDE_wrap-style.css\"/>" NL
+		"<INCLUDE SRC=\"element_macro_INCLUDE_wrap-script.js\"/>" NL
 	);
 	string_view out = (
 		"Lorem ipsum, etc." NL
@@ -229,21 +243,21 @@ bool test_macro_INCLUDE_wrap(){
 }
 
 
-REGISTER2(macro_INCLUDE_nowrap);
-bool test_macro_INCLUDE_nowrap(){
-	TmpFile txt = TmpFile("text.txt",
+REGISTER2(element_macro_INCLUDE_nowrap);
+Result test_element_macro_INCLUDE_nowrap(){
+	TmpFile txt = TmpFile("element_macro_INCLUDE_nowrap-text.txt",
 		"Lorem ipsum, etc." NL
 	);
-	TmpFile css = TmpFile("style.css",
+	TmpFile css = TmpFile("element_macro_INCLUDE_nowrap-style.css",
 		"div { color: red; }"
 	);
-	TmpFile js = TmpFile("script.js",
+	TmpFile js = TmpFile("element_macro_INCLUDE_nowrap-script.js",
 		"function f(){ return 10; }" NL
 	);
-	TmpFile in = TmpFile(
-		"<INCLUDE NO-WRAP SRC=\"text.txt\"/>" NL
-		"<INCLUDE NO-WRAP SRC=\"style.css\"/>" NL
-		"<INCLUDE NO-WRAP SRC=\"script.js\"/>" NL
+	TmpFile in = TmpFile("element_macro_INCLUDE_nowrap.html",
+		"<INCLUDE NO-WRAP SRC=\"element_macro_INCLUDE_nowrap-text.txt\"/>" NL
+		"<INCLUDE NO-WRAP SRC=\"element_macro_INCLUDE_nowrap-style.css\"/>" NL
+		"<INCLUDE NO-WRAP SRC=\"element_macro_INCLUDE_nowrap-script.js\"/>" NL
 	);
 	string_view out = (
 		"Lorem ipsum, etc." NL
@@ -254,20 +268,20 @@ bool test_macro_INCLUDE_nowrap(){
 }
 
 
-REGISTER2(macro_INCLUDE_header);
-bool test_macro_INCLUDE_header(){
-	TmpFile txt = TmpFile("other.html",
+REGISTER2(element_macro_INCLUDE_header);
+Result test_element_macro_INCLUDE_header(){
+	TmpFile txt = TmpFile("element_macro_INCLUDE_header-othr.html",
 		"<MACRO NAME=\"title\">" NL
 		"	<h1>Title</h1>" NL
 		"</MACRO>" NL
 		"" NL
 		"<p>Lorem ipsum, etc.</p>" NL
 	);
-	TmpFile in = TmpFile(
+	TmpFile in = TmpFile("element_macro_INCLUDE_header.html",
 		"<body>" NL
-		"	<INCLUDE HEADER SRC=\"other.html\"/>" NL
+		"	<INCLUDE HEADER SRC=\"element_macro_INCLUDE_header-othr.html\"/>" NL
 		"	<CALL NAME=\"title\"/>" NL
-		"	<INCLUDE SRC=\"other.html\"/>" NL
+		"	<INCLUDE SRC=\"element_macro_INCLUDE_header-othr.html\"/>" NL
 		"</body>" NL
 	);
 	string_view out = (
@@ -283,20 +297,22 @@ bool test_macro_INCLUDE_header(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-REGISTER2(macro_IF);
-bool test_macro_IF(){
-	TmpFile in = TmpFile(R"(
-		<SET lang="en"/>
-		<IF lang="en">
-			<p>ENGLISH</p>
-		</IF>
-		<ELIF lang="de">
-			<p>GERMAN</p>
-		</ELIF>
-		<ELSE>
-			<p>NOTHING</p>
-		</ELSE>
-	)");
+REGISTER2(element_macro_IF);
+Result test_element_macro_IF(){
+	TmpFile in = TmpFile("element_macro_IF.html",
+		R"(
+			<SET lang="en"/>
+			<IF lang="en">
+				<p>ENGLISH</p>
+			</IF>
+			<ELIF lang="de">
+				<p>GERMAN</p>
+			</ELIF>
+			<ELSE>
+				<p>NOTHING</p>
+			</ELSE>
+		)"
+	);
 	string_view out = (
 		NL
 		"<p>ENGLISH</p>" NL
@@ -305,20 +321,22 @@ bool test_macro_IF(){
 }
 
 
-REGISTER2(macro_ELIF);
-bool test_macro_ELIF(){
-	TmpFile in = TmpFile(R"(
-		<SET lang="de"/>
-		<IF lang="en">
-			<p>ENGLISH</p>
-		</IF>
-		<ELIF lang="de">
-			<p>GERMAN</p>
-		</ELIF>
-		<ELSE>
-			<p>NOTHING</p>
-		</ELSE>
-	)");
+REGISTER2(element_macro_ELIF);
+Result test_element_macro_ELIF(){
+	TmpFile in = TmpFile("element_macro_ELIF.html",
+		R"(
+			<SET lang="de"/>
+			<IF lang="en">
+				<p>ENGLISH</p>
+			</IF>
+			<ELIF lang="de">
+				<p>GERMAN</p>
+			</ELIF>
+			<ELSE>
+				<p>NOTHING</p>
+			</ELSE>
+		)"
+	);
 	string_view out = (
 		NL
 		"<p>GERMAN</p>" NL
@@ -327,20 +345,22 @@ bool test_macro_ELIF(){
 }
 
 
-REGISTER2(macro_ELSE);
-bool test_macro_ELSE(){
-	TmpFile in = TmpFile(R"(
-		<SET lang="fr"/>
-		<IF lang="en">
-			<p>ENGLISH</p>
-		</IF>
-		<ELIF lang="de">
-			<p>GERMAN</p>
-		</ELIF>
-		<ELSE>
-			<p>NOTHING</p>
-		</ELSE>
-	)");
+REGISTER2(element_macro_ELSE);
+Result test_element_macro_ELSE(){
+	TmpFile in = TmpFile("element_macro_ELSE.html",
+		R"(
+			<SET lang="fr"/>
+			<IF lang="en">
+				<p>ENGLISH</p>
+			</IF>
+			<ELIF lang="de">
+				<p>GERMAN</p>
+			</ELIF>
+			<ELSE>
+				<p>NOTHING</p>
+			</ELSE>
+		)"
+	);
 	string_view out = (
 		NL
 		"<p>NOTHING</p>" NL

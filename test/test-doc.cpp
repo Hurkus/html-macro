@@ -9,21 +9,24 @@ using namespace std;
 
 
 REGISTER2(doc_html_whitespace_1);
-bool test_doc_html_whitespace_1(){
-	TmpFile in = TmpFile(
-		"<p>Here<u> is some </u><span>text</span>.</p>" NL
-		"" NL
-		"<p>" NL
-		"	Long text," NL
-		"	long text" NL
-		"</p>" NL
-		"" NL
-		"<div>" NL
-		"<p>Weird input" NL
-		"</p>" NL
-		"</div>" NL
+Result test_doc_html_whitespace_1(){
+	TmpFile in = TmpFile("doc_html_whitespace_1.html",
+		R"(
+			<p>Here<u> is some </u><span>text</span>.</p>
+			
+			<p>
+				Long text,
+				long text
+			</p>
+			
+			<div>
+			<p>Weird input
+			</p>
+			</div>
+		)"
 	);
 	string_view out = (
+		NL
 		"<p>Here<u> is some </u><span>text</span>.</p>" NL
 		"<p>" NL
 		"	Long text," NL
@@ -39,8 +42,8 @@ bool test_doc_html_whitespace_1(){
 
 
 REGISTER2(doc_html_whitespace_2);
-bool test_doc_html_whitespace_2(){
-	TmpFile in = TmpFile(
+Result test_doc_html_whitespace_2(){
+	TmpFile in = TmpFile("doc_html_whitespace_2.html",
 		"<head>" NL
 		"<style>" NL
 		"	body {" NL
@@ -66,8 +69,8 @@ bool test_doc_html_whitespace_2(){
 
 
 REGISTER2(doc_element_macros);
-bool test_doc_element_macros(){
-	TmpFile in = TmpFile(
+Result test_doc_element_macros(){
+	TmpFile in = TmpFile("doc_element_macros.html",
 		"<div>" NL
 		"	<IF lang=\"de\">" NL
 		"		<p>Deutsch</p>" NL
@@ -90,8 +93,8 @@ bool test_doc_element_macros(){
 
 
 REGISTER2(doc_expression_context);
-bool test_doc_expression_context(){
-	TmpFile in = TmpFile(
+Result test_doc_expression_context(){
+	TmpFile in = TmpFile("doc_expression_context.html",
 		"<p attr=\"text {1 + 2}\"></p>" NL
 		"<p attr='2 * 2'></p>" NL
 		"<p>There are {9.0 / 2} apples.</p>" NL
@@ -108,13 +111,15 @@ bool test_doc_expression_context(){
 
 
 REGISTER2(doc_expression_variables);
-bool test_doc_expression_variables(){
-	TmpFile in = TmpFile(
-		"<SET s=\"header\"/>" NL
-		"<p class='s'>My title</p>" NL
-		"" NL
-		"<SET x='2' y='3'/>" NL
-		"<p>My text number {x * (y + 1)}</p>" NL
+Result test_doc_expression_variables(){
+	TmpFile in = TmpFile("doc_expression_variables.html",
+		R"(
+			<SET s="header"/>
+			<p class='s'>My title</p>
+			
+			<SET x='2' y='3'/>
+			<p>My text number {x * (y + 1)}</p>
+		)"
 	);
 	string_view out = (
 		NL
@@ -126,8 +131,8 @@ bool test_doc_expression_variables(){
 
 
 REGISTER2(doc_expression_operators);
-bool test_doc_expression_operators(){
-	TmpFile in = TmpFile(
+Result test_doc_expression_operators(){
+	TmpFile in = TmpFile("doc_expression_operators.html",
 		"{\"x is \" + 3}" NL
 		"{\"a\" * 3}" NL
 		"{\"abc\" - 2}" NL
@@ -148,8 +153,8 @@ bool test_doc_expression_operators(){
 
 
 REGISTER2(doc_expressions_functions);
-bool test_doc_expressions_functions(){
-	TmpFile in = TmpFile(
+Result test_doc_expressions_functions(){
+	TmpFile in = TmpFile("doc_expressions_functions.html",
 		"{int('7.234')}" NL
 		"{float('122.5') + 1}" NL
 		"{str(12) + ' apples'}" NL

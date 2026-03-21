@@ -9,8 +9,8 @@ using namespace std;
 
 
 REGISTER2(attr_macro_CALL_1);
-bool test_attr_macro_CALL_1(){
-	TmpFile in = TmpFile(
+Result test_attr_macro_CALL_1(){
+	TmpFile in = TmpFile("attr_macro_CALL_1.html",
 		"<SET s=\"f\"/>" NL
 		"<MACRO NAME=\"func1\">a</MACRO>" NL
 		"<MACRO NAME=\"func2\">b</MACRO>" NL
@@ -27,10 +27,10 @@ bool test_attr_macro_CALL_1(){
 		"<p>b</p>" NL
 	);
 	string_view err = (
-		"/tmp/html-macro-test/file.html:4:4: error: Attribute `CALL` missing value." NL
+		"/tmp/html-macro-test/attr_macro_CALL_1.html:4:4: error: Attribute `CALL` missing value." NL
 		"    4 | <p CALL></p>" NL
 		"      |    ^~~~" NL
-		"/tmp/html-macro-test/file.html:5:10: error: Attribute `CALL` missing value." NL
+		"/tmp/html-macro-test/attr_macro_CALL_1.html:5:10: error: Attribute `CALL` missing value." NL
 		"    5 | <p CALL=\"\"></p>" NL
 		"      |         ^~" NL
 	);
@@ -39,16 +39,18 @@ bool test_attr_macro_CALL_1(){
 
 
 REGISTER2(attr_macro_CALL_2);
-bool test_attr_macro_CALL_2(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"f\">" NL
-		"	<SET x='x+2'/>" NL
-		"	<p>x1 is {x}</p>" NL
-		"</MACRO>" NL
-		"<SET x='10'/>" NL
-		"<div CALL=\"f\">" NL
-		"	<p>x2 is {x}</p>" NL
-		"</div>" NL
+Result test_attr_macro_CALL_2(){
+	TmpFile in = TmpFile("attr_macro_CALL_2.html",
+		R"(
+			<MACRO NAME="f">
+				<SET x='x+2'/>
+				<p>x1 is {x}</p>
+			</MACRO>
+			<SET x='10'/>
+			<div CALL="f">
+				<p>x2 is {x}</p>
+			</div>
+		)"
 	);
 	string_view out = (
 		NL
@@ -62,16 +64,18 @@ bool test_attr_macro_CALL_2(){
 
 
 REGISTER2(attr_macro_CALL_3);
-bool test_attr_macro_CALL_3(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"f\" x>" NL
-		"	<SET x='x+2'/>" NL
-		"	<p>x1 is {x}</p>" NL
-		"</MACRO>" NL
-		"<SET x='10'/>" NL
-		"<div CALL=\"f\">" NL
-		"	<p>x2 is {x}</p>" NL
-		"</div>" NL
+Result test_attr_macro_CALL_3(){
+	TmpFile in = TmpFile("attr_macro_CALL_3.html",
+		R"(
+			<MACRO NAME="f" x>
+				<SET x='x+2'/>
+				<p>x1 is {x}</p>
+			</MACRO>
+			<SET x='10'/>
+			<div CALL="f">
+				<p>x2 is {x}</p>
+			</div>
+		)"
 	);
 	string_view out = (
 		NL
@@ -85,16 +89,18 @@ bool test_attr_macro_CALL_3(){
 
 
 REGISTER2(attr_macro_CALL_4);
-bool test_attr_macro_CALL_4(){
-	TmpFile in = TmpFile(
-		"<MACRO NAME=\"f\" x='100'>" NL
-		"	<SET x='x+2'/>" NL
-		"	<p>x1 is {x}</p>" NL
-		"</MACRO>" NL
-		"<SET x='10'/>" NL
-		"<div CALL=\"f\">" NL
-		"	<p>x2 is {x}</p>" NL
-		"</div>" NL
+Result test_attr_macro_CALL_4(){
+	TmpFile in = TmpFile("attr_macro_CALL_4.html",
+		R"(
+			<MACRO NAME="f" x='100'>
+				<SET x='x+2'/>
+				<p>x1 is {x}</p>
+			</MACRO>
+			<SET x='10'/>
+			<div CALL="f">
+				<p>x2 is {x}</p>
+			</div>
+		)"
 	);
 	string_view out = (
 		NL

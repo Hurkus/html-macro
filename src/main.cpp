@@ -5,7 +5,7 @@
 #include "cli.hpp"
 #include "MacroEngine.hpp"
 #include "Paths.hpp"
-#include "Write.hpp"
+#include "output/Write.hpp"
 #include "Debug.hpp"
 
 using namespace std;

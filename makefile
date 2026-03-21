@@ -16,7 +16,12 @@ WARN = -Wformat=1 -Wformat-contains-nul -Wformat-diag -Wformat-extra-args \
 
 EXE = html-macro
 
-INCLUDES  := $(shell find 'src' -type d -exec echo ' -I "{}"' \; )
+INCLUDES  := \
+	-I src/ \
+	-I src/includes/ \
+	-I src/MacroEngine/ \
+	-I src/expression/ \
+
 SRC_FILES := $(shell find 'src' -type f -iname '*.cpp')
 SRC_NAMES := $(notdir $(SRC_FILES))
 OBJ_FILES := $(patsubst %.cpp,obj/%.o,$(SRC_NAMES))

@@ -2,8 +2,8 @@
 #include <string_view>
 #include <vector>
 
-#include "Macro.hpp"
-#include "Write.hpp"
+#include "MacroEngine/Macro.hpp"
+#include "output/Write.hpp"
 
 
 extern struct Opt {
