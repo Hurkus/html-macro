@@ -155,7 +155,7 @@ struct Value::Object {
 public:
 	std::vector<Value> arr;
 	str_map<Value> dict;
-	long refs = 0;
+	int refs = 0;
 	
 // ---------------------------------------------------------------- //
 public:
@@ -180,15 +180,20 @@ public:
 			delete this;
 	}
 	
+	static std::unique_ptr<Object> create(){
+		return std::make_unique<Object>();
+	}
+	
 // ---------------------------------------------------------------- //
 public:
 	/**
 	 * @brief Retrieve value of the underlying array.
 	 * @return Pointer to array element or `null`.
 	 */
-	Value* get(size_t index){
-		if (0 <= index && index < arr.size())
-			return &arr[index];
+	Value* get(long index){
+		const size_t i = (index < 0) ? (arr.size() + index) : size_t(index);
+		if (i < arr.size())
+			return &arr[i];
 		return nullptr;
 	}
 	
@@ -196,9 +201,10 @@ public:
 	 * @brief Retrieve value of the underlying array.
 	 * @return Pointer to array element or `null`.
 	 */
-	const Value* get(size_t index) const {
-		if (0 <= index && index < arr.size())
-			return &arr[index];
+	const Value* get(long index) const {
+		const size_t i = (index < 0) ? (arr.size() + index) : size_t(index);
+		if (i < arr.size())
+			return &arr[i];
 		return nullptr;
 	}
 	

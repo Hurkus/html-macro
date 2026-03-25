@@ -8,12 +8,12 @@
 struct Expression::Operation {
 	enum class Type : uint32_t {
 		ERROR,
-		LONG, DOUBLE, STRING, VAR,
+		LONG, DOUBLE, STRING, OBJECT, VAR,
 		NOT, NEG,
 		ADD, SUB, MUL, DIV, MOD,
 		AND, OR,
 		EQ, NEQ, LT, LTE, GT, GTE,
-		FUNC,
+		INDEX, FUNC,
 	} type;
 	
 	uint32_t len;		// Length of `pos`.
@@ -48,6 +48,17 @@ struct String : public Expression::Operation {
 };
 
 
+struct Object : public Expression::Operation {
+	struct Entry {
+		Operation* key = nullptr;		// `null` if `value` is an array element.
+		Operation* value = nullptr;		// Array element or dictionary entry value.
+	};
+	
+	uint32_t count;			// Number of elements in `elements`.
+	Entry elements[];
+};
+
+
 struct Variable : public Expression::Operation {
 	std::string_view name() const {
 		return std::string_view(pos, len);
@@ -66,12 +77,16 @@ struct BinaryOperation : public Expression::Operation {
 };
 
 
+struct Index : public Expression::Operation {
+	Operation* obj;
+	Operation* index;
+};
+
+
 struct Function : public Expression::Operation {
 	uint32_t name_len;
-	uint32_t argc;
+	uint32_t argc;			// Number of arguments in `argv`.
 	Operation* argv[];
-	
-	static constexpr int MAX_ARGS = 8;
 	
 	std::string_view name() const {
 		return std::string_view(pos, name_len);

@@ -2,12 +2,14 @@
 #include <cassert>
 
 using namespace std;
+using Allocator = Expression::Allocator;
+using Page = Expression::Allocator::Page;
 
 
 // ---------------------------------- [ Constructors ] -------------------------------------- //
 
 
-Expression::Allocator::~Allocator(){
+Allocator::~Allocator(){
 	Page* p = this->page;
 	
 	while (p != nullptr){
@@ -22,24 +24,43 @@ Expression::Allocator::~Allocator(){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void* Expression::Allocator::alloc(size_t size){
-	// Convert to unit, round up
-	size = (size + UNIT - 1) / UNIT;
-	
-	if (size > PAGE_SIZE){
-		throw bad_alloc();
-	} else if (this->page == nullptr){ new_page:
-		Page* page = new Page;
-		page->count = 0;
-		page->next = this->page;
-		this->page = page;
-	} else if (this->page->count + size > PAGE_SIZE){
-		goto new_page;
+static Page* newPage(Page* prev, size_t minCapacity) noexcept {
+	size_t capacity;
+	if (prev != nullptr){
+		capacity = max(prev->capacity * 2, minCapacity);
+	} else {
+		capacity = Allocator::MIN_CAPACITY;
 	}
 	
-	assert(page != nullptr);
-	void* p = &page->memory[page->count];
-	page->count += size;
+	assert(capacity > 0);
+	void* mem = ::operator new(sizeof(Page) + capacity * sizeof(*Page::memory), align_val_t(alignof(Page)), nothrow);
+	if (mem == nullptr){
+		return nullptr;
+	}
+	
+	Page* page = new (mem) Page();
+	page->capacity = capacity;
+	return page;
+}
+
+
+void* Allocator::alloc(size_t size){
+	if (page == nullptr || (page->size + size) > page->capacity){
+		Page* p = newPage(page, size);
+		if (p == nullptr){
+			throw bad_alloc();
+		}
+		
+		p->next = page;
+		page = p;
+	}
+	
+	// Align
+	size = ((size + UNIT - 1) / UNIT) * UNIT;
+	
+	// Alloc
+	void* p = &page->memory[page->size];
+	page->size += size;
 	return p;
 }
 

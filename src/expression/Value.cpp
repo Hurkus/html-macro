@@ -165,7 +165,7 @@ static string str(const Value::Object& o){
 	for (const Value& el : o.arr){
 		if (comma)
 			s.push_back(',');
-		comma = false;
+		comma = true;
 		
 		if (el.type == Value::Type::STRING){
 			s.append("\"").append(el.toStr()).push_back('"');
@@ -175,11 +175,10 @@ static string str(const Value::Object& o){
 	}
 	
 	for (const auto& pair : o.dict){
-		if (comma){
+		if (comma)
 			s.push_back(',');
-		}
-		
 		comma = true;
+		
 		s.append("\"").append(pair.key).append("\":");
 		
 		if (pair.value.type == Value::Type::STRING){

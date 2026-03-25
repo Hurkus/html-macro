@@ -26,6 +26,35 @@ static void serialize(const String& str, string& buff){
 	buff.append(str.str());
 }
 
+static void serialize(const Object& obj, string& buff){
+	buff.push_back('[');
+	
+	for (uint32_t i = 0 ; i < obj.count ; i++){
+		const Object::Entry& e = obj.elements[i];
+		
+		if (i > 0){
+			buff.push_back(',');
+		}
+		
+		if (e.key == nullptr){
+			serialize(e.value, buff);
+		} else {
+			serialize(e.key, buff);
+			buff.push_back(':');
+			serialize(e.value, buff);
+		}
+		
+	}
+	
+}
+
+static void serialize(const Index& idx, string& buff){
+	serialize(idx.obj, buff);
+	buff.push_back('[');
+	serialize(idx.index, buff);
+	buff.push_back(']');
+}
+
 static void serialize(const UnaryOperation& un, string& buff, string_view op){
 	buff.append(op).push_back('(');
 	serialize(un.arg, buff);
@@ -42,11 +71,13 @@ static void serialize(const BinaryOperation& bin, string& buff, string_view op){
 
 static void serialize(const Function& fun, string& buff){
 	buff.append(fun.name()).push_back('(');
+	
 	for (uint32_t i = 0 ; i < fun.argc ; i++){
 		if (i > 0)
 			buff.push_back(',');
 		serialize(fun.argv[i], buff);
 	}
+	
 	buff.push_back(')');
 }
 
@@ -63,6 +94,8 @@ static void serialize(const Operation* op, string& buff){
 			return serialize(static_cast<const Double&>(*op), buff);
 		case Operation::Type::STRING:
 			return serialize(static_cast<const String&>(*op), buff);
+		case Operation::Type::OBJECT:
+			return serialize(static_cast<const Object&>(*op), buff);
 		case Operation::Type::VAR:
 			return serialize(static_cast<const Variable&>(*op), buff);
 		case Operation::Type::NOT:
@@ -95,6 +128,8 @@ static void serialize(const Operation* op, string& buff){
 			return serialize(static_cast<const BinaryOperation&>(*op), buff, "&&");
 		case Operation::Type::OR:
 			return serialize(static_cast<const BinaryOperation&>(*op), buff, "||");
+		case Operation::Type::INDEX:
+			return serialize(static_cast<const Index&>(*op), buff);
 		case Operation::Type::FUNC:
 			return serialize(static_cast<const Function&>(*op), buff);
 		case Operation::Type::ERROR:

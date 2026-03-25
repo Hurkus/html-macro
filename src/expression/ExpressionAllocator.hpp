@@ -14,20 +14,27 @@ consteval size_t maxAlign(){
 }
 
 
+/**
+ * @brief Arena allocator for all expression operation structs.
+ */
 struct Expression::Allocator {
 // ----------------------------------- [ Constants ] ---------------------------------------- //
 public:
-	static constexpr size_t UNIT = maxAlign<Operation,Long,Double,String,Variable,UnaryOperation,BinaryOperation,Function,Operation*>();
-	static constexpr size_t AVGSIZE = sizeof(BinaryOperation) / UNIT;	// Expected avg size of each allocation
-	static constexpr size_t PAGE_SIZE = AVGSIZE * 32;					// Size in units
-	static constexpr size_t MAX_SIZE = PAGE_SIZE * UNIT;
+	static constexpr size_t UNIT = maxAlign<
+		Operation,Variable,Long,Double,String,Object,Object::Entry,
+		UnaryOperation,BinaryOperation,
+		Index,Function
+	>();
+	static constexpr size_t MIN_CAPACITY = 128 * sizeof(std::byte);
 
 // ----------------------------------- [ Structures ] --------------------------------------- //
 public:
 	struct Page {
-		Page* next;
-		size_t count;
-		alignas(UNIT) uint8_t memory[PAGE_SIZE][UNIT];
+		Page* next = nullptr;
+		size_t capacity = 0;
+		size_t size = 0;
+		alignas(UNIT)
+		std::byte memory[];
 	};
 
 // ----------------------------------- [ Variables ] ---------------------------------------- //
@@ -37,7 +44,7 @@ public:
 // ---------------------------------- [ Constructors ] -------------------------------------- //
 public:
 	Allocator() = default;
-	Allocator(const Allocator&) = delete;
+	Allocator(Allocator&) = delete;
 	Allocator(Allocator&&) = delete;
 	
 	~Allocator();
@@ -48,7 +55,8 @@ public:
 	
 	template<typename T>
 	T* alloc(){
-		return static_cast<T*>(alloc(sizeof(T)));
+		void* mem = alloc(sizeof(T));
+		return new (mem) T();
 	}
 
 // ------------------------------------------------------------------------------------------ //

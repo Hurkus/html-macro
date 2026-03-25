@@ -17,7 +17,7 @@ bool stdout_isTTY = false;
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-constexpr bool isSpace(char c){
+constexpr bool isWhitespace(char c){
 	return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
 }
 
@@ -25,8 +25,8 @@ static string_view trim(string_view s){
 	const char* beg = s.begin();
 	const char* end = s.end();
 	
-	while (beg != end && isSpace(beg[+0])) beg++;
-	while (end != beg && isSpace(end[-1])) end--;
+	while (beg != end && isWhitespace(beg[+0])) beg++;
+	while (end != beg && isWhitespace(end[-1])) end--;
 	
 	return string_view(beg, end);
 }

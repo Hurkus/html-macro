@@ -52,6 +52,32 @@ static void warn_undefined_variable(const Expression& self, const Variable& var)
 	printCodeView(pos, mark, ANSI_YELLOW);
 }
 
+static void warn_value_not_indexable(const Expression& self, const Operation& op){
+	if (self.origin == nullptr){
+		return;
+	}
+	
+	string_view mark = op.view();
+	linepos pos = findLine(*self.origin, mark.begin());
+	
+	print(pos);
+	LOG_STDERR(WARN_PFX "Value cannot be indexed.\n");
+	printCodeView(pos, mark, ANSI_YELLOW);
+}
+
+static void error_invalid_property_type(const Expression& self, const Operation& key){
+	if (self.origin == nullptr){
+		return;
+	}
+	
+	string_view mark = key.view();
+	linepos pos = findLine(*self.origin, mark.begin());
+	
+	print(pos);
+	LOG_STDERR(WARN_PFX "Invalid key type. Only numbers and strings are allowed.\n");
+	printCodeView(pos, mark, ANSI_YELLOW);
+}
+
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
@@ -61,9 +87,63 @@ static Value var(const Expression& self, const Variable& var, const VariableMap&
 	if (val != nullptr){
 		return Value(*val);
 	} else {
-		warn_undefined_variable(self, var);
+		HERE(warn_undefined_variable(self, var));
 		return Value();
 	}
+}
+
+
+static Value object(const Expression& self, const Object& objop, const VariableMap& vars){
+	unique_ptr<Value::Object> obj = Value::Object::create();
+	
+	for (uint32_t i = 0 ; i < objop.count ; i++){
+		const Object::Entry& e = objop.elements[i];
+		assert(e.value != nullptr);
+		
+		// Is array element
+		if (e.key == nullptr){
+			obj->arr.emplace_back(eval(self, *e.value, vars));
+		}
+		
+		// Is dictionary entry
+		else {
+			Value key = eval(self, *e.key, vars);
+			Value val = eval(self, *e.value, vars);
+			
+			string key_buff;
+			string_view key_s;
+			
+			// Verify type.
+			switch (key.type){
+				case Type::LONG:
+					key_buff = to_string(key.data.l);
+					key_s = key_buff;
+					break;
+				
+				case Type::DOUBLE:
+					key_buff = to_string(key.data.l);
+					key_s = key_buff;
+					break;
+				
+				case Type::STRING:
+					key_s = key.data.s->sv();
+					break;
+				
+				case Type::OBJECT:
+					HERE(error_invalid_property_type(self, *e.key));
+					goto next;
+				
+				case Type::NONE:
+					goto next;
+			}
+			
+			obj->insert(key_s, move(val));
+		}
+		
+		next: continue;
+	}
+	
+	return Value(obj.release());
 }
 
 
@@ -584,6 +664,53 @@ static bool cmp(const Expression& self, const BinaryOperation& binop, const Vari
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+static Value eval(const Expression& self, const Index& idx, const VariableMap& vars){
+	assert(idx.obj != nullptr);
+	assert(idx.index != nullptr);
+	Value obj = eval(self, *idx.obj, vars);
+	Value index = eval(self, *idx.index, vars);
+	
+	if (obj.type == Type::NONE){
+		return Value();
+	} else if (obj.type != Type::OBJECT){
+		HERE(warn_value_not_indexable(self, *idx.obj));
+		return Value();
+	}
+	
+	Value::Object& o = *obj.data.o;
+	Value* el = nullptr;
+	
+	switch (index.type){
+		case Type::LONG:
+			el = o.get(index.data.l);
+			break;
+		case Type::DOUBLE:
+			el = o.get(size_t(index.data.d));
+			break;
+		case Type::STRING:
+			el = o.get(index.data.s->sv());
+			break;
+		case Type::OBJECT:
+			HERE(error_invalid_property_type(self, *idx.index));
+			break;
+		case Type::NONE:
+			break;
+	}
+	
+	if (el != nullptr){
+		if (o.refs <= 1)
+			return move(*el);
+		else
+			return *el;
+	}
+	
+	return Value();
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 Value eval(const Expression& self, const Operation& op, const VariableMap& vars){
 	switch (op.type){
 		case Operation::Type::LONG:
@@ -592,6 +719,8 @@ Value eval(const Expression& self, const Operation& op, const VariableMap& vars)
 			return static_cast<const Double&>(op).n;
 		case Operation::Type::STRING:
 			return static_cast<const String&>(op).str();
+		case Operation::Type::OBJECT:
+			return object(self, static_cast<const Object&>(op), vars);
 		case Operation::Type::VAR:
 			return var(self, static_cast<const Variable&>(op), vars);
 		case Operation::Type::NOT:
@@ -624,6 +753,8 @@ Value eval(const Expression& self, const Operation& op, const VariableMap& vars)
 			return cmp<greater<>>(self, static_cast<const BinaryOperation&>(op), vars) ? 1L : 0L;
 		case Operation::Type::GTE:
 			return cmp<greater_equal<>>(self, static_cast<const BinaryOperation&>(op), vars) ? 1L : 0L;
+		case Operation::Type::INDEX:
+			return eval(self, static_cast<const Index&>(op), vars);
 		case Operation::Type::FUNC:
 			return eval(self, static_cast<const Function&>(op), vars);
 		case Operation::Type::ERROR:

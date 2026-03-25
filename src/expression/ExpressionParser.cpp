@@ -21,11 +21,12 @@ enum class Expression::Status {
 	UNEXPECTED_SYMBOL,
 	UNCLOSED_STRING,			// Missing quote "
 	UNCLOSED_EXPRESSION,		// Missing bracket )
+	UNCLOSED_OBJECT,			// Missing bracket ]
+	UNCLOSED_INDEXER,			// Missing bracket ]
 	INVALID_BINARY_EXPRESSION,	// Missing second operand in binary epxression.
 	INVALID_UNARY_EXPRESSION,	// Missing operand in unary expression.
 	INVALID_INT,
 	INVALID_FLOAT,
-	FUNC_ARG_OVERFLOW,			// Too many function arguments.
 	MEMORY,
 	ERROR,
 };
@@ -40,8 +41,8 @@ struct Error {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-constexpr bool isSpace(char c){
-	return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+constexpr bool isWhitespace(char c){
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 }
 
 constexpr bool isQuot(char c){
@@ -67,7 +68,7 @@ constexpr bool isUnaryOp(int c){
 
 constexpr const char* parseWhitespace(const char* s, const char* end) noexcept {
 	assert(s != nullptr && end != nullptr);
-	while (s != end && isSpace(*s)) s++;
+	while (s != end && isWhitespace(*s)) s++;
 	return s;
 }
 
@@ -217,6 +218,45 @@ static const char* parse_unaryExpression(const char* s, const char* end, Allocat
 }
 
 
+static const char* parse_index(const char* beg, const char* end, Allocator& alc, Operation*& in_out){
+	assert(beg != nullptr && end != nullptr && beg != end);
+	assert(*beg == '[');
+	
+	const char* s = parseWhitespace(beg + 1, end);
+	if (s == end){
+		throw Error(Status::UNCLOSED_INDEXER, string_view(beg, s));
+	}
+	
+	Operation* i = nullptr;
+	s = parse_binaryExpressionChain(s, end, alc, i);
+	assert(i != nullptr);
+	
+	s = parseWhitespace(s, end);
+	if (s == end || *s != ']'){
+		throw Error(Status::UNCLOSED_INDEXER, string_view(beg, s));
+	}
+	
+	assert(*s == ']');
+	s++;
+	
+	assert(in_out != nullptr);
+	Index* idx = alc.alloc<Index>();
+	idx->type = Operation::Type::INDEX;
+	idx->pos = beg;
+	idx->len = s - beg;
+	idx->obj = in_out;
+	idx->index = i;
+	in_out = idx;
+	
+	// Check if multi-dimensional indexer.
+	if (s != end && *s == '['){
+		return parse_index(s, end, alc, in_out);
+	}
+	
+	return s;
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -357,7 +397,7 @@ static Operation* prattBinopTree(Allocator& alc, vector<Operation*>& args, vecto
 
 static const char* parse_binaryExpressionChain(const char* s, const char* end, Allocator& alc, Operation*& out){
 	assert(s != nullptr && end != nullptr && s != end);
-	assert(!isSpace(*s));
+	assert(!isWhitespace(*s));
 	const char* beg = s;
 	
 	Operation* first = nullptr;
@@ -448,6 +488,92 @@ static const char* parse_binaryExpressionChain(const char* s, const char* end, A
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
+static const char* parse_object(const char* beg, const char* end, Allocator& alc, Operation*& out){
+	assert(beg != nullptr && end != nullptr && beg != end);
+	assert(*beg == '[');
+	const char* s = beg + 1;
+	
+	vector<Object::Entry> v;
+	v.reserve(8);
+	
+	while (true){
+		s = parseWhitespace(s, end);
+		
+		if (s == end){
+			throw Error(Status::UNCLOSED_OBJECT, string_view(beg, s));
+		} else if (*s == ','){
+			throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
+		} else if (*s == ']'){
+			break;
+		}
+		
+		// Parse key or value
+		Object::Entry& e = v.emplace_back();
+		s = parse_binaryExpressionChain(s, end, alc, e.value);
+		assert(e.value != nullptr);
+		
+		// Check if dictionary entry or array element.
+		s = parseWhitespace(s, end);
+		if (s == end){
+			throw Error(Status::UNCLOSED_OBJECT, string_view(beg, s));
+		} else if (*s == ','){
+			s++;
+			continue;
+		} else if (*s == ']'){
+			break;
+		} else if (*s != ':'){
+			throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
+		}
+		
+		const char* _s = s;
+		s = parseWhitespace(s + 1, end);
+		if (s == end){
+			throw Error(Status::UNCLOSED_OBJECT, string_view(beg, s));
+		} else if (*s == ']'){
+			throw Error(Status::UNEXPECTED_SYMBOL, string_view(_s, 1));
+		}
+		
+		// Parse value
+		e.key = e.value;
+		s = parse_binaryExpressionChain(s, end, alc, e.value);
+		assert(e.value != e.key && e.value != nullptr);
+		
+		// Next element
+		s = parseWhitespace(s, end);
+		if (s == end){
+			throw Error(Status::UNCLOSED_OBJECT, string_view(beg, s));
+		} else if (*s == ']'){
+			break;
+		} else if (*s != ','){
+			throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
+		}
+		
+		assert(*s == ',');
+		s++;
+	}
+	
+	assert(*s == ']');
+	s++;
+	
+	// Create Object expression.
+	const uint32_t count = uint32_t(min(v.size(), size_t(UINT32_MAX)));
+	void* mem = alc.alloc(sizeof(Object) + count * sizeof(*Object::elements));
+	
+	Object* obj = new (mem) Object();
+	obj->type = Operation::Type::OBJECT;
+	obj->pos = beg;
+	obj->len = s - beg;
+	obj->count = count;
+	copy(v.begin(), v.begin() + count, obj->elements);
+	
+	out = obj;
+	return s;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
 static const char* parse_identifier(const char* s, const char* end, string_view& out){
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(isFirstIdentifier(*s));
@@ -460,12 +586,12 @@ static const char* parse_identifier(const char* s, const char* end, string_view&
 }
 
 
-static const char* parse_func(const char* s, const char* end, Allocator& alc, string_view name, Operation*& out){
+static const char* parse_func(const char* s, const char* end, string_view name, Allocator& alc, Operation*& out){
 	assert(s != nullptr && end != nullptr && s != end);
 	assert(*s == '(');
 	
-	Operation* argv[Function::MAX_ARGS];
-	int argc = 0;
+	vector<Operation*> argv;
+	argv.reserve(8);
 	
 	// Parse arguments
 	const char* const beg = s++;
@@ -477,7 +603,7 @@ static const char* parse_func(const char* s, const char* end, Allocator& alc, st
 		} else if (*s == ')'){
 			break;
 		} else if (*s == ','){
-			if (argc == 0){
+			if (argv.empty()){
 				throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
 			}
 			
@@ -486,34 +612,28 @@ static const char* parse_func(const char* s, const char* end, Allocator& alc, st
 				goto unclosed;
 			}
 			
-		} else if (argc > 0){
+		} else if (!argv.empty()){
 			throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
 		}
 		
 		Operation* arg = nullptr;
-		const char* arg_beg = s;
 		s = parse_binaryExpressionChain(s, end, alc, arg);
 		assert(arg != nullptr);
-		
-		if (argc >= Function::MAX_ARGS){
-			throw Error(Status::FUNC_ARG_OVERFLOW, string_view(arg_beg, s));
-		} else {
-			argv[argc++] = arg;
-		}
-		
+		argv.emplace_back(arg);
 	}
 	
 	assert(*s == ')');
 	s++;
 	
 	// Create function
-	Function* f = static_cast<Function*>(alc.alloc(sizeof(Function) + sizeof(*Function::argv)*argc));
+	const uint32_t argc = uint32_t(min(argv.size(), size_t(UINT32_MAX)));
+	Function* f = static_cast<Function*>(alc.alloc(sizeof(Function) + argc * sizeof(*Function::argv)));
 	f->type = Operation::Type::FUNC;
 	f->len = s - name.begin();
 	f->pos = name.begin();
 	f->name_len = uint32_t(name.length());
 	f->argc = argc;
-	copy(argv, argv + argc, f->argv);
+	copy(argv.begin(), argv.begin() + argc, f->argv);
 	
 	out = f;
 	return s;
@@ -531,7 +651,7 @@ static const char* parse_varOrFunc(const char* s, const char* end, Allocator& al
 	// Check if function
 	s = parseWhitespace(s, end);
 	if (s != end && *s == '('){
-		return parse_func(s, end, alc, id, out);
+		return parse_func(s, end, id, alc, out);
 	}
 	
 	// Is variable
@@ -550,20 +670,25 @@ static const char* parse_varOrFunc(const char* s, const char* end, Allocator& al
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static const char* parse_singleExpression(const char* s, const char* end, Allocator& alc, Operation*& out){
-	assert(s != nullptr && end != nullptr && s != end);
-	assert(!isSpace(*s));
+static const char* parse_singleExpression(const char* beg, const char* end, Allocator& alc, Operation*& out){
+	assert(beg != nullptr && end != nullptr && beg != end);
+	assert(!isWhitespace(*beg));
+	const char* s = beg;
 	
 	if (isDigit(*s)){
 		return parse_num(s, end, alc, out);
 	} else if (isQuot(*s)){
-		return parse_str(s, end, alc, out);
+		s = parse_str(s, end, alc, out);
+		goto _check_index;
 	} else if (isFirstIdentifier(*s)){
-		return parse_varOrFunc(s, end, alc, out);
+		s = parse_varOrFunc(s, end, alc, out);
+		goto _check_index;
 	} else if (isUnaryOp(*s)){
-		return parse_unaryExpression(s, end, alc, out);
+		s = parse_unaryExpression(s, end, alc, out);
+		goto _check_index;
 	}
 	
+	// Sub-expressions
 	else if (*s == '('){
 		const char* beg = s;
 		
@@ -576,10 +701,25 @@ static const char* parse_singleExpression(const char* s, const char* end, Alloca
 			throw Error(Status::UNCLOSED_EXPRESSION, string_view(beg, s));
 		}
 		
-		return s + 1;
+		s++;
+		goto _check_index;
 	}
 	
-	throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
+	// Arrays and dictionaries
+	else if (*s == '['){
+		s = parse_object(s, end, alc, out);
+		goto _check_index;
+	} else {
+		throw Error(Status::UNEXPECTED_SYMBOL, string_view(s, 1));
+	}
+	
+	_check_index:
+	s = parseWhitespace(s, end);
+	if (s != end && *s == '['){
+		return parse_index(s, end, alc, out);
+	}
+	
+	return s;
 }
 
 
@@ -592,18 +732,24 @@ static void report(const Macro* origin, const Error& err){
 	}
 	
 	linepos pos = findLine(*origin, err.mark.begin());
-	print(pos);
+	HERE(print(pos));
 	LOG_STDERR(ANSI_BOLD ANSI_RED "error: " ANSI_RESET);
 	
 	switch (err.status){
 		case Status::UNEXPECTED_SYMBOL:
-			LOG_STDERR("Unexpected symbol: " PURPLE("`%.*s`") "\n", VA_STRV(err.mark));
+			LOG_STDERR("Unexpected symbol: `" PURPLE("%.*s") "`\n", VA_STRV(err.mark));
 			break;
 		case Status::UNCLOSED_STRING:
 			LOG_STDERR("Unterminated string literal in expression.\n");
 			break;
 		case Status::UNCLOSED_EXPRESSION:
-			LOG_STDERR("Missing closing bracket " PURPLE("`(`") " in expression.\n");
+			LOG_STDERR("Missing closing bracket `" PURPLE(")") "` in expression.\n");
+			break;
+		case Status::UNCLOSED_OBJECT:
+			LOG_STDERR("Missing closing bracket `" PURPLE("]") "` in map/array expression.\n");
+			break;
+		case Status::UNCLOSED_INDEXER:
+			LOG_STDERR("Missing closing bracket `" PURPLE("]") "` in indexer expression.\n");
 			break;
 		case Status::INVALID_BINARY_EXPRESSION:
 			LOG_STDERR("Missing second operand in binary epxression.\n");
@@ -616,9 +762,6 @@ static void report(const Macro* origin, const Error& err){
 			break;
 		case Status::INVALID_UNARY_EXPRESSION:
 			LOG_STDERR("Missing operand in unary expression.\n");
-			break;
-		case Status::FUNC_ARG_OVERFLOW:
-			LOG_STDERR("Too many arguments in function. Maximum allowed is: " PURPLE("%d") "\n", Function::MAX_ARGS);
 			break;
 		case Status::MEMORY:
 			LOG_STDERR("Ran out of memory when parsing expression.\n");
