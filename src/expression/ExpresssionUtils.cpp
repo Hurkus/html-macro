@@ -79,8 +79,6 @@ static void serialize(const Operation* op, string& buff){
 			return serialize(static_cast<const BinaryOperation&>(*op), buff, "/");
 		case Operation::Type::MOD:
 			return serialize(static_cast<const BinaryOperation&>(*op), buff, "%");
-		case Operation::Type::XOR:
-			return serialize(static_cast<const BinaryOperation&>(*op), buff, "^");
 		case Operation::Type::EQ:
 			return serialize(static_cast<const BinaryOperation&>(*op), buff, "==");
 		case Operation::Type::NEQ:

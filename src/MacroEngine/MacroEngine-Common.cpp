@@ -251,8 +251,7 @@ bool MacroEngine::eval_string_interpolate(const Node& op, string_view str, strin
 Branch MacroEngine::attr_equals_variable(const Node& op, const Attr& attr){
 	string_view var_name = attr.name();
 	const Value* var = variables->get(var_name);
-	
-	bool pass;
+	bool pass = false;
 	
 	// Variable exists or is empty
 	if (attr.value_p == nullptr){
@@ -281,7 +280,7 @@ Branch MacroEngine::attr_equals_variable(const Node& op, const Attr& attr){
 			string buff;
 			if (!MacroEngine::eval_string_interpolate(op, attr.value(), buff))
 				return MacroEngine::Branch::NONE;
-			pass = (var == nullptr && buff.empty()) || (var->sv() == buff);
+			pass = (var == nullptr && buff.empty()) || (var->data.s->sv() == buff);
 		}
 	
 	}
@@ -292,7 +291,7 @@ Branch MacroEngine::attr_equals_variable(const Node& op, const Attr& attr){
 		if (var == nullptr)
 			pass = buff.empty();
 		else if (var->type == Value::Type::STRING)
-			pass = (var->sv() == buff);
+			pass = (var->data.s->sv() == buff);
 		else
 			pass = false;
 	}

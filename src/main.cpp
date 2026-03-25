@@ -68,7 +68,7 @@ static bool setDefinedVariables(const vector<const char*>& defines, VariableMap&
 		
 		while (true){
 			if (*s == 0){
-				ERROR("Defined variable " PURPLE("`%s`") " missing value. Proper format is " PURPLE("name=value") ".", name_beg);
+				ERROR("Defined variable `" PURPLE("%s") "` missing value. Proper format is " PURPLE("name=value") ".", name_beg);
 				assert(*s != 0);
 				return false;
 			} else if (*s == '='){
@@ -78,7 +78,7 @@ static bool setDefinedVariables(const vector<const char*>& defines, VariableMap&
 				if (name_end == nullptr)
 					name_end = s;
 			} else if (name_end != nullptr){
-				ERROR("Invalid format of variable definition " PURPLE("`%s`") ". Proper format is " PURPLE("name=value") ".", name_beg);
+				ERROR("Invalid format of variable definition `" PURPLE("%s") "`. Proper format is " PURPLE("name=value") ".", name_beg);
 				return false;
 			}
 			s++;
@@ -88,7 +88,7 @@ static bool setDefinedVariables(const vector<const char*>& defines, VariableMap&
 		s++;
 		
 		const char* val_beg = s;
-		vars.insert(string_view(name_beg, name_end), val_beg);
+		vars.insert(string_view(name_beg, name_end), string_view(val_beg));
 	}
 	return true;
 }

@@ -306,9 +306,9 @@ static bool run(){
 		if (r.expectedStatus != r.recievedStatus)
 			printf("Program exited with status " PURPLE("%d") ", expected " PURPLE("%d") ".\n", r.recievedStatus, r.expectedStatus);
 		if (r.recievedStdout != r.expectedStdout)
-			fmt_expected(r.recievedStdout, r.expectedStdout);
+			fmt_expected(r.expectedStdout, r.recievedStdout);
 		if (r.recievedStderr != r.expectedStderr)
-			fmt_expected(r.recievedStderr, r.expectedStderr);
+			fmt_expected(r.expectedStderr, r.recievedStderr);
 		
 		printf(ANSI_PURPLE "FROM: %s ~ %s:%ld" ANSI_RESET "\n", p.test->name, p.test->file, p.test->line);
 	}

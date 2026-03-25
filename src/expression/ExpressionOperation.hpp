@@ -10,7 +10,7 @@ struct Expression::Operation {
 		ERROR,
 		LONG, DOUBLE, STRING, VAR,
 		NOT, NEG,
-		ADD, SUB, MUL, DIV, MOD, XOR,
+		ADD, SUB, MUL, DIV, MOD,
 		AND, OR,
 		EQ, NEQ, LT, LTE, GT, GTE,
 		FUNC,

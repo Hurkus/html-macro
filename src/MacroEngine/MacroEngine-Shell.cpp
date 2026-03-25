@@ -103,6 +103,10 @@ static void _setEnv(const VariableMap& vars, const vector<string_view>& env){
 		const Value& val = keyval->value;
 		
 		switch (val.type){
+			case Value::Type::NONE: {
+				break;
+			}
+			
 			case Value::Type::LONG: {
 				if (snprintf(buff, sizeof(buff), "%ld", val.data.l) >= 0)
 					setenv(keyval->key, buff, 1);
@@ -118,9 +122,14 @@ static void _setEnv(const VariableMap& vars, const vector<string_view>& env){
 			} break;
 			
 			case Value::Type::STRING: {
-				assert(val.data.s[val.data_len] == 0);
-				setenv(keyval->key, val.data.s, 1);
+				assert(*val.data.s->end() == '\0');
+				setenv(keyval->key, val.data.s->str, 1);
 			} break;
+			
+			case Value::Type::OBJECT: {
+				break;
+			}
+			
 		}
 		
 	}
@@ -344,9 +353,8 @@ void MacroEngine::shell(const Node& op, Node& dst){
 	
 	// Apply result
 	switch (capture){
-		case Capture::VOID: {
+		case Capture::VOID:
 			break;
-		}
 		
 		case Capture::TEXT: {
 			if (result.total > 0){
@@ -367,23 +375,20 @@ void MacroEngine::shell(const Node& op, Node& dst){
 		} break;
 		
 		case Capture::VAR: {
-			size_t len = min(result.total, size_t(UINT32_MAX));
-			if (len <= 0){
-				variables->insert(captureVar, ""sv);
-				break;
-			}
+			uint32_t len = uint32_t(min(result.total, size_t(UINT32_MAX)));
 			
-			char* s = new char[len + 1];
-			size_t n = concat(result.chunks, s, len);
-			s[n] = 0;
+			unique_ptr<Value::String> s = Value::String::create(len);
+			len = uint32_t(concat(result.chunks, s->str, s->len));
 			
 			// Trim last newline
-			if (n > 0 && s[n-1] == '\n'){
-				s[--n] = 0;
+			if (len > 0 && s->str[len-1] == '\n'){
+				len--;
 			}
 			
-			assert(n <= UINT32_MAX);
-			variables->insert(captureVar, s, uint32_t(n));
+			s->len = len;
+			s->str[s->len] = 0;
+			
+			variables->insert(captureVar, s.release());
 		} break;
 		
 	}

@@ -14,9 +14,6 @@ using Type = Value::Type;
 // ----------------------------------- [ Prototypes ] --------------------------------------- //
 
 
-#define VAL_STR(val)	(val.toStr().c_str())
-
-
 Value eval(const Expression& self, const Operation& op, const VariableMap& vars);
 Value eval(const Expression& self, const Function& op, const VariableMap& vars);
 
@@ -140,7 +137,8 @@ static Value f_defined(const Expression& self, const Function& f, const Variable
 	}
 	
 	const Variable& var = static_cast<const Variable&>(*arg0);
-	return (vars.get(var.name()) != nullptr) ? 1L : 0L;
+	const Value* val = vars.get(var.name());
+	return (val != nullptr && val->type != Value::Type::NONE) ? 1L : 0L;
 }
 
 
@@ -160,12 +158,17 @@ static Value f_int(const Expression& self, const Function& f, const VariableMap&
 	
 	switch (val.type){
 		case Type::STRING: [[likely]]
-			val = atol(val.data.s);
+			val = atol(val.data.s->str);
 			break;
 		case Type::DOUBLE:
 			val = long(val.data.d);
 			break;
-		case Type::LONG: [[unlikely]]
+		case Type::LONG:
+			val = long(val.data.o->arr.size());
+			break;
+		case Type::NONE:
+		case Type::OBJECT:
+			val = Value();
 			break;
 	}
 	
@@ -186,12 +189,16 @@ static Value f_float(const Expression& self, const Function& f, const VariableMa
 	
 	switch (val.type){
 		case Type::STRING: [[likely]]
-			val = atof(val.data.s);
+			val = atof(val.data.s->str);
 			break;
 		case Type::LONG:
 			val = double(val.data.l);
 			break;
-		case Type::DOUBLE: [[unlikely]]
+		case Type::DOUBLE:
+			break;
+		case Type::NONE:
+		case Type::OBJECT:
+			val = Value();
 			break;
 	}
 	
@@ -211,8 +218,10 @@ static Value f_str(const Expression& self, const Function& f, const VariableMap&
 	Value val = eval(self, *f.argv[0], vars);
 	
 	switch (val.type){
+		case Type::NONE:
 		case Type::LONG:
 		case Type::DOUBLE:
+		case Type::OBJECT:
 			val = Value(val.toStr());
 			break;
 		case Type::STRING: [[unlikely]]
@@ -235,6 +244,9 @@ static Value f_len(const Expression& self, const Function& f, const VariableMap&
 	Value val = eval(self, *f.argv[0], vars);
 	
 	switch (val.type){
+		case Type::NONE:
+			val = Value();
+			break;
 		case Type::LONG:
 			val.data.l = abs(val.data.l);
 			break;
@@ -242,7 +254,10 @@ static Value f_len(const Expression& self, const Function& f, const VariableMap&
 			val.data.d = abs(val.data.d);
 			break;
 		case Type::STRING:
-			val = long(val.data_len);
+			val = static_cast<long>(val.data.s->len);
+			break;
+		case Type::OBJECT:
+			val = static_cast<long>(val.data.o->arr.size());
 			break;
 	}
 	
@@ -253,20 +268,74 @@ static Value f_len(const Expression& self, const Function& f, const VariableMap&
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static bool toNum(const Value& val, long& out_i, double& out_f){
-	switch (val.type){
-		case Type::LONG:
-			out_i = val.data.l;
-			return true;
-		case Type::DOUBLE:
-			out_f = val.data.d;
+static bool cmp(const Value& v1, const Value& v2, auto op){
+	switch (v1.type){
+		case Type::NONE:
 			return false;
-		case Type::STRING:
-			out_i = long(val.data_len);
-			return true;
+		
+		case Type::LONG: {
+			switch (v2.type){
+				case Type::NONE:
+					return true;
+				case Type::LONG:
+					return op(v1.data.l, v2.data.l);
+				case Type::DOUBLE:
+					return op(v1.data.l, v2.data.d);
+				case Type::STRING:
+					return op(v1.data.l, v2.data.s->len);
+				case Type::OBJECT:
+					return op(v1.data.l, v2.data.o->arr.size());
+			}
+		} break;
+		
+		case Type::DOUBLE: {
+			switch (v2.type){
+				case Type::NONE:
+					return true;
+				case Type::LONG:
+					return op(v1.data.d, v2.data.l);
+				case Type::DOUBLE:
+					return op(v1.data.d, v2.data.d);
+				case Type::STRING:
+					return op(v1.data.d, v2.data.s->len);
+				case Type::OBJECT:
+					return op(v1.data.d, v2.data.o->arr.size());
+			}
+		} break;
+		
+		case Type::STRING: {
+			switch (v2.type){
+				case Type::NONE:
+					return true;
+				case Type::LONG:
+					return op(v1.data.s->len, v2.data.l);
+				case Type::DOUBLE:
+					return op(v1.data.s->len, v2.data.d);
+				case Type::STRING:
+					return op(v1.data.s->len, v2.data.s->len);
+				case Type::OBJECT:
+					return op(v1.data.s->len, v2.data.o->arr.size());
+			}
+		} break;
+		
+		case Type::OBJECT: {
+			switch (v2.type){
+				case Type::NONE:
+					return true;
+				case Type::LONG:
+					return op(v1.data.o->arr.size(), v2.data.l);
+				case Type::DOUBLE:
+					return op(v1.data.o->arr.size(), v2.data.d);
+				case Type::STRING:
+					return op(v1.data.o->arr.size(), v2.data.s->len);
+				case Type::OBJECT:
+					return op(v1.data.o->arr.size(), v2.data.o->arr.size());
+			}
+		} break;
+		
 	}
-	out_i = 0;
-	return true;
+	assert(false);
+	return false;
 }
 
 
@@ -276,33 +345,28 @@ static Value f_min(const Expression& self, const Function& f, const VariableMap&
 		return {};
 	}
 	
-	long min_int;
-	double min_flt;
-	Value min_val = eval(self, *f.argv[0], vars);
-	bool min_isint = toNum(min_val, min_int, min_flt);
+	Value result;
+	auto op = std::less();
 	
-	for (uint32_t i = 1 ; i < f.argc ; i++){
-		Value val = eval(self, *f.argv[i], vars);
-		long val_int;
-		double val_flt;
+	for (uint32_t i = 0 ; i < f.argc ; i++){
+		assert(f.argv[i] != nullptr);
+		Value next = eval(self, *f.argv[i], vars);
 		
-		if (toNum(val, val_int, val_flt)){
-			if ((min_isint && val_int < min_int) || (!min_isint && val_int < min_flt)){
-				min_isint = true;
-				min_int = val_int;
-				min_val = move(val);
+		// Unroll array argument.
+		if (next.type == Type::OBJECT){
+			for (const Value& el : next.data.o->arr){
+				if (cmp(el, result, op))
+					result = el;			// Array must not be modified.
 			}
-		} else {
-			if ((min_isint && val_flt < min_int) || (!min_isint && val_flt < min_flt)){
-				min_isint = false;
-				min_flt = val_flt;
-				min_val = move(val);
-			}
+		}
+		
+		else if (cmp(next, result, op)){
+			result = move(next);
 		}
 		
 	}
 	
-	return min_val;
+	return result;
 }
 
 
@@ -312,33 +376,28 @@ static Value f_max(const Expression& self, const Function& f, const VariableMap&
 		return {};
 	}
 	
-	long max_int;
-	double max_flt;
-	Value max_val = eval(self, *f.argv[0], vars);
-	bool max_isint = toNum(max_val, max_int, max_flt);
+	Value result;
+	auto op = std::greater();
 	
-	for (uint32_t i = 1 ; i < f.argc ; i++){
-		Value val = eval(self, *f.argv[i], vars);
-		long val_int;
-		double val_flt;
+	for (uint32_t i = 0 ; i < f.argc ; i++){
+		assert(f.argv[i] != nullptr);
+		Value next = eval(self, *f.argv[i], vars);
 		
-		if (toNum(val, val_int, val_flt)){
-			if ((max_isint && val_int > max_int) || (!max_isint && val_int > max_flt)){
-				max_isint = true;
-				max_int = val_int;
-				max_val = move(val);
+		// Unroll array argument.
+		if (next.type == Type::OBJECT){
+			for (const Value& el : next.data.o->arr){
+				if (cmp(el, result, op))
+					result = el;			// Array must not be modified.
 			}
-		} else {
-			if ((max_isint && val_flt > max_int) || (!max_isint && val_flt > max_flt)){
-				max_isint = false;
-				max_flt = val_flt;
-				max_val = move(val);
-			}
+		}
+		
+		else if (cmp(next, result, op)){
+			result = move(next);
 		}
 		
 	}
 	
-	return max_val;
+	return result;
 }
 
 
@@ -361,7 +420,9 @@ static Value f_sin(const Expression& self, const Function& f, const VariableMap&
 		case Type::DOUBLE:
 			val.data.d = sin(val.data.d);
 			break;
+		case Type::NONE:
 		case Type::STRING:
+		case Type::OBJECT:
 			break;
 	}
 	
@@ -388,7 +449,9 @@ static Value f_cos(const Expression& self, const Function& f, const VariableMap&
 		case Type::DOUBLE:
 			val.data.d = cos(val.data.d);
 			break;
+		case Type::NONE:
 		case Type::STRING:
+		case Type::OBJECT:
 			break;
 	}
 	
@@ -421,13 +484,13 @@ static Value f_if(const Expression& self, const Function& f, const VariableMap& 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-inline void lowercase(char* beg, uint32_t len){
+inline void lowercase(char* beg, size_t len){
 	transform(beg, beg + len, beg, [](unsigned char c){
 		return tolower(c);
 	});
 }
 
-inline void uppercase(char* beg, uint32_t len){
+inline void uppercase(char* beg, size_t len){
 	transform(beg, beg + len, beg, [](unsigned char c){
 		return toupper(c);
 	});
@@ -462,14 +525,19 @@ static Value f_lower(const Expression& self, const Function& f, const VariableMa
 	Value val = eval(self, *f.argv[0], vars);
 	
 	switch (val.type){
+		case Type::STRING: [[likely]]
+			if (val.data.s->refs > 1)
+				val = Value(val.data.s->sv());
+			lowercase(val.data.s->str, val.data.s->len);
+			break;
 		case Type::LONG:
 			val = Value(to_string(val.data.l));
 			break;
 		case Type::DOUBLE:
 			val = Value(to_string(val.data.d));
 			break;
-		case Type::STRING: [[likely]]
-			lowercase(val.data.s, val.data_len);
+		case Type::NONE:
+		case Type::OBJECT:
 			break;
 	}
 	
@@ -489,14 +557,19 @@ static Value f_upper(const Expression& self, const Function& f, const VariableMa
 	Value val = eval(self, *f.argv[0], vars);
 	
 	switch (val.type){
+		case Type::STRING: [[likely]]
+			if (val.data.s->refs > 1)
+				val = Value(val.data.s->sv());
+			uppercase(val.data.s->str, val.data.s->len);
+			break;
 		case Type::LONG:
 			val = Value(to_string(val.data.l));
 			break;
 		case Type::DOUBLE:
 			val = Value(to_string(val.data.d));
 			break;
-		case Type::STRING: [[likely]]
-			uppercase(val.data.s, val.data_len);
+		case Type::NONE:
+		case Type::OBJECT:
 			break;
 	}
 	
@@ -529,6 +602,24 @@ static Value f_substr(const Expression& self, const Function& f, const VariableM
 	long beg;
 	long len;
 	
+	// Extract argument 0 [str]
+	switch (arg_0.type){
+		case Type::LONG:
+			str_buff = to_string(arg_0.data.l);
+			str = str_buff;
+			break;
+		case Type::DOUBLE:
+			str_buff = to_string(arg_0.data.d);
+			str = str_buff;
+			break;
+		case Type::STRING:
+			str = arg_0.data.s->sv();
+			break;
+		default:
+			HERE(error_arg_expected_str(self, *f.argv[0], "str", "substr(str, beg, [len])"));
+			return arg_0;
+	}
+	
 	// Extract argument 1 [beg]
 	switch (arg_1.type){
 		case Type::LONG:
@@ -555,21 +646,6 @@ static Value f_substr(const Expression& self, const Function& f, const VariableM
 				HERE(error_arg_expected_int(self, *f.argv[2], "len", "substr(str, beg, [len])"));
 				return arg_0;
 		}
-	}
-	
-	// Extract argument 0 [str]
-	switch (arg_0.type){
-		case Type::LONG:
-			str_buff = to_string(arg_0.data.l);
-			str = str_buff;
-			break;
-		case Type::DOUBLE:
-			str_buff = to_string(arg_0.data.d);
-			str = str_buff;
-			break;
-		case Type::STRING:
-			str = arg_0.sv();
-			break;
 	}
 	
 	// Normalize beg and end
@@ -624,20 +700,20 @@ static Value f_match(const Expression& self, const Function& f, const VariableMa
 	// Create regex
 	regex reg;
 	try {
-		reg = regex(arg_reg.data.s, arg_reg.data_len);
+		reg = regex(arg_reg.data.s->begin(), arg_reg.data.s->end());
 	} catch (...){
 		HERE(error_arg_expected_regex(self, *f.argv[1], "reg", "match(str, reg)"));
 		return 0L;
 	}
 	
 	try {
-		bool m = regex_match(arg_str.data.s, arg_str.data.s + arg_str.data_len, reg);
-		return Value(m ? 1L : 0L);
+		bool m = regex_match(arg_str.data.s->begin(), arg_str.data.s->end(), reg);
+		return m ? 1L : 0L;
 	} catch (...){
 		HERE(error_arg_expected_regex(self, *f.argv[1], "reg", "match(str, reg)"));
-		return 0L;
 	}
 	
+	return 0L;
 }
 
 
@@ -674,19 +750,14 @@ static Value f_replace(const Expression& self, const Function& f, const Variable
 		return arg_str;
 	}
 	
-	// Create regex
-	regex reg;
-	try {
-		reg = regex(arg_reg.data.s, arg_reg.data_len);
-	} catch (...){
-		HERE(error_arg_expected_regex(self, *f.argv[1], "reg", "replace(str, reg, rep)"));
-		return arg_str;
-	}
+	// Strings are C-strings
+	assert(*arg_str.data.s->end() == '\0');
+	assert(*arg_rep.data.s->end() == '\0');
 	
+	// Create regex
 	try {
-		assert(arg_str.data.s[arg_str.data_len] == 0);
-		assert(arg_rep.data.s[arg_rep.data_len] == 0);
-		string buff = regex_replace(arg_str.data.s, reg, arg_rep.data.s);
+		regex reg = regex(arg_reg.data.s->begin(), arg_reg.data.s->end());
+		string buff = regex_replace(arg_str.data.s->begin(), reg, arg_rep.data.s->begin());
 		arg_str = Value(move(buff));
 	} catch (...){
 		HERE(error_arg_expected_regex(self, *f.argv[1], "reg", "replace(str, reg, rep)"));

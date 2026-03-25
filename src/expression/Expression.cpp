@@ -48,7 +48,7 @@ static void warn_undefined_variable(const Expression& self, const Variable& var)
 	linepos pos = findLine(*self.origin, mark.begin());
 	
 	print(pos);
-	LOG_STDERR(WARN_PFX "Undefined variable `" PURPLE("%.*s") "`. Defaulted to " PURPLE("0") ".\n", VA_STRV(var.name()));
+	LOG_STDERR(WARN_PFX "Undefined variable `" PURPLE("%.*s") "`.\n", VA_STRV(var.name()));
 	printCodeView(pos, mark, ANSI_YELLOW);
 }
 
@@ -62,7 +62,7 @@ static Value var(const Expression& self, const Variable& var, const VariableMap&
 		return Value(*val);
 	} else {
 		warn_undefined_variable(self, var);
-		return Value(0L);
+		return Value();
 	}
 }
 
@@ -72,6 +72,8 @@ static Value nott(const Expression& self, const UnaryOperation& unop, const Vari
 	Value val = eval(self, *unop.arg, vars);
 	
 	switch (val.type){
+		case Type::NONE:
+			break;
 		case Type::LONG:
 			val = (val.data.l == 0) ? 1L : 0L;
 			break;
@@ -79,7 +81,10 @@ static Value nott(const Expression& self, const UnaryOperation& unop, const Vari
 			val = (val.data.d == 0) ? 1L : 0L;
 			break;
 		case Type::STRING:
-			val = (val.data_len == 0) ? 1L : 0L;
+			val = (val.data.s->len == 0) ? 1L : 0L;
+			break;
+		case Type::OBJECT:
+			val = (val.data.o->arr.empty() && val.data.o->dict.empty()) ? 1L : 0L;
 			break;
 	}
 	
@@ -98,7 +103,9 @@ static Value neg(const Expression& self, const UnaryOperation& unop, const Varia
 		case Type::DOUBLE:
 			val = -val.data.d;
 			break;
+		case Type::NONE:
 		case Type::STRING:
+		case Type::OBJECT:
 			break;
 	}
 	
@@ -114,14 +121,20 @@ static Value add(const Expression& self, const BinaryOperation& binop, const Var
 	Value v1 = eval(self, *binop.arg_1, vars);
 	Value v2 = eval(self, *binop.arg_2, vars);
 	
-	if (v1.type == Type::LONG){
+	if (v1.type == Type::NONE) [[unlikely]] {
+		v1 = move(v2);
+	}
+	
+	else if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
 			v1.data.l += v2.data.l;
 		else if (v2.type == Type::DOUBLE)
 			v1 = v1.data.l + v2.data.d;
-		else if (v2.type == Type::STRING){
-			string s1 = to_string(v1.data.l);
-			v1 = Value(s1, v2.sv());
+		else if (v2.type == Type::STRING)
+			v1 = Value(to_string(v1.data.l), v2.data.s->sv());
+		else if (v2.type == Type::OBJECT){
+			v2.data.o->insert(0, move(v1));
+			v1 = move(v2);
 		}
 	}
 	
@@ -130,23 +143,28 @@ static Value add(const Expression& self, const BinaryOperation& binop, const Var
 			v1.data.d += v2.data.l;
 		else if (v2.type == Type::DOUBLE)
 			v1.data.d += v2.data.d;
-		else if (v2.type == Type::STRING){
-			string s1 = to_string(v1.data.l);
-			v1 = Value(s1, v2.sv());
+		else if (v2.type == Type::STRING)
+			v1 = Value(to_string(v1.data.l), v2.data.s->sv());
+		else if (v2.type == Type::OBJECT){
+			v2.data.o->insert(0, move(v1));
+			v1 = move(v2);
 		}
 	}
 	
 	else if (v1.type == Type::STRING){
-		string_view s1 = string_view(v1.data.s, v1.data_len);
-		
-		if (v2.type == Type::LONG)
-			v1 = Value(s1, to_string(v2.data.l));
-		else if (v2.type == Type::DOUBLE)
-			v1 = Value(s1, to_string(v2.data.d));
-		else if (v2.type == Type::STRING){
-			v1 = Value(s1, v2.sv());
+		if (v2.type == Type::STRING){
+			v1 = Value(v1.data.s->sv(), v2.toStr());
+		} else if (v2.type == Type::OBJECT){
+			v2.data.o->insert(0, move(v1));
+			v1 = move(v2);
+		} else if (v2.type != Type::NONE){
+			v1 = Value(v1.data.s->sv(), v2.toStr());
 		}
-		
+	}
+	
+	else if (v1.type == Type::OBJECT){
+		if (v2.type != Type::NONE)
+			v1.data.o->insert(v1.data.o->arr.size(), move(v2));
 	}
 	
 	return v1;
@@ -158,7 +176,11 @@ static Value sub(const Expression& self, const BinaryOperation& binop, const Var
 	Value v1 = eval(self, *binop.arg_1, vars);
 	Value v2 = eval(self, *binop.arg_2, vars);
 	
-	if (v1.type == Type::LONG){
+	if (v1.type == Type::NONE) [[unlikely]] {
+		v1 = move(v2);
+	}
+	
+	else if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
 			v1.data.l -= v2.data.l;
 		else if (v2.type == Type::DOUBLE)
@@ -173,10 +195,37 @@ static Value sub(const Expression& self, const BinaryOperation& binop, const Var
 	}
 	
 	else if (v1.type == Type::STRING){
-		if (v2.type == Type::LONG)
-			v1.data_len = (uint32_t)clamp(long(v1.data_len) - v2.data.l, 0L, long(UINT32_MAX));
-		else if (v2.type == Type::DOUBLE)
-			v1.data_len = (uint32_t)clamp(v1.data_len - v2.data.d, 0.0, double(UINT32_MAX));
+		Value::String& s = *v1.data.s;
+		
+		// Downcast double to long.
+		if (v2.type == Type::DOUBLE){
+			v2.type = Type::LONG;
+			v2.data.l = long(v2.data.d);
+		}
+		
+		// Shorten string.
+		if (v2.type == Type::LONG){
+			const size_t len = (v2.data.l < s.len) ? s.len - v2.data.l : 0;
+			
+			if (v1.data.s->refs <= 1){
+				v1.data.s->len = uint32_t(len);
+			} else {
+				v1 = Value(string_view(s.str, len));
+			}
+			
+		}
+		
+	}
+	
+	else if (v1.type == Type::OBJECT){
+		vector<Value>& arr = v1.data.o->arr;
+		
+		// Remove identical elements.
+		for (ssize_t i = arr.size() - 1 ; i >= 0 ; i--){
+			if (arr[i] == v2)
+				arr.erase(arr.begin() + i);
+		}
+		
 	}
 	
 	return v1;
@@ -190,19 +239,25 @@ static Value mul(const Expression& self, const BinaryOperation& binop, const Var
 	
 	auto mul = [](string_view sv, long n){
 		assert(n > 0);
-		size_t len = sv.length() * size_t(n);
 		
-		char* s = new char[len + 1];
+		string buff;
+		buff.reserve(sv.length() * n);
+		
 		for (long i = 0 ; i < n ; i++){
-			copy(sv.begin(), sv.end(), s + i * sv.length());
+			buff.append(sv);
 		}
 		
-		s[len] = 0;
-		return Value(s, (uint32_t)min(len, size_t(UINT32_MAX)));
+		return Value(buff);
 	};
 	
-	if (v1.type == Type::LONG){
-		if (v2.type == Type::LONG)
+	if (v1.type == Type::NONE){
+		v1 = move(v2);
+	}
+	
+	else if (v1.type == Type::LONG){
+		if (v2.type == Type::NONE)
+			v1 = Value();
+		else if (v2.type == Type::LONG)
 			v1.data.l *= v2.data.l;
 		else if (v2.type == Type::DOUBLE)
 			v1 = v1.data.l * v2.data.d;
@@ -212,40 +267,65 @@ static Value mul(const Expression& self, const BinaryOperation& binop, const Var
 			else if (v1.data.l == 1)
 				v1 = move(v2);
 			else
-				v1 = mul(v2.sv(), v1.data.l);
+				v1 = mul(v2.data.s->sv(), v1.data.l);
 			return v1;
+		}
+		else if (v2.type == Type::OBJECT){
+			v2.data.o->insert(0, move(v1));
+			v1 = move(v2);
 		}
 	}
 	
 	else if (v1.type == Type::DOUBLE){
-		if (v2.type == Type::LONG)
+		if (v2.type == Type::NONE)
+			v1 = Value();
+		else if (v2.type == Type::LONG)
 			v1.data.d *= v2.data.l;
 		else if (v2.type == Type::DOUBLE)
 			v1.data.d *= v2.data.d;
 		else if (v2.type == Type::STRING){
-			if (v1.data.l <= 0)
+			if (v1.data.d <= 0)
 				v1 = Value(""sv);
-			else if (v1.data.l == 1)
+			else if (v1.data.d == 1)
 				v1 = move(v2);
 			else
-				v1 = mul(v2.sv(), long(v1.data.d));
+				v1 = mul(v2.data.s->sv(), long(v1.data.d));
 			return v1;
+		}
+		else if (v2.type == Type::OBJECT){
+			v2.data.o->insert(0, move(v1));
+			v1 = move(v2);
 		}
 	}
 	
 	else if (v1.type == Type::STRING){
-		if (v2.type == Type::STRING){
-			return v1;
-		}
-		
-		long n = 0;
-		if (v2.type == Type::LONG)
-			n = v2.data.l;
+		if (v2.type == Type::NONE)
+			v1 = Value();
+		else if (v2.type == Type::LONG)
+			v1 = mul(v1.data.s->sv(), v2.data.l);
 		else if (v2.type == Type::DOUBLE)
-			n = long(v2.data.d);
-		
-		v1 = mul(v1.sv(), n);
-		return v1;
+			v1 = mul(v1.data.s->sv(), long(v2.data.d));
+		else if (v2.type == Type::OBJECT){
+			v2.data.o->insert(0, move(v1));
+			v1 = move(v2);
+		}
+	}
+	
+	else if (v1.type == Type::OBJECT){
+		switch (v2.type){
+			case Type::NONE:
+				break;
+			
+			case Type::LONG:
+			case Type::DOUBLE:
+			case Type::STRING:
+				v1.data.o->insert(v1.data.o->arr.size(), move(v2));
+				break;
+			
+			case Type::OBJECT:
+				v1.data.o->merge(move(*v2.data.o));
+				break;
+		}
 	}
 	
 	return v1;
@@ -257,7 +337,11 @@ static Value div(const Expression& self, const BinaryOperation& binop, const Var
 	Value v1 = eval(self, *binop.arg_1, vars);
 	Value v2 = eval(self, *binop.arg_2, vars);
 	
-	if (v1.type == Type::LONG){
+	if (v1.type == Type::NONE){
+		v1 = move(v2);
+	}
+	
+	else if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
 			v1.data.l /= v2.data.l;
 		else if (v2.type == Type::DOUBLE)
@@ -271,6 +355,33 @@ static Value div(const Expression& self, const BinaryOperation& binop, const Var
 			v1.data.d /= v2.data.d;
 	}
 	
+	else if (v1.type == Type::OBJECT){
+		if (v2.type == Type::LONG)
+			v1.data.o->remove(static_cast<size_t>(v2.data.l));
+		else if (v2.type == Type::DOUBLE)
+			v1.data.o->remove(static_cast<size_t>(v2.data.d));
+		else if (v2.type == Type::STRING)
+			v1.data.o->remove(v2.data.s->sv());
+		else if (v2.type == Type::OBJECT){
+			
+			// Remove properties indexed from o2 dictionary.
+			for (const auto& pair : v2.data.o->dict){
+				v1.data.o->remove(pair.key);
+			}
+			
+			// Remove elements and properties indexed from o2 array.
+			for (const Value& el : v2.data.o->arr){
+				if (el.type == Type::LONG)
+					v1.data.o->remove(size_t(el.data.l));
+				else if (el.type == Type::DOUBLE)
+					v1.data.o->remove(size_t(el.data.d));
+				else if (el.type == Type::STRING)
+					v1.data.o->remove(el.data.s->sv());
+			}
+			
+		}
+	}
+	
 	return v1;
 }
 
@@ -280,7 +391,11 @@ static Value mod(const Expression& self, const BinaryOperation& binop, const Var
 	Value v1 = eval(self, *binop.arg_1, vars);
 	Value v2 = eval(self, *binop.arg_2, vars);
 	
-	if (v1.type == Type::LONG){
+	if (v1.type == Type::NONE){
+		v1 = move(v2);
+	}
+	
+	else if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
 			v1.data.l %= v2.data.l;
 		else if (v2.type == Type::DOUBLE)
@@ -294,18 +409,57 @@ static Value mod(const Expression& self, const BinaryOperation& binop, const Var
 			v1 = fmod(v1.data.d, v2.data.d);
 	}
 	
-	return v1;
-}
-
-
-static Value xxor(const Expression& self, const BinaryOperation& binop, const VariableMap& vars){
-	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
-	Value v1 = eval(self, *binop.arg_1, vars);
-	Value v2 = eval(self, *binop.arg_2, vars);
-	
-	if (v1.type == Type::LONG){
-		if (v2.type == Type::LONG)
-			v1.data.l ^= v2.data.l;
+	else if (v1.type == Type::OBJECT){
+		Value::Object& o1 = *v1.data.o;
+		
+		if (v2.type == Type::LONG){
+			Value* el = o1.get(static_cast<size_t>(v2.data.l));
+			if (el != nullptr)
+				v1 = move(*el);
+		}
+		else if (v2.type == Type::DOUBLE){
+			Value* el = o1.get(static_cast<size_t>(v2.data.l));
+			if (el != nullptr)
+				v1 = move(*el);
+		}
+		else if (v2.type == Type::STRING){
+			Value* el = o1.get(v2.data.s->sv());
+			if (el != nullptr)
+				v1 = move(*el);
+		}
+		else if (v2.type == Type::OBJECT){
+			Value::Object& o1 = *v1.data.o;
+			Value::Object& o2 = *v2.data.o;
+			unique_ptr<Value::Object> o3 = make_unique<Value::Object>();
+			
+			// Build array by extracting elements from o1 and indecies from o2.
+			for (const Value& el : o2.arr){
+				if (el.type == Type::LONG){
+					Value* v = o1.get(static_cast<size_t>(el.data.l));
+					if (v != nullptr)
+						o3->arr.emplace_back(*v);
+				}
+				else if (el.type == Type::DOUBLE){
+					Value* v = o1.get(static_cast<size_t>(el.data.d));
+					if (v != nullptr)
+						o3->arr.emplace_back(*v);
+				}
+				else if (el.type == Type::STRING){
+					Value* v = o1.get(el.data.s->sv());
+					if (v != nullptr)
+						o3->arr.emplace_back(*v);
+				}
+			}
+			
+			// Build dictionary by extracting entries from o1 and keys from o2.
+			for (const auto& pair : o2.dict){
+				Value* v = o1.get(pair.key);
+				if (v != nullptr)
+					o3->dict.insert(pair.key, *v);
+			}
+			
+			v1 = Value(o3.release());
+		}
 	}
 	
 	return v1;
@@ -338,7 +492,9 @@ static bool equals(const Expression& self, const BinaryOperation& binop, const V
 		else if (v2.type == Type::DOUBLE)
 			return v1.data.l == v2.data.d;
 		else if (v2.type == Type::STRING)
-			return to_string(v1.data.l) == v2.sv();
+			return to_string(v1.data.l) == v2.data.s->sv();
+		else if (v2.type == Type::OBJECT)
+			return v2.data.o->arr.size() == size_t(v1.data.l);
 	}
 	
 	else if (v1.type == Type::DOUBLE){
@@ -347,16 +503,27 @@ static bool equals(const Expression& self, const BinaryOperation& binop, const V
 		else if (v2.type == Type::DOUBLE)
 			return v1.data.d == v2.data.d;
 		else if (v2.type == Type::STRING)
-			return to_string(v1.data.d) == v2.sv();
+			return to_string(v1.data.d) == v2.data.s->sv();
+		else if (v2.type == Type::OBJECT)
+			return v2.data.o->arr.size() == v1.data.d;
 	}
 	
 	else if (v1.type == Type::STRING){
 		if (v2.type == Type::LONG)
-			return v1.sv() == to_string(v2.data.l);
+			return v1.data.s->sv() == to_string(v2.data.l);
 		else if (v2.type == Type::DOUBLE)
-			return v1.sv() == to_string(v2.data.d);
+			return v1.data.s->sv() == to_string(v2.data.d);
 		else if (v2.type == Type::STRING)
-			return v1.sv() == v2.sv();
+			return v1.data.s->sv() == v2.data.s->sv();
+	}
+	
+	else if (v1.type == Type::OBJECT){
+		if (v2.type == Type::LONG)
+			return v1.data.o->arr.size() == size_t(v2.data.l);
+		else if (v2.type == Type::DOUBLE)
+			return v1.data.o->arr.size() == v2.data.d;
+		else if (v2.type == Type::OBJECT)
+			return *v1.data.o == *v2.data.o;
 	}
 	
 	return false;
@@ -376,7 +543,9 @@ static bool cmp(const Expression& self, const BinaryOperation& binop, const Vari
 		else if (v2.type == Type::DOUBLE)
 			return op(v1.data.l, v2.data.d);
 		else if (v2.type == Type::STRING)
-			return op(v1.data.l, v2.data_len);
+			return op(v1.data.l, v2.data.s->len);
+		else if (v2.type == Type::OBJECT)
+			return op(v1.data.l, v2.data.o->arr.size());
 	}
 	
 	else if (v1.type == Type::DOUBLE){
@@ -385,16 +554,27 @@ static bool cmp(const Expression& self, const BinaryOperation& binop, const Vari
 		else if (v2.type == Type::DOUBLE)
 			return op(v1.data.d, v2.data.d);
 		else if (v2.type == Type::STRING)
-			return op(v1.data.d, v2.data_len);
+			return op(v1.data.d, v2.data.s->len);
+		else if (v2.type == Type::OBJECT)
+			return op(v1.data.d, v2.data.o->arr.size());
 	}
 	
 	else if (v1.type == Type::STRING){
 		if (v2.type == Type::LONG)
-			return op(v1.data_len, v2.data.l);
+			return op(v1.data.s->len, v2.data.l);
 		else if (v2.type == Type::DOUBLE)
-			return op(v1.data_len, v2.data.d);
+			return op(v1.data.s->len, v2.data.d);
 		else if (v2.type == Type::STRING)
-			return op(v1.data_len, v2.data_len);
+			return op(v1.data.s->sv(), v2.data.s->sv());
+	}
+	
+	else if (v1.type == Type::OBJECT){
+		if (v2.type == Type::LONG)
+			return op(v1.data.o->arr.size(), v2.data.l);
+		else if (v2.type == Type::DOUBLE)
+			return op(v1.data.o->arr.size(), v2.data.d);
+		else if (v2.type == Type::OBJECT)
+			return op(v1.data.o->arr.size(), v2.data.o->arr.size());
 	}
 	
 	return false;
@@ -428,8 +608,6 @@ Value eval(const Expression& self, const Operation& op, const VariableMap& vars)
 			return div(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::MOD:
 			return mod(self, static_cast<const BinaryOperation&>(op), vars);
-		case Operation::Type::XOR:
-			return xxor(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::AND:
 			return logical<logical_and<>>(self, static_cast<const BinaryOperation&>(op), vars);
 		case Operation::Type::OR:

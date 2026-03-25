@@ -238,9 +238,6 @@ static Operation::Type try_parse_binaryOp(const char*& s, const char* end) noexc
 		case '%':
 			s++;
 			return Operation::Type::MOD;
-		case '^':
-			s++;
-			return Operation::Type::XOR;
 		
 		case '|':
 			if (s+1 != end && s[1] == '|'){
@@ -319,7 +316,6 @@ constexpr int _bindPower(Operation::Type type){
 		case Operation::Type::MUL: return 50;
 		case Operation::Type::DIV: return 50;
 		case Operation::Type::MOD: return 50;
-		case Operation::Type::XOR: return 50;
 		default:
 			assert(false);
 			return 0;
