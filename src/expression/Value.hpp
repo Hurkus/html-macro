@@ -272,7 +272,7 @@ public:
 	 * @brief Append all array elements of an obejct and insert all dictionary entries of the object `data.o`.
 	 * @param Object The object from which to pull array elements and dictionary entries.
 	 */
-	void merge(Object&& obj);
+	void merge(const Object& obj);
 	
 // ---------------------------------------------------------------- //
 public:

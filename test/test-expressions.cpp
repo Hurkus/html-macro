@@ -47,9 +47,6 @@ Result test_expression_array_2(){
 }
 
 
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
 REGISTER2(expression_dict_1);
 Result test_expression_dict_1(){
 	TmpFile in = TmpFile("expression_dict-1.html",
@@ -84,6 +81,39 @@ Result test_expression_dict_2(){
 		"10" NL
 		"20" NL
 		"0,1,2" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+REGISTER2(expression_slice);
+Result test_expression_slice(){
+	TmpFile in = TmpFile("expression_slice.html",
+		R"(
+			<SET s="green" a='[0, 1, 2, 3, 4]'/>
+			{slice(s, 1)}
+			{slice(s, 1, 3)}
+			{slice(s, 4, -1)}
+			{slice(s, -3, 2)}
+			{slice(a, 1)}
+			{slice(a, 1, 3)}
+			{slice(a, 4, -1)}
+			{slice(a, -3, 2)}
+		)"
+	);
+	string_view out = (
+		NL
+		"reen" NL
+		"ree" NL
+		"n" NL
+		"ee" NL
+		"[1,2,3,4]" NL
+		"[1,2,3]" NL
+		"[4]" NL
+		"[2,3]" NL
 	);
 	return run({in}, out, "", 0);
 }

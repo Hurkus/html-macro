@@ -30,6 +30,13 @@
 	</style>
 	<style>
 		
+		.purple {
+			color: purple;
+		}
+		
+	</style>
+	<style>
+		
 		code, .code {
 			background-color: rgb(240, 240, 240);
 			padding-left: 0.3em;
@@ -333,7 +340,7 @@
 						<a href="#expressions">5. Expressions</a>
 						<ol class="lvl-2">
 							<li><a href="#expression-context">5.1. Expression context</a></li>
-							<li><a href="#expression-constants">5.2. Constants</a></li>
+							<li><a href="#expression-values">5.2. Values</a></li>
 							<li><a href="#expression-operators">5.3. Operators</a></li>
 							<li><a href="#expression-variables">5.4. Variables</a></li>
 							<li><a href="#expression-functions">5.5. Functions</a></li>
@@ -2511,27 +2518,46 @@
 				<p>
 					In certain contexts, expressions can be used to interpolate HTML text nodes,
 					or to provide computed values to <a href="#macros">macros</a>.
-					They consist of constants, expression operators, variables and functions.
+					They consist of constants, operators, variables and functions.
 				</p>
 				<br/>
 				<p>
-					There are only 3 fundamental data types that can be evaluated from expressions:
+					There are 5 fundamental data types that can be evaluated from expressions:
 					<ul>
-						<li><b>int</b>eger: <i>long</i>, 64 bit,</li>
-						<li><b>float</b>ing point number: <i>double</i>, 64 bit,</li>
-						<li><b>string</b>: <i>char[]</i>.</li>
+						<li><b>null</b>: nothing,</li>
+						<li><b>int</b>: <i>long</i>, 64 bit,</li>
+						<li><b>float</b>: <i>double</i>, 64 bit,</li>
+						<li><b>string</b>: <i>char[]</i>, maximum length of 2<sup>32</sup>.</li>
+						<li><b>object</b>: <i>array</i> and <i>map</i>.</li>
 					</ul>
 				</p>
 				<br/>
 				<p>
-					For purposes of easier explanation and documentation, 2 implicit data types are defined:
+					For purposes of easier explanation and documentation, 4 implicit data types are defined:
 					<ul>
-						<li><b>number</b>: <b>int</b> or <b>float</b>,</li>
 						<li>
-							<b>bool</b>ean: <b>int</b>, where logical
-							<code>false</code> equals <code>0</code> and
-							<code>true</code> equals <code>1</code>.
+							<b>number</b>: <b>int</b> or <b>float</b>,
 						</li>
+						<li>
+							<b>bool</b>: <b>int</b>, where logical
+							<code>false</code> equals <code>0</code> and
+							<code>true</code> equals <code>1</code>,
+						</li>
+						<li>
+							<b>array</b>: <b>object</b> but referencing only the <i>array</i> part,
+						</li>
+						<li>
+							<b>map</b>: <b>object</b> but referencing only the <i>map</i> part.
+						</li>
+					</ul>
+				</p>
+				<br/>
+				<p>
+					To further clarify the <b>object</b> data type, it contains <u>both</u> an <i>array</i> and a <i>map</i> (<code><i>string</i> &rarr; <i>any</i></code> mapping, also known as a <i>dictionary</i>).
+					When using the indexer operator <code>[...]</code>, the underlying value retrieval depends on the type of the index:
+					<ul>
+						<li>If the index is a <i>number</i>, it is retrieving values from the <i>array</i>.</li>
+						<li>If the index is a <i>string</i>, it is retrieving values from the <i>map</i>.</li>
 					</ul>
 				</p>
 				<br/>
@@ -2547,7 +2573,7 @@
 					<br/>
 					<p>
 						Any plain text or string attribute values (quoted with double quotes <code>&quot;...&quot;</code>) are interpolated for any expressions contained within curly brackets <code>{}</code>.
-						Content within the curly brackets is evaluated as an expression and it's result is stringified and inserted in-place of the expression in the final document.<br/>
+						Content within the curly brackets is evaluated as an expression and then converted to text and inserted in-place of the expression in the final document.<br/>
 					</p>
 					<br/>
 					<p>
@@ -2563,16 +2589,16 @@
 							</tr>
 							<tr>
 								<td class="code">
-									&lt;p attr="text <span title="Replace this expression with its result (3)">{1 + 2}</span>"&gt;&lt;/p&gt;<br/>
-									&lt;p attr=<span title="Set attribute value to the result of this expression (4)">'2 * 2'</span>&gt;&lt;/p&gt;<br/>
-									&lt;p&gt;There are <span title="Replace this expression with its result (4.5)">{9.0 / 2}</span> apples.&lt;/p&gt;<br/>
-									&lt;p&gt;Escaped expression <span title="This expression is not evaluated">\{1+1}</span>&lt;/p&gt;
+									&lt;p attr="text <span title="Replace this expression with its result (3)" class="purple">{1 + 2}</span>"&gt;&lt;/p&gt;<br/>
+									&lt;p attr=<span title="Set attribute value to the result of this expression (4)" class="purple">'2 * 2'</span>&gt;&lt;/p&gt;<br/>
+									&lt;p&gt;There are <span title="Replace this expression with its result (4.5)" class="purple">{9.0 / 2}</span> apples.&lt;/p&gt;<br/>
+									&lt;p&gt;Escaped expression <span title="This expression is not evaluated" class="purple">\{1+1}</span>&lt;/p&gt;
 								</td>
 								<td class="code">
-									&lt;p attr="text 3"&gt;&lt;/p&gt;<br/>
-									&lt;p attr="4"&gt;&lt;/p&gt;<br/>
-									&lt;p&gt;There are 4.5 apples.&lt;/p&gt;<br/>
-									&lt;p&gt;Escaped expression {1+1}&lt;/p&gt;
+									&lt;p attr="text <span class="purple">3</span>"&gt;&lt;/p&gt;<br/>
+									&lt;p attr=<span class="purple">"4"</span>&gt;&lt;/p&gt;<br/>
+									&lt;p&gt;There are <span class="purple">4.5</span> apples.&lt;/p&gt;<br/>
+									&lt;p&gt;Escaped expression <span class="purple">{1+1}</span>&lt;/p&gt;
 								</td>
 							</tr>
 						</table>
@@ -2580,22 +2606,57 @@
 				</section>
 				<br/>
 				<br/>
-				<section id="expression-constants">
-					<h3><a href="#expression-constants">5.2. Constants</a></h3>
+				<section id="expression-values">
+					<h3><a href="#expression-values">5.2. Values</a></h3>
 					<p>
-						Regex descriptions for types of constants:
+						Descriptions for types of constants or value constructors:
 						<ul>
 							<li><b>int:</b>
 								<code>-?[0-9]+</code></li>
 							<li><b>float:</b>
 								<code>-?[0-9]+[.][0-9]*</code></li>
 							<li><b>string:</b>
-								<code>&quot;.*?&quot;|&apos;.*?&apos;</code> (All text between either single <code>&apos;</code> or double <code>&quot;</code> quotes)</li>
+								<code>&quot;.*?&quot;|&apos;.*?&apos;</code> All text between either single <code>&apos;</code> or double <code>&quot;</code> quotes</li>
+							<li>
+								<b>object:</b>
+								<code>[x, y, ..., "name_1": z, "name_2": w, ...]</code>
+								List of comma-separated values between two square brackets <code>[]</code>.
+								If a value is preceeded by a <i>string</i> and a colon <code>:</code>, it defines an entry in the <i>map</i>,
+								otherwise it is the <i>n</i>-th element of the <i>array</i>.
+							</li>
 						</ul>
 					</p>
 					<br/>
+					<div class="example">
+						<h4><b>Example:</b> Constructing an <i>object</i> value.</h4>
+						<table>
+							<tr>
+								<th>input</th>
+								<th>output</th>
+							</tr>
+							<tr>
+								<td class="code">
+									&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+									<span title="Set variable a to a new array of elements 0, 10 and 20.">a='[0,10,20]'</span>&gt;&lt;/SET&gt;<br/>
+									&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+									<span title="Set variable m to a new map, mapping &quot;x&quot; &rarr; 30 and &quot;y&quot; &rarr; 40.">m='["x": 30, "y": 40]'</span>&gt;&lt;/SET&gt;<br/>
+									&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
+									<span title="Set variable am to an object comprising of an array of values 0, 10 and 20, and a mapping of &quot;x&quot; &rarr; 30 and &quot;y&quot; &rarr; 40.">am='[0, 10, 20, "x": 30, "y": 40]'</span>&gt;&lt;/SET&gt;<br/>
+									&lt;p&gt;<span title="Retrieve element at index 1 from the array (a)." class="purple">{a[1]}</span>&lt;/p&gt;<br/>
+									&lt;p&gt;<span title="Retrieve the mapped value &quot;y&quot; from the map (m)." class="purple">{m["y"]}</span>&lt;/p&gt;<br/>
+									&lt;p&gt;<span title="Retrieve values from the array and the map from the same object (am)." class="purple">{am[2] + am["x"]}</span>&lt;/p&gt;<br/>
+								</td>
+								<td class="code">
+									&lt;p&gt;<span class="purple">10</span>&lt;/p&gt;<br/>
+									&lt;p&gt;<span class="purple">40</span>&lt;/p&gt;<br/>
+									&lt;p&gt;<span class="purple">50</span>&lt;/p&gt;<br/>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<br/>
 					<style>
-						#expression-constants table td {
+						#expression-values table td {
 							min-width: 6em;
 						}
 					</style>
@@ -2626,20 +2687,20 @@
 				<section id="expression-operators">
 					<h3><a href="#expression-operators">5.3. Operators</a></h3>
 					<p>
-						Expression operators consist of standard unary and binary operators:
+						Expression operators consist of unary and binary operators:
 						<ul>
 							<li><b>Unary operatos:</b>
 								<code>-</code> (arithmetic negation),
 								<code>!</code> (boolean negation)
 							</li>
-							<li><b>Arithmetic binary operators:</b>
+							<li><b>Arithmetic or overloaded binary operators</b>:
 								<code>+</code>,
 								<code>-</code>,
 								<code>*</code>,
 								<code>/</code>,
 								<code>%</code>
 							</li>
-							<li><b>Logical operators:</b>
+							<li><b>Logical binary operators:</b>
 								<code>&&</code> (and),
 								<code>||</code> (or)
 							</li>
@@ -2651,13 +2712,17 @@
 								<code>&gt;</code>,
 								<code>&gt;=</code>
 							</li>
+							<li><b>Indexer:</b>
+								<code>[]</code>
+							</li>
 						</ul>
 					</p>
 					<br/>
 					<p>
-						For some operations with operands of different types, some of the operands might get coerced/casted into other types.
+						For some operations with operands of different types, some of the operands might get coerced/casted into a common type.
 						For example, adding a number to a string results in the number being stringified and appended to the string operand.
-						Another case is coercing a string into a boolean where it evaluates to <code>true</code> when it's not empty.
+						Another case is coercing a string into a boolean with logical operators where it evaluates to <code>true</code> when it's not empty.
+						For invalid operations between certain types, either the first operand or <code>null</code> is returned.
 					</p>
 					<br/>
 					<style>
@@ -2677,7 +2742,7 @@
 						}
 					</style>
 					<p>
-						Here is a list of notable cases of operations between different types:
+						Here is a list of notable operator behaviours between different types:
 						<table class="list">
 							<tr>
 								<th>Operation</th>
@@ -2686,10 +2751,21 @@
 							</tr>
 							<tr>
 								<td>
-									<span>string <code>+</code> any</span>
+									<span>float <code>%</code> number</span>
 								</td>
 								<td>
-									The second operand is converted into a string and then appended to the main string operand.
+									Produces a remainder using <code>fmod</code>.
+								</td>
+								<td>
+									<code>3.6 % 1.25</code> &rarr; <code>1.1</code>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span>string <code>+</code> number</span>
+								</td>
+								<td>
+									The <i>number</i> is converted into a <i>string</i> and then appended to the <i>string</i> operand.
 								</td>
 								<td>
 									<code>&quot;x is &quot; + 3</code> &rarr; <code>&quot;x is 3&quot;</code>
@@ -2700,7 +2776,7 @@
 									string <code>*</code> number
 								</td>
 								<td>
-									Produces a string that is appended to itself <var>n</var> times, where the number is casted into an <i>int</i>.
+									Produces a <i>string</i> that is appended to itself <var>n</var> times, where the <i>number</i> is casted into an <i>int</i>.
 								</td>
 								<td>
 									<code>&quot;a&quot; * 3</code> &rarr; <code>&quot;aaa&quot;</code>
@@ -2711,7 +2787,7 @@
 									string <code>-</code> number
 								</td>
 								<td>
-									Shortens the string by <var>n</var> characters.
+									Shortens the <i>string</i> by <var>n</var> characters.
 								</td>
 								<td>
 									<code>&quot;abc&quot; - 2</code> &rarr; <code>&quot;a&quot;</code>
@@ -2719,21 +2795,98 @@
 							</tr>
 							<tr>
 								<td>
-									<span><code>!</code>string</span>,<br/>
-									<span>string <code>||</code> any</span>,<br/>
-									<span>string <code>&&</code> any</span>
+									<span>array <code>+</code> any</span><br/>
+									<span>array <code>*</code> number</span><br/>
+									<span>array <code>*</code> string</span>
 								</td>
 								<td>
-									The string is converted into a <i>bool</i>, equivalent to <code>len(string) != 0</code>
+									The second operand is appended or prepended to the <i>array</i>.
 								</td>
 								<td>
-									<code>&quot;a&quot; || &quot;&quot;</code> &rarr; <code>true || false</code> &rarr; <code>1</code>
+									<code>[123] + 456</code> &rarr; <code>[123,456]</code>
 								</td>
 							</tr>
 							<tr>
 								<td>
-									<span><code>!</code>number</span>,<br/>
-									<span>number <code>||</code> any</span>,<br/>
+									<span>array <code>-</code> any</span>
+								</td>
+								<td>
+									All occurances of the second operand are removed from the array.
+								</td>
+								<td>
+									<code>[0,2,2,3] - 2</code> &rarr; <code>[0,3]</code>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span>object <code>*</code> object</span>
+								</td>
+								<td>
+									Objects are merged.
+									Arrays are concatenated and a union of the maps is made.
+								</td>
+								<td>
+									<code>[0] * [1, "x": 2]</code> &rarr; <code>[0, 1, "x": 2]</code>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span>object <code>/</code> object</span>
+								</td>
+								<td>
+									This operation is an indexed removal of elements from the left <i>object</i>.
+									It behaves similarly to a set subtraction, except with indexes instead of elements.
+									<br/><br/>
+									The <i>array</i> on the right serves as a list of indexes that are removed from the <i>array</i> on the left.
+									Numbers serve as indexes that must be erased from the <i>array</i> and <i>strings</i> serve as keys that must be removed from the <i>map</i>.
+									<br/><br/>
+									The <i>map</i> on the right is stripped of values and the keys are used to remove mappings from the <i>map</i> on the left.
+								</td>
+								<td>
+									<code>[10,20,30] / [1,0]</code> &rarr; <code>[30]</code><br/>
+									<code>["x": 1, "y": 2] / ["y"]</code> &rarr; <code>["x": 1]</code><br/>
+									<code>["x": 1, "y": 2] / ["y": 123]</code> &rarr; <code>["x": 1]</code>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span>object <code>%</code> object</span>
+								</td>
+								<td>
+									This operation is an indexed selection of elements from the left <i>object</i>.
+									It behaves similarly to a set <a href="https://en.wikipedia.org/wiki/Logical_conjunction">conjunction</a>, except with indexes instead of elements and is also indexing values from the <i>map</i> and inserting them into  the <i>array</i>.
+									<br/><br/>
+									The <i>array</i> on the right serves as a list of indexes that are selected from the <i>array</i> on the left.
+									Numbers serve as indexes that must be retained from the <i>array</i> and <i>strings</i> serve as keys that are indexed from the <i>map</i> and inserted in-place.
+									<br/><br/>
+									The <i>map</i> on the right is stripped of values and a <a href="https://en.wikipedia.org/wiki/Logical_conjunction">conjunction</a> is made with the <i>map</i> on the left.
+								</td>
+								<td>
+									<code>[10,20,30] % [1,0]</code> &rarr; <code>[20,10]</code><br/>
+									<code>["x": 1, "y": 2] % ["y"]</code> &rarr; <code>[2]</code><br/>
+									<code>["x": 1, "y": 2] % ["y": 123]</code> &rarr; <code>["y": 2]</code>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span>object<code>[</code>number<code>]</code></span><br/>
+									<span>object<code>[</code>string<code>]</code></span><br/>
+									<span>object <code>%</code> number</span><br/>
+									<span>object <code>%</code> string</span>
+								</td>
+								<td>
+									Retrieve <i>array</i> element at index <code>number</code> or
+									retrieve value from the <i>map</i> using key <code>string</code>.
+								</td>
+								<td>
+									<code>[10,20,30] % 2</code> &rarr; <code>30</code><br/>
+									<code>["x": 1, "y": 2] % "y"</code> &rarr; <code>2</code>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span><code>!</code>number</span><br/>
+									<span>number <code>||</code> any</span><br/>
 									<span>number <code>&&</code> any</span>
 								</td>
 								<td>
@@ -2745,20 +2898,31 @@
 							</tr>
 							<tr>
 								<td>
-									<span>float <code>%</code> number</span>
+									<span><code>!</code>string</span><br/>
+									<span>string <code>||</code> any</span><br/>
+									<span>string <code>&&</code> any</span>
 								</td>
 								<td>
-									Produces a remainder the same way it is done with an <i>int</i>.
+									The string is converted into a <i>bool</i>, equivalent to <code>len(string) != 0</code>.<br/>
 								</td>
 								<td>
-									<code>3.6 % 1.25</code> &rarr; <code>1.1</code>
+									<code>&quot;a&quot; || &quot;&quot;</code> &rarr; <code>true || false</code> &rarr; <code>1</code>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span><code>!</code>object</span><br/>
+									<span>object <code>||</code> any</span><br/>
+									<span>object <code>&&</code> any</span>
+								</td>
+								<td>
+									The object is converted into a <i>bool</i>, where <code>true</code> means either <i>array</i> or <i>map</i> is not empty.
+								</td>
+								<td>
+									<code>![1,2]</code> &rarr; <code>!true</code> &rarr; <code>0</code>
 								</td>
 							</tr>
 						</table>
-					</p>
-					<br/>
-					<p>
-						For invalid operations between certain types, either <code>0</code> or a copy of the first operand is produced.
 					</p>
 				</section>
 				<br/>
@@ -2773,7 +2937,7 @@
 					</p>
 					<br/>
 					<p>
-						At program start, some variables get predefined values, as explained in the chapter on <a href="#expression-constants">constants</a>.
+						At program start, some variables get predefined values, as explained in the chapter on <a href="#expression-values">values</a>.
 						The user can also provide more predefined variables through command-line options in the form of <code>name=value</code>, as explained in the <a href="#cli">command-line interface</a> chapter.
 					</p>
 					<br/>
@@ -2788,16 +2952,16 @@
 								<td class="code">
 									&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 									<span title="Set variable s to string &quot;header&quot;">s="header"</span>/&gt;<br/>
-									&lt;p <span title="Set value of the attribute to the result of the expression, which is just the content of the variable s">class='s'</span>&gt;My title&lt;/p&gt;<br/>
+									&lt;p <span title="Set value of the attribute to the result of the expression, which is just the content of the variable s">class=<span class="purple">'s'</span></span>&gt;My title&lt;/p&gt;<br/>
 									<br/>
 									&lt;<a href="#SET" title="Assigns values to variables.">SET</a>
 									<span title="Set variable x to 2">x='2'</span>
 									<span title="Set variable y to 3">y='3'</span>/&gt;<br/>
-									&lt;p&gt;My text number <span title="Replace this expression with its result (8)">{x * (y + 1)}</span>&lt;/p&gt;
+									&lt;p&gt;My text number <span title="Replace this expression with its result (8)" class="purple">{x * (y + 1)}</span>&lt;/p&gt;
 								</td>
 								<td class="code">
-									&lt;p class="header"&gt;My title&lt;/p&gt;<br/>
-									&lt;p&gt;My text number 8&lt;/p&gt;
+									&lt;p class=<span class="purple">"header"</span>&gt;My title&lt;/p&gt;<br/>
+									&lt;p&gt;My text number <span class="purple">8</span>&lt;/p&gt;
 								</td>
 							</tr>
 						</table>
@@ -2813,110 +2977,161 @@
 					</p>
 					<br/>
 					<style>
+						#expression-functions table td:nth-child(1) {
+							text-wrap: nowrap;
+						}
+						#expression-functions table td:nth-child(2) {
+							text-align: justify;
+						}
 						#expression-functions table td:nth-child(3) {
-							min-width: 12em;
 							padding: 5px 1em;
 							text-align: left;
 						}
 						#expression-functions table tr.br {
 							border-top: 2px solid black;
 						}
+						#expression-functions table span.return-type {
+							display: none;
+						}
 					</style>
 					<p>List of functions:</p>
 					<table class="list">
 						<tr>
-							<th>Name</th>
-							<th>Return type</th>
+							<th>Signature</th>
 							<th>Description</th>
 							<th>Example</th>
 						</tr>
-						<tr id="function-int" class="br">
-							<td><code>int(x)</code></td>
-							<td>int</td>
+						<tr id="function-bool" class="br">
+							<td>
+								<code>bool(x)</code>
+								<span class="return-type"><br/>&darr;<br/>bool</span>
+							</td>
+							<td>
+								If <code>x</code> is a <i>number</i>, returns <code>x != 0</code>.<br/>
+								If <code>x</code> is a <i>string</i>, returns <code>len(x) != 0</code> or if possible parses the strings <code>lower("false")</code> or <code>lower("true")</code>.<br/>
+								If <code>x</code> is an <i>object</i>, returns <code>false</code> when the <i>array</i>
+								<u>and</u>
+								<i>map</i> are both empty.
+							</td>
+							<td>
+								<code>bool(4)</code> &rarr; <code>true</code><br/>
+								<code>bool("true")</code> &rarr; <code>true</code><br/>
+								<code>bool("FALSE")</code> &rarr; <code>false</code><br/>
+								<code>bool("hello")</code> &rarr; <code>true</code><br/>
+								<code>bool("")</code> &rarr; <code>false</code>
+							</td>
+						</tr>
+						<tr id="function-int">
+							<td>
+								<code>int(x)</code>
+								<span class="return-type"><br/>&darr;<br/>int</span>
+							</td>
 							<td>
 								Converts <code>x</code> into an <i>integer</i>.
-								If <code>x</code> is a <i>string</i> and cannot be parsed as an <i>integer</i>, returns <code>0</code>.
+								For <i>arrays</i>, it returns the length of the <i>array</i>.
+								If <code>x</code> cannot be parsed as an <i>integer</i>, returns <code>0</code>.
 							</td>
 							<td>
 								<code>int('7.234')</code> &rarr; <code>7</code>
 							</td>
 						</tr>
 						<tr id="function-float">
-							<td><code>float(x)</code></td>
-							<td>float</td>
+							<td>
+								<code>float(x)</code>
+								<span class="return-type"><br/>&darr;<br/>float</span>
+							</td>
 							<td>
 								Converts <code>x</code> into a <i>float</i>.
-								If <code>x</code> is a <i>string</i> and cannot be parsed as a <i>float</i>, returns <code>0.0</code>.
+								For <i>arrays</i>, it returns the length of the <i>array</i>.
+								If <code>x</code> cannot be parsed as a <i>float</i>, returns <code>0.0</code>.
 							</td>
 							<td>
 								<code>float('122.5') + 1</code> &rarr; <code>123.5</code>
 							</td>
 						</tr>
 						<tr id="function-str">
-							<td><code>str(x)</code></td>
-							<td>string</td>
+							<td>
+								<code>str(x)</code>
+								<span class="return-type"><br/>&darr;<br/>string</span>
+							</td>
 							<td>Converts <code>x</code> into a <i>string</i>.</td>
 							<td>
 								<code>str(12) + ' apples'</code> &rarr; <code>12 apples</code>
 							</td>
 						</tr>
 						<tr id="function-len" class="br">
-							<td><code>len(x)</code></td>
-							<td>int</td>
 							<td>
-								If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.
-								If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
+								<code>len(x)</code><br/>
+								<code>abs(x)</code>
+								<span class="return-type"><br/>&darr;<br/>int</span>
 							</td>
 							<td>
-								<code>len('hello')</code> &rarr; <code>5</code>
-							</td>
-						</tr>
-						<tr id="function-abs">
-							<td><code>abs(x)</code></td>
-							<td>int</td>
-							<td>
-								If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.
-								If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.
+								If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.<br/>
+								If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.<br/>
+								If <code>x</code> is an <i>array</i>, returns the length of the <i>array</i>.<br/>
 							</td>
 							<td>
+								<code>len('hello')</code> &rarr; <code>5</code><br/>
 								<code>abs(-4.5)</code> &rarr; <code>4.5</code>
 							</td>
 						</tr>
 						<tr id="function-min">
-							<td><code>min(x, y, ...)</code></td>
-							<td>int,<br/>float,<br/>string</td>
-							<td>Returns smallest <i>number</i> or shortest <i>string</i>.</td>
+							<td>
+								<code>min(x, y, ...)</code>
+								<span class="return-type"><br/>&darr;<br/>int<br/>float<br/>string</span>
+							</td>
+							<td>
+								Returns smallest <i>number</i> or shortest <i>string</i>.<br/>
+								If an argument is an <i>array</i>, the minimum value is selected from the array.
+							</td>
 							<td>
 								<code>min(1, 2.5, 'three')</code> &rarr; <code>1</code>
 							</td>
 						</tr>
 						<tr id="function-max">
-							<td><code>max(x, y, ...)</code></td>
-							<td>int,<br/>float,<br/>string</td>
-							<td>Returns largest <i>number</i> or longest <i>string</i>.</td>
+							<td>
+								<code>max(x, y, ...)</code>
+								<span class="return-type"><br/>&darr;<br/>int<br/>float<br/>string</span>
+							</td>
+							<td>
+								Returns largest <i>number</i> or longest <i>string</i>.<br/>
+								If an argument is an <i>array</i>, the maximum value is selected from the array.
+							</td>
 							<td>
 								<code>max(1, 2.5, 'three')</code> &rarr; <code>three</code>
 							</td>
 						</tr>
 						<tr id="function-sin">
-							<td><code>sin(x)</code></td>
-							<td>float</td>
-							<td>Returns <i>sin</i> of <i>x rad</i>.</td>
+							<td>
+								<code>sin(x)</code>
+								<span class="return-type"><br/>&darr;<br/>float</span>
+							</td>
+							<td>
+								Returns <i>sin</i> of <code>x</code>
+								<i>radians</i>.
+							</td>
 							<td>
 								<code>sin(pi/6)</code> &rarr; <code>0.5</code>
 							</td>
 						</tr>
 						<tr id="function-cos">
-							<td><code>cos(x)</code></td>
-							<td>float</td>
-							<td>Returns <i>cos</i> of <i>x rad</i>.</td>
+							<td>
+								<code>cos(x)</code>
+								<span class="return-type"><br/>&darr;<br/>float</span>
+							</td>
+							<td>
+								Returns <i>cos</i> of <code>x</code>
+								<i>radians</i>.
+							</td>
 							<td>
 								<code>cos(pi/3)</code> &rarr; <code>0.5</code>
 							</td>
 						</tr>
 						<tr id="function-lower" class="br">
-							<td><code>lower(s)</code></td>
-							<td>string</td>
+							<td>
+								<code>lower(s)</code>
+								<span class="return-type"><br/>&darr;<br/>string</span>
+							</td>
 							<td>Converts <i>string</i>
 								<code>s</code> to lower case.</td>
 							<td>
@@ -2924,37 +3139,45 @@
 							</td>
 						</tr>
 						<tr id="function-upper">
-							<td><code>upper(s)</code></td>
-							<td>string</td>
+							<td>
+								<code>upper(s)</code>
+								<span class="return-type"><br/>&darr;<br/>string</span>
+							</td>
 							<td>Converts <i>string</i>
 								<code>s</code> to upper case.</td>
 							<td>
 								<code>upper(&quot;World!&quot;)</code> &rarr; <code>WORLD</code>
 							</td>
 						</tr>
-						<tr id="function-substr">
-							<td><code>substr(s, i, [len])</code></td>
-							<td>string</td>
+						<tr id="function-slice">
 							<td>
-								Returns substring of <i>string</i>
-								<code>s</code>
-								beginning at character <code>i</code> and ending at character <code>i+len</code>, where default value of <code>len</code> is the length of the string <code>s</code>.
-								<br/>
-								If <code>i</code> is negative, it equals to <code>len(s)-abs(i)</code> (that is from the end backwards).
-								Length <code>len</code> can also be negative, meaning it selects characters from <code>i</code> backwards.
-								<br/>
-								Beginning and end points of the substring are clamped between <code>0</code> and <code>len(s)</code>.
+								<code>slice(arr, i, [n])</code>
+								<span class="return-type"><br/>&darr;<br/>array<br/>string</span>
 							</td>
 							<td>
-								<code>substr(&quot;green&quot;, 1)</code> &rarr; <code>&quot;reen&quot;</code><br/>
-								<code>substr(&quot;green&quot;, 1, 3)</code> &rarr; <code>&quot;ree&quot;</code><br/>
-								<code>substr(&quot;green&quot;, -4, 3)</code> &rarr; <code>&quot;ree&quot;</code><br/>
-								<code>substr(&quot;green&quot;, -1, -3)</code> &rarr; <code>&quot;ree&quot;</code>
+								Returns sub-array (slice) of an <i>array</i> or a <i>string</i>
+								<code>arr</code>
+								beginning at character <code>i</code> and ending at character <code>i+n</code>, where default value of <code>n</code> is the length of the string <code>s</code>.
+								<br/>
+								<br/>
+								If <code>i</code> is negative, it equals to <code>len(arr)-abs(i)</code> (t.i. from the end backwards).
+								Length <code>n</code> can also be negative, marking the end position, going from the end towards begining (<code>len(arr) - abs(n) + 1</code>).
+								<br/>
+								<br/>
+								Beginning and end points of the substring are clamped between <code>0</code> and <code>len(arr)</code>.
+							</td>
+							<td>
+								<code>slice(&quot;green&quot;, 1)</code> &rarr; <code>&quot;reen&quot;</code><br/>
+								<code>slice(&quot;green&quot;, 1, 3)</code> &rarr; <code>&quot;ree&quot;</code><br/>
+								<code>slice(&quot;green&quot;, 1, -2)</code> &rarr; <code>&quot;ree&quot;</code><br/>
+								<code>slice(&quot;green&quot;, -3, 2)</code> &rarr; <code>&quot;ee&quot;</code>
 							</td>
 						</tr>
 						<tr id="function-match">
-							<td><code>match(s, regex)</code></td>
-							<td>bool</td>
+							<td>
+								<code>match(s, regex)</code>
+								<span class="return-type"><br/>&darr;<br/>bool</span>
+							</td>
 							<td>
 								Returns <code>true</code> if <i>string</i>
 								<code>s</code> matches the <a href="https://en.wikipedia.org/wiki/Regular_expression" title="Wikipedia - Regular expression" target="_blank" class="TD-0">regular expression</a>
@@ -2965,8 +3188,10 @@
 							</td>
 						</tr>
 						<tr id="function-replace">
-							<td><code>replace(s, regex, rep)</code></td>
-							<td>string</td>
+							<td>
+								<code>replace(s, regex, rep)</code>
+								<span class="return-type"><br/>&darr;<br/>string</span>
+							</td>
 							<td>
 								Replaces all occurances of substrings matched by
 								<a href="https://en.wikipedia.org/wiki/Regular_expression" title="Wikipedia - Regular expression" target="_blank" class="TD-0">regular expression</a>
@@ -2981,25 +3206,42 @@
 							</td>
 						</tr>
 						<tr id="function-if" class="br">
-							<td><code>if(cond, pass, else)</code></td>
-							<td>int,<br/>float,<br/>string</td>
 							<td>
-								If <code>cond</code> evaluates to logical <code>true</code>, evaluates and returns <code>pass</code>,
-								otherwise evaluates and returns <code>else</code>.
+								<code>if(cond, pass, else)</code>
+								<span class="return-type"><br/>&darr;<br/>int<br/>float<br/>string</span>
+							</td>
+							<td>
+								If <code>cond</code> evaluates to logical <code>true</code>, evaluates and returns expression <code>pass</code>,
+								otherwise evaluates and returns expression <code>else</code>.
 							</td>
 							<td>
 								<code>if(3 > 2, &quot;yes&quot;, &quot;no&quot;)</code> &rarr; <code>&quot;yes&quot;</code>
 							</td>
 						</tr>
 						<tr id="function-defined">
-							<td><code>defined(var)</code></td>
-							<td>bool</td>
+							<td>
+								<code>defined(var)</code>
+								<span class="return-type"><br/>&darr;<br/>bool</span>
+							</td>
 							<td>
 								Returns <code>true</code> if variable <code>var</code> is defined.<br/>
 								<code>var</code> is not a string but an identifier that reflects the name of a variable.
 							</td>
 							<td>
 								<code>if(defined(x),x,100)</code> &rarr; <code>100</code>
+							</td>
+						</tr>
+						<tr id="function-coalesce">
+							<td>
+								<code>coalesce(x, ...)</code>
+								<span class="return-type"><br/>&darr;<br/>any</span>
+							</td>
+							<td>
+								Returns the first non-<code>null</code> argument.
+								This is usefull for handling undefined variables.
+							</td>
+							<td>
+								<code>coalesce(x,100)</code> &rarr; <code>100</code>
 							</td>
 						</tr>
 					</table>

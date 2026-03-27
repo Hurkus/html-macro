@@ -1,5 +1,6 @@
 #include "Value.hpp"
 #include <string>
+#include <cstring>
 #include <charconv>
 
 using namespace std;
@@ -196,20 +197,17 @@ static string str(const Value::Object& o){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-void Value::Object::merge(Object&& o2){
+void Value::Object::merge(const Object& o2){
 	if (this == &o2){
 		return;
 	}
 	
-	arr.insert(arr.end(), make_move_iterator(o2.arr.begin()), make_move_iterator(o2.arr.end()));
+	arr.insert(arr.end(), o2.arr.begin(), o2.arr.end());
 	for (auto p : o2.dict){
-		insert(p.key, move(p.value));
+		dict.insert(p.key, p.value);
 	}
 	
-	o2.arr.clear();
-	o2.dict.clear();
 }
-
 
 
 bool Value::Object::operator==(const Value::Object& o) const {
@@ -250,10 +248,21 @@ bool Value::toBool() const noexcept {
 			return (data.l != 0);
 		case Type::DOUBLE:
 			return (data.d != 0);
-		case Type::STRING:
-			return (data.s->len != 0);
 		case Type::OBJECT:
 			return (!data.o->arr.empty() || !data.o->dict.empty());
+		
+		case Type::STRING: {
+			string_view s = data.s->sv();
+			
+			if (s.length() == 4){
+				return strncasecmp(s.data(), "true", 4) == 0;
+			} else if (s.length() == 5){
+				return strncasecmp(s.data(), "false", 5) != 0;
+			}
+			
+			return !s.empty();
+		}
+		
 	}
 	return false;
 }

@@ -1,8 +1,26 @@
 #include "test.hpp"
+#include <array>
+
 using namespace std;
 
 #define NL "\n"
 #define REGISTER2(name)	REGISTER(#name, test_##name)
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+struct TestSet {
+	string_view fileName;
+	string_view in;
+	string_view out;
+	
+	Result run() const {
+		TmpFile file = TmpFile(fileName, in);
+		return ::run({file}, out, "", 0);
+	}
+	
+};
 
 
 // ----------------------------------- [ Functions ] ---------------------------------------- //
@@ -110,6 +128,28 @@ Result test_doc_expression_context(){
 }
 
 
+REGISTER2(doc_expression_values);
+Result test_doc_expression_values(){
+	TmpFile in = TmpFile("doc_expression_values.html",
+		R"(
+			<SET a='[0,10,20]'></SET>
+			<SET m='["x": 30, "y": 40]'></SET>
+			<SET am='[0, 10, 20, "x": 30, "y": 40]'></SET>
+			<p>{a[1]}</p>
+			<p>{m["y"]}</p>
+			<p>{am[2] + am["x"]}</p>
+		)"
+	);
+	string_view out = (
+		NL
+		"<p>10</p>" NL
+		"<p>40</p>" NL
+		"<p>50</p>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
 REGISTER2(doc_expression_variables);
 Result test_doc_expression_variables(){
 	TmpFile in = TmpFile("doc_expression_variables.html",
@@ -133,20 +173,57 @@ Result test_doc_expression_variables(){
 REGISTER2(doc_expression_operators);
 Result test_doc_expression_operators(){
 	TmpFile in = TmpFile("doc_expression_operators.html",
-		"{\"x is \" + 3}" NL
-		"{\"a\" * 3}" NL
-		"{\"abc\" - 2}" NL
-		"{\"a\" || \"\"}" NL
-		"{!10}" NL
-		"{3.6 % 1.25}" NL
+		R"(
+			{3.6 % 1.25}
+			{"x is " + 3}
+			{"a" * 3}
+			{"abc" - 2}
+			
+			{[123] + 456}
+			{[0,2,2,3] - 2}
+			{[0] * [1, "x": 2]}
+			
+			{[10,20,30] / [1,0]}
+			{["x": 1, "y": 2] / ["y"]}
+			{["x": 1, "y": 2] / ["y": 123]}
+			
+			{[10,20,30] % [1,0]}
+			{["x": 1, "y": 2] % ["y"]}
+			{["x": 1, "y": 2] % ["y": 123]}
+			
+			{[10,20,30] % 2}
+			{["x": 1, "y": 2] % "y"}
+			
+			{!10}
+			{"a" || ""}
+			{![1,2]}
+		)"
 	);
 	string_view out = (
+		NL
+		"1.1" NL
 		"x is 3" NL
 		"aaa" NL
 		"a" NL
+		NL
+		"[123,456]" NL
+		"[0,3]" NL
+		"[0,1,\"x\":2]" NL
+		NL
+		"[30]" NL
+		"[\"x\":1]" NL
+		"[\"x\":1]" NL
+		NL
+		"[20,10]" NL
+		"[2]" NL
+		"[\"y\":2]" NL
+		NL
+		"30" NL
+		"2" NL
+		NL
+		"0" NL
 		"1" NL
 		"0" NL
-		"1.1" NL
 	);
 	return run({in}, out, "", 0);
 }
@@ -154,57 +231,103 @@ Result test_doc_expression_operators(){
 
 REGISTER2(doc_expressions_functions);
 Result test_doc_expressions_functions(){
-	TmpFile in = TmpFile("doc_expressions_functions.html",
-		"{int('7.234')}" NL
-		"{float('122.5') + 1}" NL
-		"{str(12) + ' apples'}" NL
-		NL
-		"{len('hello')}" NL
-		"{abs(-4.5)}" NL
-		"{min(1, 2.5, 'three')}" NL
-		"{max(1, 2.5, 'three')}" NL
-		"{sin(pi/6)}" NL
-		"{cos(pi/3)}" NL
-		NL
-		"{lower('World!')}" NL
-		"{upper('World!')}" NL
-		"{substr(\"green\", 1)}" NL
-		"{substr(\"green\", 1, 3)}" NL
-		"{substr(\"green\", 4, -3)}" NL
-		"{substr(\"green\", -1, -3)}" NL
-		NL
-		"{match('01:20:13', '\\d?\\d:\\d\\d:\\d\\d')}" NL
-		"{replace('12 apples', '(\\d+)\\s+(\\w+)', '$1 green $2')}" NL
-		NL
-		"{if(3 > 2, \"yes\", \"no\")}" NL
-		"{if(defined(x),x,100)}" NL
-	);
-	string_view out = (
-		"7" NL
-		"123.5" NL
-		"12 apples" NL
-		NL
-		"5" NL
-		"4.5" NL
-		"1" NL
-		"three" NL
-		"0.5" NL
-		"0.5" NL
-		NL
-		"world!" NL
-		"WORLD!" NL
-		"reen" NL
-		"ree" NL
-		"ree" NL
-		"ree" NL
-		NL
-		"1" NL
-		"12 green apples" NL
-		NL
-		"yes" NL
-		"100" NL
-	);
-	return run({in}, out, "", 0);
+	array<TestSet,4> t;
+	
+	t[0] = TestSet {
+		.fileName = "doc_expressions_functions-1.html",
+		.in = R"(
+			{bool(4)}
+			{bool("true")}
+			{bool("FALSE")}
+			{bool("hello")}
+			{bool("")}
+			
+			{int('7.234')}
+			{float('122.5') + 1}
+			{str(12) + ' apples'}
+		)",
+		.out = (
+			NL
+			"1" NL
+			"1" NL
+			"0" NL
+			"1" NL
+			"0" NL
+			"" NL
+			"7" NL
+			"123.5" NL
+			"12 apples" NL
+		)
+	};
+	
+	t[1] = TestSet {
+		.fileName = "doc_expressions_functions-2.html",
+		.in = R"(
+			{len('hello')}
+			{abs(-4.5)}
+			{min(1, 2.5, 'three')}
+			{max(1, 2.5, 'three')}
+			{sin(pi/6)}
+			{cos(pi/3)}
+		)",
+		.out = (
+			NL
+			"5" NL
+			"4.5" NL
+			"1" NL
+			"three" NL
+			"0.5" NL
+			"0.5" NL
+		)
+	};
+	
+	t[2] = TestSet {
+		.fileName = "doc_expressions_functions-3.html",
+		.in = R"(
+			{lower('World!')}
+			{upper('World!')}
+			{slice("green", 1)}
+			{slice("green", 1, 3)}
+			{slice("green", 1, -2)}
+			{slice("green", -3, 2)}
+			{match('01:20:13', '\d?\d:\d\d:\d\d')}
+			{replace('12 apples', '(\d+)\s+(\w+)', '$1 green $2')}
+		)",
+		.out = (
+			NL
+			"world!" NL
+			"WORLD!" NL
+			"reen" NL
+			"ree" NL
+			"ree" NL
+			"ee" NL
+			"1" NL
+			"12 green apples" NL
+		)
+	};
+	
+	t[3] = TestSet {
+		.fileName = "doc_expressions_functions-4.html",
+		.in = R"(
+			{if(3 > 2, "yes", "no")}
+			{if(defined(x),x,100)}
+			{coalesce(x,100)}
+		)",
+		.out = (
+			NL
+			"yes" NL
+			"100" NL
+			"100" NL
+		)
+	};
+	
+	Result r;
+	for (TestSet s : t){
+		r = s.run();
+		if (!r) break;
+	}
+	
+	return r;
 }
 
 

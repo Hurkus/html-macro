@@ -39,6 +39,27 @@ constexpr T clamp(T x, T min, T max){
 }
 
 
+/**
+ * @brief If the object is not unique (`refs > 1`), it is cloned
+ *        and the value is updated to hold the cloned object.
+ * @return Reference to the unique object. It might be new.
+ */
+static Value::Object& uniq_obj(Value& val){
+	assert(val.type == Type::OBJECT);
+	assert(val.data.o != nullptr);
+	
+	if (val.data.o->refs > 1){
+		unique_ptr<Value::Object> o2 = Value::Object::create();
+		o2->arr = val.data.o->arr;
+		val.data.o->dict.copy(o2->dict);
+		val.data.o->unref();
+		val.data.o = o2.release()->ref();
+	}
+	
+	return *val.data.o;
+}
+
+
 static void warn_undefined_variable(const Expression& self, const Variable& var){
 	if (self.origin == nullptr){
 		return;
@@ -90,6 +111,47 @@ static Value var(const Expression& self, const Variable& var, const VariableMap&
 		HERE(warn_undefined_variable(self, var));
 		return Value();
 	}
+}
+
+
+static Value index(const Expression& self, const Index& idx, const VariableMap& vars){
+	assert(idx.obj != nullptr);
+	assert(idx.index != nullptr);
+	Value obj = eval(self, *idx.obj, vars);
+	Value index = eval(self, *idx.index, vars);
+	
+	if (obj.type == Type::NONE){
+		return Value();
+	} else if (obj.type != Type::OBJECT){
+		HERE(warn_value_not_indexable(self, *idx.obj));
+		return Value();
+	}
+	
+	Value::Object& o = *obj.data.o;
+	Value* el = nullptr;
+	
+	switch (index.type){
+		case Type::LONG:
+			el = o.get(index.data.l);
+			break;
+		case Type::DOUBLE:
+			el = o.get(size_t(index.data.d));
+			break;
+		case Type::STRING:
+			el = o.get(index.data.s->sv());
+			break;
+		case Type::OBJECT:
+			HERE(error_invalid_property_type(self, *idx.index));
+			break;
+		case Type::NONE:
+			break;
+	}
+	
+	if (el != nullptr){
+		return *el;
+	}
+	
+	return Value();
 }
 
 
@@ -150,25 +212,7 @@ static Value object(const Expression& self, const Object& objop, const VariableM
 static Value nott(const Expression& self, const UnaryOperation& unop, const VariableMap& vars){
 	assert(unop.arg != nullptr);
 	Value val = eval(self, *unop.arg, vars);
-	
-	switch (val.type){
-		case Type::NONE:
-			break;
-		case Type::LONG:
-			val = (val.data.l == 0) ? 1L : 0L;
-			break;
-		case Type::DOUBLE:
-			val = (val.data.d == 0) ? 1L : 0L;
-			break;
-		case Type::STRING:
-			val = (val.data.s->len == 0) ? 1L : 0L;
-			break;
-		case Type::OBJECT:
-			val = (val.data.o->arr.empty() && val.data.o->dict.empty()) ? 1L : 0L;
-			break;
-	}
-	
-	return val;
+	return val.toBool() ? 0L : 1L;
 }
 
 
@@ -213,7 +257,7 @@ static Value add(const Expression& self, const BinaryOperation& binop, const Var
 		else if (v2.type == Type::STRING)
 			v1 = Value(to_string(v1.data.l), v2.data.s->sv());
 		else if (v2.type == Type::OBJECT){
-			v2.data.o->insert(0, move(v1));
+			uniq_obj(v2).insert(0, move(v1));
 			v1 = move(v2);
 		}
 	}
@@ -226,7 +270,7 @@ static Value add(const Expression& self, const BinaryOperation& binop, const Var
 		else if (v2.type == Type::STRING)
 			v1 = Value(to_string(v1.data.l), v2.data.s->sv());
 		else if (v2.type == Type::OBJECT){
-			v2.data.o->insert(0, move(v1));
+			uniq_obj(v2).insert(0, move(v1));
 			v1 = move(v2);
 		}
 	}
@@ -235,7 +279,7 @@ static Value add(const Expression& self, const BinaryOperation& binop, const Var
 		if (v2.type == Type::STRING){
 			v1 = Value(v1.data.s->sv(), v2.toStr());
 		} else if (v2.type == Type::OBJECT){
-			v2.data.o->insert(0, move(v1));
+			uniq_obj(v2).insert(0, move(v1));
 			v1 = move(v2);
 		} else if (v2.type != Type::NONE){
 			v1 = Value(v1.data.s->sv(), v2.toStr());
@@ -244,7 +288,7 @@ static Value add(const Expression& self, const BinaryOperation& binop, const Var
 	
 	else if (v1.type == Type::OBJECT){
 		if (v2.type != Type::NONE)
-			v1.data.o->insert(v1.data.o->arr.size(), move(v2));
+			uniq_obj(v1).arr.emplace_back(move(v2));
 	}
 	
 	return v1;
@@ -256,11 +300,7 @@ static Value sub(const Expression& self, const BinaryOperation& binop, const Var
 	Value v1 = eval(self, *binop.arg_1, vars);
 	Value v2 = eval(self, *binop.arg_2, vars);
 	
-	if (v1.type == Type::NONE) [[unlikely]] {
-		v1 = move(v2);
-	}
-	
-	else if (v1.type == Type::LONG){
+	if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
 			v1.data.l -= v2.data.l;
 		else if (v2.type == Type::DOUBLE)
@@ -298,14 +338,18 @@ static Value sub(const Expression& self, const BinaryOperation& binop, const Var
 	}
 	
 	else if (v1.type == Type::OBJECT){
-		vector<Value>& arr = v1.data.o->arr;
+		Value::Object& o1 = uniq_obj(v1);
 		
 		// Remove identical elements.
-		for (ssize_t i = arr.size() - 1 ; i >= 0 ; i--){
-			if (arr[i] == v2)
-				arr.erase(arr.begin() + i);
+		for (ssize_t i = o1.arr.size() - 1 ; i >= 0 ; i--){
+			if (o1.arr[i] == v2)
+				o1.arr.erase(o1.arr.begin() + i);
 		}
 		
+	}
+	
+	else if (v1.type == Type::NONE){
+		v1 = move(v2);
 	}
 	
 	return v1;
@@ -330,11 +374,7 @@ static Value mul(const Expression& self, const BinaryOperation& binop, const Var
 		return Value(buff);
 	};
 	
-	if (v1.type == Type::NONE){
-		v1 = move(v2);
-	}
-	
-	else if (v1.type == Type::LONG){
+	if (v1.type == Type::LONG){
 		if (v2.type == Type::NONE)
 			v1 = Value();
 		else if (v2.type == Type::LONG)
@@ -348,10 +388,9 @@ static Value mul(const Expression& self, const BinaryOperation& binop, const Var
 				v1 = move(v2);
 			else
 				v1 = mul(v2.data.s->sv(), v1.data.l);
-			return v1;
 		}
 		else if (v2.type == Type::OBJECT){
-			v2.data.o->insert(0, move(v1));
+			uniq_obj(v2).insert(0, move(v1));
 			v1 = move(v2);
 		}
 	}
@@ -370,10 +409,9 @@ static Value mul(const Expression& self, const BinaryOperation& binop, const Var
 				v1 = move(v2);
 			else
 				v1 = mul(v2.data.s->sv(), long(v1.data.d));
-			return v1;
 		}
 		else if (v2.type == Type::OBJECT){
-			v2.data.o->insert(0, move(v1));
+			uniq_obj(v2).insert(0, move(v1));
 			v1 = move(v2);
 		}
 	}
@@ -386,7 +424,7 @@ static Value mul(const Expression& self, const BinaryOperation& binop, const Var
 		else if (v2.type == Type::DOUBLE)
 			v1 = mul(v1.data.s->sv(), long(v2.data.d));
 		else if (v2.type == Type::OBJECT){
-			v2.data.o->insert(0, move(v1));
+			uniq_obj(v2).insert(0, move(v1));
 			v1 = move(v2);
 		}
 	}
@@ -399,13 +437,17 @@ static Value mul(const Expression& self, const BinaryOperation& binop, const Var
 			case Type::LONG:
 			case Type::DOUBLE:
 			case Type::STRING:
-				v1.data.o->insert(v1.data.o->arr.size(), move(v2));
+				uniq_obj(v1).arr.emplace_back(move(v2));
 				break;
 			
 			case Type::OBJECT:
-				v1.data.o->merge(move(*v2.data.o));
+				uniq_obj(v1).merge(*v2.data.o);
 				break;
 		}
+	}
+	
+	else if (v1.type == Type::NONE){
+		v1 = move(v2);
 	}
 	
 	return v1;
@@ -436,27 +478,30 @@ static Value div(const Expression& self, const BinaryOperation& binop, const Var
 	}
 	
 	else if (v1.type == Type::OBJECT){
+		Value::Object& o1 = uniq_obj(v1);
+		
 		if (v2.type == Type::LONG)
-			v1.data.o->remove(static_cast<size_t>(v2.data.l));
+			o1.remove(static_cast<size_t>(v2.data.l));
 		else if (v2.type == Type::DOUBLE)
-			v1.data.o->remove(static_cast<size_t>(v2.data.d));
+			o1.remove(static_cast<size_t>(v2.data.d));
 		else if (v2.type == Type::STRING)
-			v1.data.o->remove(v2.data.s->sv());
+			o1.remove(v2.data.s->sv());
 		else if (v2.type == Type::OBJECT){
-			
-			// Remove properties indexed from o2 dictionary.
-			for (const auto& pair : v2.data.o->dict){
-				v1.data.o->remove(pair.key);
-			}
+			// TODO: optimize by constructing the object without the elements instead of removing them.
 			
 			// Remove elements and properties indexed from o2 array.
 			for (const Value& el : v2.data.o->arr){
 				if (el.type == Type::LONG)
-					v1.data.o->remove(size_t(el.data.l));
+					o1.remove(size_t(el.data.l));
 				else if (el.type == Type::DOUBLE)
-					v1.data.o->remove(size_t(el.data.d));
+					o1.remove(size_t(el.data.d));
 				else if (el.type == Type::STRING)
-					v1.data.o->remove(el.data.s->sv());
+					o1.remove(el.data.s->sv());
+			}
+			
+			// Remove properties indexed from o2 dictionary.
+			for (const auto& pair : v2.data.o->dict){
+				o1.remove(pair.key);
 			}
 			
 		}
@@ -471,15 +516,18 @@ static Value mod(const Expression& self, const BinaryOperation& binop, const Var
 	Value v1 = eval(self, *binop.arg_1, vars);
 	Value v2 = eval(self, *binop.arg_2, vars);
 	
-	if (v1.type == Type::NONE){
-		v1 = move(v2);
-	}
-	
-	else if (v1.type == Type::LONG){
+	if (v1.type == Type::LONG){
 		if (v2.type == Type::LONG)
 			v1.data.l %= v2.data.l;
 		else if (v2.type == Type::DOUBLE)
 			v1 = fmod(v1.data.l, v2.data.d);
+		else if (v2.type == Type::OBJECT){
+			const Value* v = v2.data.o->get(v1.data.l);
+			if (v != nullptr)
+				v1 = *v;
+			else
+				v1 = Value();
+		}
 	}
 	
 	else if (v1.type == Type::DOUBLE){
@@ -487,25 +535,38 @@ static Value mod(const Expression& self, const BinaryOperation& binop, const Var
 			v1 = fmod(v1.data.d, v2.data.l);
 		else if (v2.type == Type::DOUBLE)
 			v1 = fmod(v1.data.d, v2.data.d);
+		else if (v2.type == Type::OBJECT){
+			const Value* v = v2.data.o->get(long(v1.data.d));
+			if (v != nullptr)
+				v1 = *v;
+			else
+				v1 = Value();
+		}
+	}
+	
+	else if (v1.type == Type::STRING){
+		if (v2.type == Type::OBJECT){
+			const Value* v = v2.data.o->get(v1.data.s->sv());
+			v1 = (v != nullptr) ? *v : Value();
+		} else {
+			v1 = Value();
+		}
 	}
 	
 	else if (v1.type == Type::OBJECT){
 		Value::Object& o1 = *v1.data.o;
 		
 		if (v2.type == Type::LONG){
-			Value* el = o1.get(static_cast<size_t>(v2.data.l));
-			if (el != nullptr)
-				v1 = move(*el);
+			Value* v = o1.get(static_cast<size_t>(v2.data.l));
+			v1 = (v != nullptr) ? *v : Value();
 		}
 		else if (v2.type == Type::DOUBLE){
-			Value* el = o1.get(static_cast<size_t>(v2.data.l));
-			if (el != nullptr)
-				v1 = move(*el);
+			Value* v = o1.get(static_cast<size_t>(v2.data.l));
+			v1 = (v != nullptr) ? *v : Value();
 		}
 		else if (v2.type == Type::STRING){
-			Value* el = o1.get(v2.data.s->sv());
-			if (el != nullptr)
-				v1 = move(*el);
+			Value* v = o1.get(v2.data.s->sv());
+			v1 = (v != nullptr) ? *v : Value();
 		}
 		else if (v2.type == Type::OBJECT){
 			Value::Object& o1 = *v1.data.o;
@@ -540,6 +601,10 @@ static Value mod(const Expression& self, const BinaryOperation& binop, const Var
 			
 			v1 = Value(o3.release());
 		}
+	}
+	
+	else if (v1.type == Type::NONE){
+		v1 = move(v2);
 	}
 	
 	return v1;
@@ -664,53 +729,6 @@ static bool cmp(const Expression& self, const BinaryOperation& binop, const Vari
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static Value eval(const Expression& self, const Index& idx, const VariableMap& vars){
-	assert(idx.obj != nullptr);
-	assert(idx.index != nullptr);
-	Value obj = eval(self, *idx.obj, vars);
-	Value index = eval(self, *idx.index, vars);
-	
-	if (obj.type == Type::NONE){
-		return Value();
-	} else if (obj.type != Type::OBJECT){
-		HERE(warn_value_not_indexable(self, *idx.obj));
-		return Value();
-	}
-	
-	Value::Object& o = *obj.data.o;
-	Value* el = nullptr;
-	
-	switch (index.type){
-		case Type::LONG:
-			el = o.get(index.data.l);
-			break;
-		case Type::DOUBLE:
-			el = o.get(size_t(index.data.d));
-			break;
-		case Type::STRING:
-			el = o.get(index.data.s->sv());
-			break;
-		case Type::OBJECT:
-			HERE(error_invalid_property_type(self, *idx.index));
-			break;
-		case Type::NONE:
-			break;
-	}
-	
-	if (el != nullptr){
-		if (o.refs <= 1)
-			return move(*el);
-		else
-			return *el;
-	}
-	
-	return Value();
-}
-
-
-// ----------------------------------- [ Functions ] ---------------------------------------- //
-
-
 Value eval(const Expression& self, const Operation& op, const VariableMap& vars){
 	switch (op.type){
 		case Operation::Type::LONG:
@@ -754,7 +772,7 @@ Value eval(const Expression& self, const Operation& op, const VariableMap& vars)
 		case Operation::Type::GTE:
 			return cmp<greater_equal<>>(self, static_cast<const BinaryOperation&>(op), vars) ? 1L : 0L;
 		case Operation::Type::INDEX:
-			return eval(self, static_cast<const Index&>(op), vars);
+			return index(self, static_cast<const Index&>(op), vars);
 		case Operation::Type::FUNC:
 			return eval(self, static_cast<const Function&>(op), vars);
 		case Operation::Type::ERROR:

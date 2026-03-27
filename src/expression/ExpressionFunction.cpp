@@ -103,6 +103,19 @@ static void error_arg_expected_str(const Expression& self, const Operation& arg,
 	printCodeView(pos, mark, ANSI_RED);
 }
 
+static void error_arg_expected_arr(const Expression& self, const Operation& arg, string_view arg_name, string_view sig){
+	if (self.origin == nullptr){
+		return;
+	}
+	
+	string_view mark = arg.view();
+	linepos pos = findLine(*self.origin, mark.begin());
+	
+	print(pos);
+	LOG_STDERR(ERROR_PFX "Argument " PURPLE("%.*s") " in function " PURPLE("%.*s") " must be an array.\n", VA_STRV(arg_name), VA_STRV(sig));
+	printCodeView(pos, mark, ANSI_RED);
+}
+
 static void error_arg_expected_regex(const Expression& self, const Operation& arg, string_view arg_name, string_view sig){
 	if (self.origin == nullptr){
 		return;
@@ -142,7 +155,57 @@ static Value f_defined(const Expression& self, const Function& f, const Variable
 }
 
 
+static Value f_coalesce(const Expression& self, const Function& f, const VariableMap& vars){
+	if (f.argc < 1){
+		HERE(error_arg_underflow(self, f, 1, "coalesce(x, ...)"));
+		return Value();
+	}
+	
+	for (uint32_t i = 0 ; i < f.argc ; i++){
+		assert(f.argv[i] != nullptr);
+		const Operation& arg = *f.argv[i];
+		
+		// Check for variable.
+		if (arg.type == Operation::Type::VAR){
+			const Variable& var = static_cast<const Variable&>(arg);
+			const Value* val = vars.get(var.name());
+			
+			if (val != nullptr && val->type != Type::NONE){
+				return *val;
+			}
+			
+		}
+		
+		// Evaluate expression.
+		else {
+			Value val = eval(self, arg, vars);
+			if (val.type != Type::NONE)
+				return val;
+		}
+		
+	}
+	
+	return Value();
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+static Value f_bool(const Expression& self, const Function& f, const VariableMap& vars){
+	if (f.argc < 1){
+		HERE(error_arg_underflow(self, f, 1, "bool(e)"));
+		return Value(0L);
+	} else if (f.argc > 1){
+		HERE(warn_arg_overflow(self, f, 1, "bool(e)"));
+	}
+	
+	assert(f.argv[0] != nullptr);
+	Value val = eval(self, *f.argv[0], vars);
+	bool b = val.toBool();
+	
+	return b ? 1L : 0L;
+}
 
 
 static Value f_int(const Expression& self, const Function& f, const VariableMap& vars){
@@ -160,15 +223,16 @@ static Value f_int(const Expression& self, const Function& f, const VariableMap&
 		case Type::STRING: [[likely]]
 			val = atol(val.data.s->str);
 			break;
+		case Type::LONG:
+			break;
 		case Type::DOUBLE:
 			val = long(val.data.d);
 			break;
-		case Type::LONG:
+		case Type::OBJECT:
 			val = long(val.data.o->arr.size());
 			break;
-		case Type::NONE:
-		case Type::OBJECT:
-			val = Value();
+		default:
+			val = Value(0L);
 			break;
 	}
 	
@@ -196,9 +260,11 @@ static Value f_float(const Expression& self, const Function& f, const VariableMa
 			break;
 		case Type::DOUBLE:
 			break;
-		case Type::NONE:
 		case Type::OBJECT:
-			val = Value();
+			val = double(val.data.o->arr.size());
+			break;
+		default:
+			val = Value(0.0);
 			break;
 	}
 	
@@ -219,6 +285,8 @@ static Value f_str(const Expression& self, const Function& f, const VariableMap&
 	
 	switch (val.type){
 		case Type::NONE:
+			val = Value(""sv);
+			break;
 		case Type::LONG:
 		case Type::DOUBLE:
 		case Type::OBJECT:
@@ -577,12 +645,12 @@ static Value f_upper(const Expression& self, const Function& f, const VariableMa
 }
 
 
-static Value f_substr(const Expression& self, const Function& f, const VariableMap& vars){
+static Value f_slice(const Expression& self, const Function& f, const VariableMap& vars){
 	if (f.argc < 2){
-		HERE(error_arg_underflow(self, f, 2, "substr(str, beg, [len])"));
+		HERE(error_arg_underflow(self, f, 2, "slice(arr, beg, [len])"));
 		return string_view();
 	} else if (f.argc > 3){
-		HERE(warn_arg_overflow(self, f, 3, "substr(str, beg, [len])"));
+		HERE(warn_arg_overflow(self, f, 3, "slice(arr, beg, [len])"));
 	}
 	
 	assert(f.argv[0] != nullptr);
@@ -591,32 +659,26 @@ static Value f_substr(const Expression& self, const Function& f, const VariableM
 	Value arg_1 = eval(self, *f.argv[1], vars);
 	Value arg_2;
 	
-	const bool hasLen = (f.argc >= 3);
-	if (hasLen){
+	if (f.argc >= 3){
 		assert(f.argv[2] != nullptr);
 		arg_2 = eval(self, *f.argv[2], vars);
 	}
 	
-	string str_buff;
-	string_view str;
-	long beg;
-	long len;
+	int64_t size = 0;
+	int64_t beg = 0;
+	int64_t end = -1;
+	int64_t len = -1;
 	
-	// Extract argument 0 [str]
+	// Verify argument 0 [arr]
 	switch (arg_0.type){
-		case Type::LONG:
-			str_buff = to_string(arg_0.data.l);
-			str = str_buff;
-			break;
-		case Type::DOUBLE:
-			str_buff = to_string(arg_0.data.d);
-			str = str_buff;
-			break;
 		case Type::STRING:
-			str = arg_0.data.s->sv();
+			size = arg_0.data.s->len;
+			break;
+		case Type::OBJECT:
+			size = arg_0.data.o->arr.size();
 			break;
 		default:
-			HERE(error_arg_expected_str(self, *f.argv[0], "str", "substr(str, beg, [len])"));
+			HERE(error_arg_expected_arr(self, *f.argv[0], "arr", "slice(arr, beg, [len])"));
 			return arg_0;
 	}
 	
@@ -629,43 +691,52 @@ static Value f_substr(const Expression& self, const Function& f, const VariableM
 			beg = long(arg_1.data.d);
 			break;
 		default:
-			HERE(error_arg_expected_int(self, *f.argv[1], "beg", "substr(str, beg, [len])"));
+			HERE(error_arg_expected_int(self, *f.argv[1], "beg", "slice(arr, beg, [len])"));
 			return arg_0;
 	}
 	
 	// Extract argument 2 [len]
-	if (hasLen){
-		switch (arg_2.type){
-			case Type::LONG:
-				len = arg_2.data.l;
-				break;
-			case Type::DOUBLE:
-				len = long(arg_2.data.d);
-				break;
-			default:
-				HERE(error_arg_expected_int(self, *f.argv[2], "len", "substr(str, beg, [len])"));
-				return arg_0;
+	switch (arg_2.type){
+		case Type::NONE:
+			break;
+		case Type::LONG:
+			len = arg_2.data.l;
+			break;
+		case Type::DOUBLE:
+			len = long(arg_2.data.d);
+			break;
+		default:
+			HERE(error_arg_expected_int(self, *f.argv[2], "len", "slice(arr, beg, [len])"));
+			return arg_0;
+	}
+	
+	// Normalize begining and length.
+	beg = (beg < 0) ? size + beg : beg;
+	beg = min(max(0L, beg), size);
+	end = (len < 0) ? size + len + 1 : beg + len;
+	end = min(max(beg, end), size);
+	len = end - beg;
+	
+	switch (arg_0.type){
+		case Type::STRING: {
+			string_view s = arg_0.data.s->sv();
+			return Value(s.substr(beg, len));
 		}
+		
+		case Type::OBJECT: {
+			Value o2 = Value(new Value::Object());
+			const vector<Value>& v1 = arg_0.data.o->arr;
+			vector<Value>& v2 = o2.data.o->arr;
+			v2.insert(v2.end(), v1.begin() + beg, v1.begin() + end);
+			return o2; 
+		}
+		
+		default:
+			break;
 	}
 	
-	// Normalize beg and end
-	beg = (beg >= 0) ? beg : long(str.length()) + beg;
-	long end = (hasLen) ? beg + len : INT64_MAX;
-	
-	if (beg > end){
-		swap(beg, end);
-	}
-	
-	beg = max(0L, beg);
-	end = min(end, long(str.length()));
-	
-	// Substring
-	if (beg >= end)
-		return Value(""sv);
-	else if (beg == 0 && end == long(str.length()) && arg_0.type == Type::STRING)
-		return arg_0;
-	else
-		return Value(str.substr(beg, end - beg));
+	assert(false);
+	return Value();
 }
 
 
@@ -794,9 +865,15 @@ Value eval(const Expression& self, const Function& f, const VariableMap& vars){
 				else if (name == "cos")
 					return f_cos(self, f, vars);
 				break;
+			case 4:
+				if (name == "bool")
+					return f_bool(self, f, vars);
+				break;
 			case 5:
 				if (name == "float")
 					return f_float(self, f, vars);
+				else if (name == "slice")
+					return f_slice(self, f, vars);
 				else if (name == "lower")
 					return f_lower(self, f, vars);
 				else if (name == "upper")
@@ -804,15 +881,15 @@ Value eval(const Expression& self, const Function& f, const VariableMap& vars){
 				else if (name == "match")
 					return f_match(self, f, vars);
 				break;
-			case 6:
-				if (name == "substr")
-					return f_substr(self, f, vars);
-				break;
 			case 7:
 				if (name == "replace")
 					return f_replace(self, f, vars);
 				else if (name == "defined")
 					return f_defined(self, f, vars);
+				break;
+			case 8:
+				if (name == "coalesce")
+					return f_coalesce(self, f, vars);
 				break;
 		}
 	} catch (...) {
