@@ -321,6 +321,24 @@ Result test_element_macro_IF(){
 }
 
 
+REGISTER2(element_macro_IF_semantic);
+Result test_element_macro_IF_semantic(){
+	TmpFile in = TmpFile("element_macro_IF_semantic.html",
+		R"(
+			<SET x='5' y='6'/>
+			<IF x="5">x is 5</IF>
+			<IF y>y exists</IF>
+			<IF z>z exists</IF>
+		)"
+	);
+	string_view out = (
+		"x is 5" NL
+		"y exists" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
 REGISTER2(element_macro_ELIF);
 Result test_element_macro_ELIF(){
 	TmpFile in = TmpFile("element_macro_ELIF.html",

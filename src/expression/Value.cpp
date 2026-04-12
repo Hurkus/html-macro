@@ -121,6 +121,67 @@ unique_ptr<Value::String> Value::String::create(string_view s1, string_view s2){
 }
 
 
+unique_ptr<Value::String> Value::String::fmt(long val){
+	unique_ptr<Value::String> s = create(24 - 1);
+	int n = snprintf(s->str, s->len, "%li", val);
+	
+	if (n < 0){
+		s->len = 0;
+		return s;
+	} else if (uint32_t(n) < s->len){
+		s->len = uint32_t(n);
+		return s;
+	}
+	
+	// Resize buffer and retry.
+	s = create(uint32_t(n) + 1);
+	n = snprintf(s->str, s->len, "%li", val);
+	
+	if (n < 0){
+		s->len = 0;
+	} else if (uint32_t(n) < s->len){
+		s->len = uint32_t(n);
+	}
+	
+	return s;
+}
+
+
+unique_ptr<Value::String> Value::String::fmt(double val){
+	int len = 32 - 1;
+	
+	unique_ptr<Value::String> s = create(uint32_t(len));
+	int n = snprintf(s->str, s->len, "%lf", val);
+	
+	if (n < 0){
+		s->len = 0;
+		return s;
+	}
+	
+	// Resize buffer and retry.
+	else if (n >= len){
+		len = n + 1;
+		s = create(uint32_t(len));
+		n = snprintf(s->str, s->len, "%lf", val);
+		n = min(n, len);
+		
+		if (n < 0){
+			s->len = 0;
+			return s;
+		}
+		
+	}
+	
+	// Trimm trailing 0.
+	while (n > 2 && s->str[n-1] == '0' && s->str[n-2] != '.'){
+		n--;
+	}
+	
+	s->len = uint32_t(n);
+	return s;
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -169,9 +230,11 @@ static string str(const Value::Object& o){
 		comma = true;
 		
 		if (el.type == Value::Type::STRING){
-			s.append("\"").append(el.toStr()).push_back('"');
+			s.append("\"");
+			el.toStr(s);
+			s.push_back('"');
 		} else {
-			s.append(el.toStr());
+			el.toStr(s);
 		}
 	}
 	
@@ -183,9 +246,11 @@ static string str(const Value::Object& o){
 		s.append("\"").append(pair.key).append("\":");
 		
 		if (pair.value.type == Value::Type::STRING){
-			s.append("\"").append(pair.value.toStr()).push_back('"');
+			s.append("\"");
+			pair.value.toStr(s);
+			s.push_back('"');
 		} else {
-			s.append(pair.value.toStr());
+			pair.value.toStr(s);
 		}
 	}
 	
@@ -240,7 +305,7 @@ bool Value::Object::operator==(const Value::Object& o) const {
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool Value::toBool() const noexcept {
+bool Value::getBool() const noexcept {
 	switch (type){
 		case Type::NONE:
 			return false;
@@ -271,7 +336,7 @@ bool Value::toBool() const noexcept {
 string Value::toStr() const {
 	switch (type){
 		case Type::NONE:
-			return string("null");
+			return string();
 		case Type::LONG:
 			return to_string(data.l);
 		case Type::DOUBLE:
@@ -299,6 +364,108 @@ string& Value::toStr(string& buff) const {
 			return buff.append(str(*data.o));
 	}
 	return buff;
+}
+
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+Value Value::cast_bool() const noexcept {
+	return Value(getBool() ? 1L : 0L);
+}
+
+
+Value Value::cast_int() const noexcept {
+	switch (type){
+		case Type::NONE:
+			break;
+		
+		case Type::LONG:
+			return Value(data.l);
+			
+		case Type::DOUBLE:
+			return Value(static_cast<long>(data.d));
+		
+		case Type::STRING:
+			assert(data.s != nullptr);
+			return Value(atol(data.s->begin()));
+		
+		case Type::OBJECT:
+			assert(data.o != nullptr);
+			return Value(static_cast<long>(data.o->arr.size()));
+		
+	}
+	return Value(0L);
+}
+
+
+Value Value::cast_float() const noexcept {
+	switch (type){
+		case Type::NONE:
+			break;
+		
+		case Type::LONG:
+			return Value(static_cast<double>(data.l));
+			
+		case Type::DOUBLE:
+			return Value(data.d);
+		
+		case Type::STRING:
+			assert(data.s != nullptr);
+			return Value(atof(data.s->begin()));
+		
+		case Type::OBJECT:
+			assert(data.o != nullptr);
+			return Value(static_cast<double>(data.o->arr.size()));
+		
+	}
+	return Value(0.0);
+}
+
+
+Value Value::cast_str() const {
+	switch (type){
+		case Type::NONE:
+			break;
+		
+		case Type::LONG:
+			return Value(Value::String::fmt(data.l).release());
+		
+		case Type::DOUBLE:
+			return Value(Value::String::fmt(data.d).release());
+		
+		case Type::STRING:
+			return Value(data.s);
+		
+		case Type::OBJECT: {
+			assert(data.o != nullptr);
+			string x = str(*data.o);
+			return Value(Value::String::create(x).release());
+		} break;
+		
+	}
+	return Value(Value::String::create(0).release());
+}
+
+
+Value Value::cast_obj() const {
+	switch (type){
+		case Type::NONE:
+			break;
+		
+		case Type::LONG:
+		case Type::DOUBLE:
+		case Type::STRING: {
+			unique_ptr<Value::Object> obj = Value::Object::create();
+			obj->arr.emplace_back(*this);
+			return Value(obj.release());
+		}
+		
+		case Type::OBJECT:
+			return Value(data.o);
+		
+	}
+	return Value(Value::Object::create().release());
 }
 
 
@@ -374,9 +541,9 @@ bool Value::semanticEquals(string_view s) const noexcept {
 				return false;
 		}
 		
-		case Type::STRING: {
-			[[likely]]
-			return string_view(*data.s) == s;
+		case Type::STRING: [[likely]] {
+			assert(data.s != nullptr);
+			return (data.s->sv() == s);
 		}
 		
 		case Type::OBJECT: {

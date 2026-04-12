@@ -202,9 +202,7 @@ static Value f_bool(const Expression& self, const Function& f, const VariableMap
 	
 	assert(f.argv[0] != nullptr);
 	Value val = eval(self, *f.argv[0], vars);
-	bool b = val.toBool();
-	
-	return b ? 1L : 0L;
+	return val.cast_bool();
 }
 
 
@@ -218,25 +216,7 @@ static Value f_int(const Expression& self, const Function& f, const VariableMap&
 	
 	assert(f.argv[0] != nullptr);
 	Value val = eval(self, *f.argv[0], vars);
-	
-	switch (val.type){
-		case Type::STRING: [[likely]]
-			val = atol(val.data.s->str);
-			break;
-		case Type::LONG:
-			break;
-		case Type::DOUBLE:
-			val = long(val.data.d);
-			break;
-		case Type::OBJECT:
-			val = long(val.data.o->arr.size());
-			break;
-		default:
-			val = Value(0L);
-			break;
-	}
-	
-	return val;
+	return val.cast_int();
 }
 
 
@@ -250,25 +230,7 @@ static Value f_float(const Expression& self, const Function& f, const VariableMa
 	
 	assert(f.argv[0] != nullptr);
 	Value val = eval(self, *f.argv[0], vars);
-	
-	switch (val.type){
-		case Type::STRING: [[likely]]
-			val = atof(val.data.s->str);
-			break;
-		case Type::LONG:
-			val = double(val.data.l);
-			break;
-		case Type::DOUBLE:
-			break;
-		case Type::OBJECT:
-			val = double(val.data.o->arr.size());
-			break;
-		default:
-			val = Value(0.0);
-			break;
-	}
-	
-	return val;
+	return val.cast_float();
 }
 
 
@@ -282,21 +244,7 @@ static Value f_str(const Expression& self, const Function& f, const VariableMap&
 	
 	assert(f.argv[0] != nullptr);
 	Value val = eval(self, *f.argv[0], vars);
-	
-	switch (val.type){
-		case Type::NONE:
-			val = Value(""sv);
-			break;
-		case Type::LONG:
-		case Type::DOUBLE:
-		case Type::OBJECT:
-			val = Value(val.toStr());
-			break;
-		case Type::STRING: [[unlikely]]
-			break;
-	}
-	
-	return val;
+	return val.cast_str();
 }
 
 
@@ -313,7 +261,7 @@ static Value f_len(const Expression& self, const Function& f, const VariableMap&
 	
 	switch (val.type){
 		case Type::NONE:
-			val = Value();
+			val = Value(0L);
 			break;
 		case Type::LONG:
 			val.data.l = abs(val.data.l);
@@ -538,7 +486,7 @@ static Value f_if(const Expression& self, const Function& f, const VariableMap& 
 	assert(f.argv[0] != nullptr);
 	Value cond = eval(self, *f.argv[0], vars);
 	
-	if (cond.toBool()){
+	if (cond.getBool()){
 		assert(f.argv[1] != nullptr);
 		return eval(self, *f.argv[1], vars);
 	} else {
@@ -740,6 +688,126 @@ static Value f_slice(const Expression& self, const Function& f, const VariableMa
 }
 
 
+static Value f_split(const Expression& self, const Function& f, const VariableMap& vars){
+	if (f.argc < 2){
+		HERE(error_arg_underflow(self, f, 2, "split(str, delim)"));
+		return Value();
+	} else if (f.argc > 2){
+		HERE(warn_arg_overflow(self, f, 2, "split(str, delim)"));
+	}
+	
+	// Extract argument 0 [str]
+	assert(f.argv[0] != nullptr);
+	Value arg_str = eval(self, *f.argv[0], vars);
+	
+	if (arg_str.type == Type::OBJECT){
+		return arg_str;
+	}
+	
+	arg_str = arg_str.cast_str();
+	string_view str = arg_str.data.s->sv();
+	
+	// Extract argument 1 [delim]
+	assert(f.argv[1] != nullptr);
+	Value arg_delim = eval(self, *f.argv[1], vars);
+	string_view delim;
+	
+	switch (arg_delim.type){
+		case Type::NONE:
+		case Type::LONG:
+		case Type::DOUBLE:
+			arg_delim = arg_delim.cast_str();
+			delim = arg_delim.data.s->sv();
+			break;
+			
+		case Type::OBJECT:
+			HERE(error_arg_expected_regex(self, *f.argv[1], "delim", "split(str, delim)"));
+			return Value();
+		
+		case Type::STRING:
+			delim = arg_delim.data.s->sv();
+			break;
+	}
+	
+	unique_ptr<Value::Object> obj = Value::Object::create();
+	string str_buff;
+	
+	// Split on every character.
+	if (delim.empty()){
+		obj->arr.reserve(str.size());
+		
+		for (char c : str){
+			obj->arr.emplace_back(string_view(&c, 1));
+		}
+		
+		goto _ret;
+	}
+	
+	// Split using regex.
+	try {
+		regex reg = regex(delim.begin(), delim.end());
+		cregex_token_iterator tok = cregex_token_iterator(str.begin(), str.end(), reg, -1);
+		cregex_token_iterator end = cregex_token_iterator();
+		
+		for (; tok != end ; tok++){
+			string_view s = string_view(tok->first, tok->length());
+			obj->arr.emplace_back(s);
+		}
+		
+	} catch (...){
+		HERE(error_arg_expected_regex(self, *f.argv[1], "delim", "split(str, delim)"));
+		goto _err_ret;
+	}
+	
+	_ret:
+	return Value(obj.release());
+	
+	_err_ret:
+	obj->arr.emplace_back(move(arg_str));
+	goto _ret;
+}
+
+
+static Value f_join(const Expression& self, const Function& f, const VariableMap& vars){
+	if (f.argc < 1){
+		HERE(error_arg_underflow(self, f, 1, "join(arr, [sep])"));
+		return Value();
+	} else if (f.argc > 2){
+		HERE(warn_arg_overflow(self, f, 2, "join(arr, sep)"));
+	}
+	
+	// Extract argument 0 [arr]
+	assert(f.argv[0] != nullptr);
+	Value arg_arr = eval(self, *f.argv[0], vars);
+	
+	if (arg_arr.type != Type::OBJECT){
+		return arg_arr.cast_str();
+	}
+	
+	const vector<Value>& arr = arg_arr.data.o->arr;
+	
+	// Extract argument 1 [sep]
+	Value arg_sep;
+	string_view sep = "";
+	
+	if (f.argc >= 2){
+		assert(f.argv[1] != nullptr);
+		arg_sep = eval(self, *f.argv[1], vars).cast_str();
+		assert(arg_sep.type == Type::STRING);
+		sep = arg_sep.data.s->sv();
+	}
+	
+	string buff;
+	for (size_t i = 0 ; i < arr.size() ; i++){
+		if (i > 0)
+			buff.append(sep);
+		arr[i].toStr(buff);
+	}
+	
+	return Value(buff);
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -868,12 +936,16 @@ Value eval(const Expression& self, const Function& f, const VariableMap& vars){
 			case 4:
 				if (name == "bool")
 					return f_bool(self, f, vars);
+				else if (name == "join")
+					return f_join(self, f, vars);
 				break;
 			case 5:
 				if (name == "float")
 					return f_float(self, f, vars);
 				else if (name == "slice")
 					return f_slice(self, f, vars);
+				else if (name == "split")
+					return f_split(self, f, vars);
 				else if (name == "lower")
 					return f_lower(self, f, vars);
 				else if (name == "upper")

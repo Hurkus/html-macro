@@ -302,32 +302,6 @@ static void _include_header(MacroEngine& self, const Node& op, const Attr& src){
 }
 
 
-/**
- * @brief Transfer leading and trailing whitespace.
- * @param dst Node with new child elements (reversed list).
- * @param dst_original_last Original first child before include added more child elements.
- */
-static void _include_transfer_space(const Node& op, Node& dst, const Node* dst_original_last){
-	if (dst.child == nullptr){
-		return;
-	}
-	
-	// Transfer trailing space to last new child
-	if (dst.child != dst_original_last){
-		dst.child->options |= (op.options & NodeOptions::SPACE_AFTER);
-	}
-	
-	// Find first new child and transfer leading space
-	for (Node* child = dst.child ; child != nullptr ; child = child->next){
-		if (child->next == dst_original_last){
-			child->options |= (op.options & NodeOptions::SPACE_BEFORE);
-			break;
-		}
-	}
-	
-}
-
-
 static void _include_macro(MacroEngine& self, const Node& op, const Attr& src, stack_vector<var_copy,2>& args, bool wrap, Node& dst){
 	assert(self.macro != nullptr);
 	assert(self.macro->html != nullptr);
@@ -443,7 +417,7 @@ static void _include_macro(MacroEngine& self, const Node& op, const Attr& src, s
 		
 	}
 	
-	_include_transfer_space(op, dst, original_first);
+	MacroEngine::transfer_parent_space(op, dst, original_first);
 }
 
 

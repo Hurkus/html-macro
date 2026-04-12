@@ -56,16 +56,23 @@ public:
 	
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
-	bool toBool() const noexcept;
+	bool getBool() const noexcept;
 	std::string toStr() const;
 	std::string& toStr(std::string& buff) const;
+	
+public:
+	Value cast_bool() const noexcept;
+	Value cast_int() const noexcept;
+	Value cast_float() const noexcept;
+	Value cast_str() const;
+	Value cast_obj() const;
 	
 // ----------------------------------- [ Operators ] ---------------------------------------- //
 public:
 	bool equals(const Value& o) const noexcept;
 	bool semanticEquals(const Value& o) const noexcept;
 	bool semanticEquals(std::string_view s) const noexcept;
-
+	
 // ----------------------------------- [ Operators ] ---------------------------------------- //
 public:
 	bool operator==(const Value& o) const noexcept {
@@ -138,6 +145,8 @@ public:
 	static std::unique_ptr<String> create(uint32_t len);
 	static std::unique_ptr<String> create(std::string_view str);
 	static std::unique_ptr<String> create(std::string_view s1, std::string_view s2);
+	static std::unique_ptr<String> fmt(long val);
+	static std::unique_ptr<String> fmt(double val);
 	
 // ---------------------------------------------------------------- //
 public:

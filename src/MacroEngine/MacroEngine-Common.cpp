@@ -6,6 +6,31 @@ using namespace html;
 
 using Branch = MacroEngine::Branch;
 
+
+// ----------------------------------- [ Functions ] ---------------------------------------- //
+
+
+void MacroEngine::transfer_parent_space(const Node& op, Node& dst, const Node* dst_original_last){
+	if (dst.child == nullptr){
+		return;
+	}
+	
+	// Transfer trailing space to last new child
+	if (dst.child != dst_original_last){
+		dst.child->options |= (op.options & NodeOptions::SPACE_AFTER);
+	}
+	
+	// Find first new child and transfer leading space
+	for (Node* child = dst.child ; child != nullptr ; child = child->next){
+		if (child->next == dst_original_last){
+			child->options |= (op.options & NodeOptions::SPACE_BEFORE);
+			break;
+		}
+	}
+	
+}
+
+
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
@@ -70,7 +95,7 @@ Branch MacroEngine::try_eval_attr_if_elif_else(const Node& op, const Attr& attr)
 		return MacroEngine::currentBranch_inline = Branch::FAILED;
 	}
 	
-	const bool b = expr.eval(*variables).toBool();
+	const bool b = expr.eval(*variables).getBool();
 	return MacroEngine::currentBranch_inline = (b ? Branch::PASSED : Branch::FAILED);
 }
 
@@ -94,7 +119,7 @@ bool MacroEngine::eval_attr_bool(const Node& op, const Attr& attr, bool& value){
 		return false;
 	}
 	
-	value = expr.eval(*variables).toBool();
+	value = expr.eval(*variables).getBool();
 	return true;
 }
 
@@ -255,7 +280,7 @@ Branch MacroEngine::attr_equals_variable(const Node& op, const Attr& attr){
 	
 	// Variable exists or is empty
 	if (attr.value_p == nullptr){
-		pass = (var != nullptr && var->toBool());
+		pass = (var != nullptr && var->getBool());
 	}
 	
 	// Evaluate expression
@@ -266,21 +291,20 @@ Branch MacroEngine::attr_equals_variable(const Node& op, const Attr& attr){
 		}
 		
 		Value val = expr.eval(*variables);
-		pass = (var == nullptr && !val.toBool()) || (*var == val);
+		pass = (var == nullptr && !val.getBool()) || (*var == val);
 	}
 	
 	// Interpolate
 	else if (attr.options % NodeOptions::INTERPOLATE){
-		if (var != nullptr && var->type != Value::Type::STRING){
-			pass = false;
+		string buff;
+		if (!MacroEngine::eval_string_interpolate(op, attr.value(), buff)){
+			return MacroEngine::Branch::NONE;
 		}
 		
-		// Compare only strings
-		else {
-			string buff;
-			if (!MacroEngine::eval_string_interpolate(op, attr.value(), buff))
-				return MacroEngine::Branch::NONE;
-			pass = (var == nullptr && buff.empty()) || (var->data.s->sv() == buff);
+		if (var == nullptr){
+			pass = buff.empty();
+		} else {
+			pass = var->semanticEquals(buff);
 		}
 	
 	}
@@ -290,10 +314,8 @@ Branch MacroEngine::attr_equals_variable(const Node& op, const Attr& attr){
 		string_view buff = attr.value();
 		if (var == nullptr)
 			pass = buff.empty();
-		else if (var->type == Value::Type::STRING)
-			pass = (var->data.s->sv() == buff);
 		else
-			pass = false;
+			pass = var->semanticEquals(buff);
 	}
 	
 	return (pass) ? MacroEngine::Branch::PASSED : MacroEngine::Branch::FAILED;

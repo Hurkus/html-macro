@@ -290,6 +290,8 @@ Result test_doc_expressions_functions(){
 			{slice("green", 1, 3)}
 			{slice("green", 1, -2)}
 			{slice("green", -3, 2)}
+			{split("a: b:c", ":\s*")}
+			{join(["a","b","c"], ":")}
 			{match('01:20:13', '\d?\d:\d\d:\d\d')}
 			{replace('12 apples', '(\d+)\s+(\w+)', '$1 green $2')}
 		)",
@@ -301,6 +303,8 @@ Result test_doc_expressions_functions(){
 			"ree" NL
 			"ree" NL
 			"ee" NL
+			"[\"a\",\"b\",\"c\"]" NL
+			"a:b:c" NL
 			"1" NL
 			"12 green apples" NL
 		)

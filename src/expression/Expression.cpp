@@ -212,7 +212,7 @@ static Value object(const Expression& self, const Object& objop, const VariableM
 static Value nott(const Expression& self, const UnaryOperation& unop, const VariableMap& vars){
 	assert(unop.arg != nullptr);
 	Value val = eval(self, *unop.arg, vars);
-	return val.toBool() ? 0L : 1L;
+	return val.getBool() ? 0L : 1L;
 }
 
 
@@ -619,7 +619,7 @@ static Value logical(const Expression& self, const BinaryOperation& binop, const
 	assert(binop.arg_1 != nullptr && binop.arg_2 != nullptr);
 	Value v1 = eval(self, *binop.arg_1, vars);
 	Value v2 = eval(self, *binop.arg_2, vars);
-	return OP{}(v1.toBool(), v2.toBool()) ? 1L : 0L;
+	return OP{}(v1.getBool(), v2.getBool()) ? 1L : 0L;
 }
 
 

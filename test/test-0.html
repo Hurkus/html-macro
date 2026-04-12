@@ -1,6 +1,6 @@
-<SET x='[1, 2, [3, 4]]'></SET>
-<SET y='["name": "Mark", "age": 500]'></SET>
-{x}
-{y}
-{x[2][1]}
-{[0,1,2,3][3]}
+{split("a: b:c", ":\s*")}
+{join(["a","b","c"], ":")}
+-
+<SET x='5' y='6'/>
+<IF x="5">x is 5</IF>
+<IF y>y exists</IF>

@@ -42,9 +42,14 @@ void MacroEngine::branch_if(const Node& op, Node& dst){
 	}
 	
 	// pass:
-	evalChildren(op, dst);
-	MacroEngine::currentBranch_block = Branch::PASSED;
-	return;
+	{
+		Node* _last = dst.child;
+		evalChildren(op, dst);
+		transfer_parent_space(op, dst, _last);
+		
+		MacroEngine::currentBranch_block = Branch::PASSED;
+		return;
+	}
 	
 	fail:
 	MacroEngine::currentBranch_block = Branch::FAILED;
@@ -194,7 +199,7 @@ long MacroEngine::loop_for(const Node& op, Node& dst){
 	
 	// Run loop
 	long i = 0;
-	while (expr_cond.eval(*variables).toBool() == cond_expected){
+	while (expr_cond.eval(*variables).getBool() == cond_expected){
 		evalChildren(op, dst);
 		
 		// Increment
@@ -266,7 +271,7 @@ long MacroEngine::loop_while(const Node& op, Node& dst){
 	
 	// Run
 	long i = 0;
-	while (expr_cond.eval(*variables).toBool() == cond_expected){
+	while (expr_cond.eval(*variables).getBool() == cond_expected){
 		evalChildren(op, dst);
 		i++;
 	}

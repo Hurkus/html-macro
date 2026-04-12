@@ -199,6 +199,13 @@ public:
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 public:
 	/**
+	 * @brief Transfer leading and trailing whitespace.
+	 * @param dst Node with new child elements (reversed list).
+	 * @param prev_last_child Original last child before more child elements were added.
+	 */
+	static void transfer_parent_space(const html::Node& op, html::Node& dst, const html::Node* prev_last_child);
+	
+	/**
 	 * @brief Check if attribute is an `IF`, `ELIF` or `ELSE` attribute macro, and evaluate.
 	 * @param op Parent node of `attr`.
 	 * @param attr Attribute to check for the attribute macro.

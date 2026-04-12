@@ -41,9 +41,9 @@ struct Double : public Expression::Operation {
 
 struct String : public Expression::Operation {
 	std::string_view str() const {
-		if (len < 2)
-			return {};
-		return std::string_view(pos + 1, len - 2);
+		if (len >= 2) [[likely]]
+			return std::string_view(pos + 1, len - 2);
+		return view();
 	}
 };
 

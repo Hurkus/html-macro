@@ -3173,6 +3173,33 @@
 								<code>slice(&quot;green&quot;, -3, 2)</code> &rarr; <code>&quot;ee&quot;</code>
 							</td>
 						</tr>
+						<tr id="function-split">
+							<td>
+								<code>split(str, delim)</code>
+								<span class="return-type"><br/>&darr;<br/>string</span>
+							</td>
+							<td>
+								Split <i>string</i>
+								<code>str</code> into an <i>array</i> of substrings using the regex delimiter <code>delim</code>.
+							</td>
+							<td>
+								<code>split(&quot;a: b:c&quot;, &quot;:\s*&quot;)</code> &rarr; <code>[&quot;a&quot,&quot;b&quot;,&quot;c&quot;]</code><br/>
+							</td>
+						</tr>
+						<tr id="function-join">
+							<td>
+								<code>join(arr, [sep])</code>
+								<span class="return-type"><br/>&darr;<br/>string</span>
+							</td>
+							<td>
+								Concatenate all elements of <i>array</i>
+								<code>arr</code> as strings with the separator <code>sep</code>.
+								Default value for <code>sep</code> is an empty string <code>""</code>.
+							</td>
+							<td>
+								<code>join([&quot;a&quot,&quot;b&quot;,&quot;c&quot;], &quot;:&quot;)</code> &rarr; <code> &quot;a:b:c&quot;</code><br/>
+							</td>
+						</tr>
 						<tr id="function-match">
 							<td>
 								<code>match(s, regex)</code>
