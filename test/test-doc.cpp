@@ -183,13 +183,15 @@ Result test_doc_expression_operators(){
 			{[0,2,2,3] - 2}
 			{[0] * [1, "x": 2]}
 			
+			{[10,20,30] / 1}
 			{[10,20,30] / [1,0]}
-			{["x": 1, "y": 2] / ["y"]}
-			{["x": 1, "y": 2] / ["y": 123]}
+			{["x": 1, "y": 2] / "y"}
+			{["x": 1, "y": 2] / ["y", "x"]}
 			
+			{[10,20,30] % 1}
 			{[10,20,30] % [1,0]}
-			{["x": 1, "y": 2] % ["y"]}
-			{["x": 1, "y": 2] % ["y": 123]}
+			{["x": 1, "y": 2] % "y"}
+			{["x": 1, "y": 2] % ["y", "x"]}
 			
 			{[10,20,30] % 2}
 			{["x": 1, "y": 2] % "y"}
@@ -210,13 +212,15 @@ Result test_doc_expression_operators(){
 		"[0,3]" NL
 		"[0,1,\"x\":2]" NL
 		NL
+		"[10,30]" NL
 		"[30]" NL
 		"[\"x\":1]" NL
-		"[\"x\":1]" NL
+		"[]" NL
 		NL
+		"20" NL
 		"[20,10]" NL
-		"[2]" NL
-		"[\"y\":2]" NL
+		"2" NL
+		"[2,1]" NL
 		NL
 		"30" NL
 		"2" NL
@@ -263,8 +267,9 @@ Result test_doc_expressions_functions(){
 	t[1] = TestSet {
 		.fileName = "doc_expressions_functions-2.html",
 		.in = R"(
-			{len('hello')}
 			{abs(-4.5)}
+			{len('hello')}
+			{len([4, 5, 6])}
 			{min(1, 2.5, 'three')}
 			{max(1, 2.5, 'three')}
 			{sin(pi/6)}
@@ -272,8 +277,9 @@ Result test_doc_expressions_functions(){
 		)",
 		.out = (
 			NL
-			"5" NL
 			"4.5" NL
+			"5" NL
+			"3" NL
 			"1" NL
 			"three" NL
 			"0.5" NL

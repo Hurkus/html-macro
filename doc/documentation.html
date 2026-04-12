@@ -2773,17 +2773,6 @@
 							</tr>
 							<tr>
 								<td>
-									string <code>*</code> number
-								</td>
-								<td>
-									Produces a <i>string</i> that is appended to itself <var>n</var> times, where the <i>number</i> is casted into an <i>int</i>.
-								</td>
-								<td>
-									<code>&quot;a&quot; * 3</code> &rarr; <code>&quot;aaa&quot;</code>
-								</td>
-							</tr>
-							<tr>
-								<td>
 									string <code>-</code> number
 								</td>
 								<td>
@@ -2795,9 +2784,18 @@
 							</tr>
 							<tr>
 								<td>
+									string <code>*</code> number
+								</td>
+								<td>
+									Produces a <i>string</i> that is appended to itself <var>n</var> times, where the <i>number</i> is casted into an <i>int</i>.
+								</td>
+								<td>
+									<code>&quot;a&quot; * 3</code> &rarr; <code>&quot;aaa&quot;</code>
+								</td>
+							</tr>
+							<tr>
+								<td>
 									<span>array <code>+</code> any</span><br/>
-									<span>array <code>*</code> number</span><br/>
-									<span>array <code>*</code> string</span>
 								</td>
 								<td>
 									The second operand is appended or prepended to the <i>array</i>.
@@ -2831,51 +2829,49 @@
 							</tr>
 							<tr>
 								<td>
-									<span>object <code>/</code> object</span>
+									<span>object <code>/</code> int</span><br/>
+									<span>object <code>/</code> string</span><br/>
+									<span>object <code>/</code> array</span>
 								</td>
 								<td>
-									This operation is an indexed removal of elements from the left <i>object</i>.
-									It behaves similarly to a set subtraction, except with indexes instead of elements.
-									<br/><br/>
-									The <i>array</i> on the right serves as a list of indexes that are removed from the <i>array</i> on the left.
-									Numbers serve as indexes that must be erased from the <i>array</i> and <i>strings</i> serve as keys that must be removed from the <i>map</i>.
-									<br/><br/>
-									The <i>map</i> on the right is stripped of values and the keys are used to remove mappings from the <i>map</i> on the left.
+									Remove elements by their index or key.
+									<br/>
+									The second operand can be an <i>array</i> of indexes and keys.
 								</td>
 								<td>
+									<code>[10,20,30] / 1</code> &rarr; <code>[10,30]</code><br/>
 									<code>[10,20,30] / [1,0]</code> &rarr; <code>[30]</code><br/>
-									<code>["x": 1, "y": 2] / ["y"]</code> &rarr; <code>["x": 1]</code><br/>
-									<code>["x": 1, "y": 2] / ["y": 123]</code> &rarr; <code>["x": 1]</code>
+									<code>["x": 1, "y": 2] / "y"</code> &rarr; <code>["x": 1]</code><br/>
+									<code>["x": 1, "y": 2] / ["y", "x"]</code> &rarr; <code>[]</code><br/>
 								</td>
 							</tr>
 							<tr>
 								<td>
-									<span>object <code>%</code> object</span>
+									<span>object <code>%</code> int</span><br/>
+									<span>object <code>%</code> string</span><br/>
+									<span>object <code>%</code> array</span>
 								</td>
 								<td>
-									This operation is an indexed selection of elements from the left <i>object</i>.
-									It behaves similarly to a set <a href="https://en.wikipedia.org/wiki/Logical_conjunction">conjunction</a>, except with indexes instead of elements and is also indexing values from the <i>map</i> and inserting them into  the <i>array</i>.
+									Select elements by their index or key.
+									It behaves similarly to a set <a href="https://en.wikipedia.org/wiki/Logical_conjunction">conjunction</a>, except with indexes and keys instead of elements.
 									<br/><br/>
-									The <i>array</i> on the right serves as a list of indexes that are selected from the <i>array</i> on the left.
-									Numbers serve as indexes that must be retained from the <i>array</i> and <i>strings</i> serve as keys that are indexed from the <i>map</i> and inserted in-place.
-									<br/><br/>
-									The <i>map</i> on the right is stripped of values and a <a href="https://en.wikipedia.org/wiki/Logical_conjunction">conjunction</a> is made with the <i>map</i> on the left.
+									The <i>array</i> on the right serves as a list and order of indexes that are selected from the <i>array</i> on the left.
+									Numbers serve as indexes that must be retained from the <i>array</i> and <i>strings</i> serve as keys that are retrieved from the <i>map</i>.
 								</td>
 								<td>
+									<code>[10,20,30] % 1</code> &rarr; <code>20</code><br/>
 									<code>[10,20,30] % [1,0]</code> &rarr; <code>[20,10]</code><br/>
-									<code>["x": 1, "y": 2] % ["y"]</code> &rarr; <code>[2]</code><br/>
-									<code>["x": 1, "y": 2] % ["y": 123]</code> &rarr; <code>["y": 2]</code>
+									<code>["x": 1, "y": 2] % "y"</code> &rarr; <code>2</code><br/>
+									<code>["x": 1, "y": 2] % ["y", "x"]</code> &rarr; <code>[2, 1]</code><br/>
 								</td>
 							</tr>
 							<tr>
 								<td>
-									<span>object<code>[</code>number<code>]</code></span><br/>
+									<span>object<code>[</code>int<code>]</code></span><br/>
 									<span>object<code>[</code>string<code>]</code></span><br/>
-									<span>object <code>%</code> number</span><br/>
-									<span>object <code>%</code> string</span>
 								</td>
 								<td>
-									Retrieve <i>array</i> element at index <code>number</code> or
+									Retrieve <i>array</i> element at index <code>int</code> or
 									retrieve value from the <i>map</i> using key <code>string</code>.
 								</td>
 								<td>
@@ -3066,13 +3062,14 @@
 								<span class="return-type"><br/>&darr;<br/>int</span>
 							</td>
 							<td>
-								If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.<br/>
 								If <code>x</code> is a <i>number</i>, returns the absolute value of the <i>number</i>.<br/>
+								If <code>x</code> is a <i>string</i>, returns length of the <i>string</i>.<br/>
 								If <code>x</code> is an <i>array</i>, returns the length of the <i>array</i>.<br/>
 							</td>
 							<td>
+								<code>abs(-4.5)</code> &rarr; <code>4.5</code><br/>
 								<code>len('hello')</code> &rarr; <code>5</code><br/>
-								<code>abs(-4.5)</code> &rarr; <code>4.5</code>
+								<code>len([5, 6, 7])</code> &rarr; <code>3</code>
 							</td>
 						</tr>
 						<tr id="function-min">
@@ -3245,19 +3242,6 @@
 								<code>if(3 > 2, &quot;yes&quot;, &quot;no&quot;)</code> &rarr; <code>&quot;yes&quot;</code>
 							</td>
 						</tr>
-						<tr id="function-defined">
-							<td>
-								<code>defined(var)</code>
-								<span class="return-type"><br/>&darr;<br/>bool</span>
-							</td>
-							<td>
-								Returns <code>true</code> if variable <code>var</code> is defined.<br/>
-								<code>var</code> is not a string but an identifier that reflects the name of a variable.
-							</td>
-							<td>
-								<code>if(defined(x),x,100)</code> &rarr; <code>100</code>
-							</td>
-						</tr>
 						<tr id="function-coalesce">
 							<td>
 								<code>coalesce(x, ...)</code>
@@ -3269,6 +3253,19 @@
 							</td>
 							<td>
 								<code>coalesce(x,100)</code> &rarr; <code>100</code>
+							</td>
+						</tr>
+						<tr id="function-defined">
+							<td>
+								<code>defined(var)</code>
+								<span class="return-type"><br/>&darr;<br/>bool</span>
+							</td>
+							<td>
+								Returns <code>true</code> if variable <code>var</code> is defined.<br/>
+								<code>var</code> is not a string but an identifier that reflects the name of a variable.
+							</td>
+							<td>
+								<code>if(defined(x),x,100)</code> &rarr; <code>100</code>
 							</td>
 						</tr>
 					</table>
