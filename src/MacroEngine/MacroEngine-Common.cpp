@@ -155,7 +155,7 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, Value& out_r
 	// Interpolate
 	else if (attr.options % NodeOptions::INTERPOLATE){
 		string buff;
-		if (!eval_string_interpolate(op, attr.value(), buff)){
+		if (!eval_string_interpolate(attr.value(), buff)){
 			return false;
 		}
 		
@@ -189,7 +189,7 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff
 	
 	// Interpolate
 	else if (attr.options % NodeOptions::INTERPOLATE){
-		if (!eval_string_interpolate(op, attr.value(), buff))
+		if (!eval_string_interpolate(attr.value(), buff))
 			return false;
 		result = buff;
 	}
@@ -206,9 +206,10 @@ bool MacroEngine::eval_attr_value(const Node& op, const Attr& attr, string& buff
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-bool MacroEngine::eval_string_interpolate(const Node& op, string_view str, string& buff){
+bool MacroEngine::eval_string_interpolate(string_view str, string& buff){
 	assert(macro != nullptr);
 	
+	bool res = true;
 	const char* const end = str.end();
 	const char* beg = str.begin();
 	
@@ -216,39 +217,32 @@ bool MacroEngine::eval_string_interpolate(const Node& op, string_view str, strin
 		const char* a;	// expr begin
 		const char* b;	// expr end
 		
-		// Find starting poing {
+		// Find starting point '{'
 		a = beg;
 		while (a != end){
 			if (*a == '{'){
 				break;
+			} else if (a[0] == '\\' && a+1 != end){
+				if (a[1] == '{' || a[1] == '\\'){
+					buff.append(beg, a);
+					beg = ++a;
+				}
 			}
-			
-			else if (*a == '\\'){
-				if (++a == end)
-					break;
-				buff.append(beg, a - 1);
-				beg = a;
-			}
-			
 			a++;
 		}
 		
-		// Find end point }
+		// Find end point '}'
 		b = a;
 		while (b != end){
-			if (*b == '}'){
+			if (*b == '}')
 				break;
-			} else if (*b == '\n'){
-				HERE(error_string_interpolation_newline(*macro, b));
-				return false;
-			}
 			b++;
 		}
 		
 		// Append prefix
 		if (b == end){
 			buff.append(beg, b);
-			return true;
+			break;
 		} else {
 			buff.append(beg, a);
 		}
@@ -260,13 +254,14 @@ bool MacroEngine::eval_string_interpolate(const Node& op, string_view str, strin
 		if (expr){
 			expr.eval(*variables).toStr(buff);
 		} else {
-			return false;
+			res = false;
+			buff.append(a, b+1);
 		}
 		
 		beg = b+1;
 	}
 	
-	return true;
+	return res;
 }
 
 
@@ -297,7 +292,7 @@ Branch MacroEngine::attr_equals_variable(const Node& op, const Attr& attr){
 	// Interpolate
 	else if (attr.options % NodeOptions::INTERPOLATE){
 		string buff;
-		if (!MacroEngine::eval_string_interpolate(op, attr.value(), buff)){
+		if (!MacroEngine::eval_string_interpolate(attr.value(), buff)){
 			return MacroEngine::Branch::NONE;
 		}
 		

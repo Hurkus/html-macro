@@ -27,11 +27,10 @@ void MacroEngine::text(const Node& src, Node& dst){
 	// Interpolate value
 	if (src.options % NodeOptions::INTERPOLATE){
 		string buff;
-		if (eval_string_interpolate(src, src.value(), buff)){
-			txt.options |= NodeOptions::OWNED_VALUE;
-			txt.value_len = uint32_t(min(buff.length(), size_t(UINT32_MAX)));
-			txt.value_p = newStr(buff);
-		}
+		eval_string_interpolate(src.value(), buff);
+		txt.options |= NodeOptions::OWNED_VALUE;
+		txt.value_len = uint32_t(min(buff.length(), size_t(UINT32_MAX)));
+		txt.value_p = newStr(buff);
 	}
 	
 }

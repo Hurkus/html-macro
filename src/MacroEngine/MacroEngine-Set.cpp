@@ -55,7 +55,7 @@ void MacroEngine::set(const Node& op){
 		// Interpolate
 		else if (attr->options % NodeOptions::INTERPOLATE){
 			buff.clear();
-			if (eval_string_interpolate(op, value, buff))
+			if (eval_string_interpolate(value, buff))
 				variables->insert(name, move(buff));
 		}
 		

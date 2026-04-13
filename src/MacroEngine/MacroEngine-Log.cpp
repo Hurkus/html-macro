@@ -50,10 +50,9 @@ void MacroEngine::info(const Node& op){
 	// Interpolate msg
 	if (txt_node->options % NodeOptions::INTERPOLATE){
 		string buff;
-		if (eval_string_interpolate(op, txt, buff)){
-			info_node(*macro, op, buff);
-			return;
-		}
+		eval_string_interpolate(txt, buff);
+		info_node(*macro, op, buff);
+		return;
 	}
 	
 	// Raw string msg
@@ -89,10 +88,9 @@ void MacroEngine::warn(const Node& op){
 	// Interpolate msg
 	if (txt_node->options % NodeOptions::INTERPOLATE){
 		string buff;
-		if (eval_string_interpolate(op, txt, buff)){
-			warn_node(*macro, op, buff);
-			return;
-		}
+		eval_string_interpolate(txt, buff);
+		warn_node(*macro, op, buff);
+		return;
 	}
 	
 	// Raw string msg
@@ -128,10 +126,9 @@ void MacroEngine::error(const Node& op){
 	// Interpolate msg
 	if (txt_node->options % NodeOptions::INTERPOLATE){
 		string buff;
-		if (eval_string_interpolate(op, txt, buff)){
-			error_node(*macro, op, buff);
-			return;
-		}
+		eval_string_interpolate(txt, buff);
+		error_node(*macro, op, buff);
+		return;
 	}
 	
 	// Raw string msg

@@ -252,14 +252,13 @@ public:
 	bool eval_attr_value(const html::Node& op, const html::Attr& attr, std::string& result_buff, std::string_view& result);
 	
 	/**
-	 * @brief Interpolate string for any expressions.
-	 * @param op Parent containing the interpolated string (either by value or within an attribute).
+	 * @brief Interpolate string for all expressions.
 	 * @param str The string to interpolate.
 	 * @param buff The output buffer for the resulting interpolated string.
 	 *             If an error occurs, the buffer is not cleared.
 	 * @return `true` If no errors occured with interpolation.
 	 */
-	bool eval_string_interpolate(const html::Node& op, std::string_view str, std::string& buff);
+	bool eval_string_interpolate(std::string_view str, std::string& buff);
 	
 	/**
 	 * @brief Check if variable, named the same as an attribute, equals the attribute value.
