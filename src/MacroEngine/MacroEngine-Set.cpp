@@ -11,6 +11,7 @@ using namespace html;
 
 
 void MacroEngine::setVariableConstants(){
+	MacroEngine::variables->insert("null", nullptr);
 	MacroEngine::variables->insert("false", 0L);
 	MacroEngine::variables->insert("true", 1L);
 	MacroEngine::variables->insert("pi", M_PI);

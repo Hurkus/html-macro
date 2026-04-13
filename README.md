@@ -1,5 +1,5 @@
 <h1 align="center">HTML Macro</h1>
-<p align="center">Version 0.12</p>
+<p align="center">Version 0.13</p>
 
 
 **HTML-Macro** is a CLI tool for generating static website HTML files.
