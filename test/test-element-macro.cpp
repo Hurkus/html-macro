@@ -10,7 +10,7 @@ using namespace std;
 
 REGISTER2(element_macro_MACRO_name);
 Result test_element_macro_MACRO_name(){
-	TmpFile in = TmpFile("element_macro_MACRO_name.html",
+	TmpFile in = TmpFile("element_macro_MACRO-name.html",
 		"<MACRO/>" NL
 		"<MACRO NAME/>" NL
 		"<MACRO NAME=''/>" NL
@@ -19,19 +19,19 @@ Result test_element_macro_MACRO_name(){
 		"<MACRO NAME=\"hello\"/>" NL
 	);
 	string_view err = (
-		"/tmp/html-macro-test/element_macro_MACRO_name.html:1:2: warn: Element <MACRO> missing attribute `NAME`." NL
+		"/tmp/html-macro-test/element_macro_MACRO-name.html:1:2: warn: Element <MACRO> missing attribute `NAME`." NL
 		"    1 | <MACRO/>" NL
 		"      |  ^~~~~" NL
-		"/tmp/html-macro-test/element_macro_MACRO_name.html:2:8: error: Attribute `NAME` missing value." NL
+		"/tmp/html-macro-test/element_macro_MACRO-name.html:2:8: error: Attribute `NAME` missing value." NL
 		"    2 | <MACRO NAME/>" NL
 		"      |        ^~~~" NL
-		"/tmp/html-macro-test/element_macro_MACRO_name.html:3:14: error: Attribute `NAME` missing value." NL
+		"/tmp/html-macro-test/element_macro_MACRO-name.html:3:14: error: Attribute `NAME` missing value." NL
 		"    3 | <MACRO NAME=''/>" NL
 		"      |             ^~" NL
-		"/tmp/html-macro-test/element_macro_MACRO_name.html:4:14: warn: Attribute `NAME` expected double quotes (\"\"). Value is always interpreted as a string." NL
+		"/tmp/html-macro-test/element_macro_MACRO-name.html:4:14: warn: Attribute `NAME` expected double quotes (\"\"). Value is always interpreted as a string." NL
 		"    4 | <MACRO NAME='hello'/>" NL
 		"      |             ^~~~~~~" NL
-		"/tmp/html-macro-test/element_macro_MACRO_name.html:5:14: error: Attribute `NAME` missing value." NL
+		"/tmp/html-macro-test/element_macro_MACRO-name.html:5:14: error: Attribute `NAME` missing value." NL
 		"    5 | <MACRO NAME=\"\"/>" NL
 		"      |             ^~" NL
 	);
@@ -41,7 +41,7 @@ Result test_element_macro_MACRO_name(){
 
 REGISTER2(element_macro_MACRO_customElement);
 Result test_element_macro_MACRO_customElement(){
-	TmpFile in = TmpFile("element_macro_MACRO_customElement.html",
+	TmpFile in = TmpFile("element_macro_MACRO-customElement.html",
 		R"(
 			<MACRO NAME="FUNC" x>
 				<SET x='x+2' y='y+2'/>
@@ -62,7 +62,7 @@ Result test_element_macro_MACRO_customElement(){
 
 REGISTER2(element_macro_MACRO_customAttribute);
 Result test_element_macro_MACRO_customAttribute(){
-	TmpFile in = TmpFile("element_macro_MACRO_customAttribute.html",
+	TmpFile in = TmpFile("element_macro_MACRO-customAttribute.html",
 		R"(
 			<MACRO NAME="FUNC">
 				<SET-ATTR href='VALUE'/>
@@ -75,6 +75,41 @@ Result test_element_macro_MACRO_customAttribute(){
 	string_view out = (
 		NL
 		"<a href=\"https://github.com/Hurkus/html-macro/\" class=\"link\">repo</a>" NL
+	);
+	return run({in}, out, "", 0);
+}
+
+
+REGISTER2(element_macro_MACRO_nested);
+Result test_element_macro_MACRO_nested(){
+	TmpFile in = TmpFile("element_macro_MACRO-nested.html",
+		R"(
+			<MACRO NAME="FG">hello </MACRO>
+			<div>
+				<MACRO NAME="BG">world</MACRO>
+				<FG/>
+				<BG/>
+			</div>
+			<div>
+				<MACRO NAME="DP">
+					deep
+					<MACRO NAME="DP2">
+						very deep
+					</MACRO>
+				</MACRO>
+				<DP/>
+				<DP2/>
+			</div>
+		)"
+	);
+	string_view out = (
+		NL
+		"<div>hello world</div>" NL
+		"<div>" NL
+		"	deep" NL
+		"	" NL
+		"	very deep" NL
+		"</div>" NL
 	);
 	return run({in}, out, "", 0);
 }

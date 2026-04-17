@@ -44,38 +44,42 @@ Macro::Type Macro::getType(const filepath& path){
 // ----------------------------------- [ Functions ] ---------------------------------------- //
 
 
-static unique_ptr<Document> split(Document& srcDoc, Node* node){
+static unique_ptr<Document> split(Node* node){
 	assert(node != nullptr);
+	assert(node->parent != nullptr);
 	
-	unique_ptr<Document> newDoc = make_unique<Document>();
-	srcDoc.extractChild(node);
+	Document& srcDoc = node->root();
+	unique_ptr<Document> dstDoc = make_unique<Document>();
+	
+	// Remove from current doc
+	node->parent->extractChild(node);
 	assert(node->parent == nullptr);
 	assert(node->next == nullptr);
 	
 	// Clone shared storage
-	newDoc->buffer = shared_ptr(srcDoc.buffer);
-	newDoc->nodeAlloc = shared_ptr(srcDoc.nodeAlloc);
-	newDoc->attrAlloc = shared_ptr(srcDoc.attrAlloc);
-	newDoc->charAlloc = shared_ptr(srcDoc.charAlloc);
+	dstDoc->buffer = shared_ptr(srcDoc.buffer);
+	dstDoc->nodeAlloc = shared_ptr(srcDoc.nodeAlloc);
+	dstDoc->attrAlloc = shared_ptr(srcDoc.attrAlloc);
+	dstDoc->charAlloc = shared_ptr(srcDoc.charAlloc);
 	
 	// Clone node properties
-	newDoc->options   = node->options;
-	newDoc->type      = NodeType::ROOT;
-	newDoc->value_len = node->value_len;
-	newDoc->value_p   = node->value_p;
-	newDoc->attribute = node->attribute;
-	newDoc->parent    = nullptr;
-	newDoc->child     = node->child;
-	newDoc->next      = nullptr;
+	dstDoc->options   = node->options;
+	dstDoc->type      = NodeType::ROOT;
+	dstDoc->value_len = node->value_len;
+	dstDoc->value_p   = node->value_p;
+	dstDoc->attribute = node->attribute;
+	dstDoc->parent    = nullptr;
+	dstDoc->child     = node->child;
+	dstDoc->next      = nullptr;
 	
 	// Adjust children
-	for (Node* child = newDoc->child ; child != nullptr ; child = child->next){
-		child->parent = newDoc.get();
+	for (Node* child = dstDoc->child ; child != nullptr ; child = child->next){
+		child->parent = dstDoc.get();
 	}
 	
 	assert(srcDoc.nodeAlloc);
 	srcDoc.nodeAlloc->dealloc(node);
-	return newDoc;
+	return dstDoc;
 }
 
 
@@ -152,7 +156,7 @@ bool Macro::parseHTML(){
 	// Extract and register all child <MACRO> nodes.
 	for (Node* mnode : res.macros){
 		assert(mnode != nullptr && mnode->parent != nullptr);
-		unique_ptr<Document> mdoc = split(*doc, mnode);
+		unique_ptr<Document> mdoc = split(mnode);
 		registerChildMacro(*this, move(mdoc));
 	}
 	
