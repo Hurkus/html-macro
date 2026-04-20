@@ -25,9 +25,9 @@ bool printDependencies(const char* path);
 #define C(s)		ANSI_CYAN s ANSI_RESET
 
 #if DEBUG
-	#define VERSION 	"Version 0.13.1 (Debug)"
+	#define VERSION 	"Version 0.13.2 (Debug)"
 #else
-	#define VERSION 	"Version 0.13.1"
+	#define VERSION 	"Version 0.13.2"
 #endif
 
 

@@ -21,8 +21,7 @@ constexpr bool isTokenChar(char c) noexcept {
 	return c == ';' || c == ',' || c == ':'
 		|| c == '<' || c == '>'
 		|| c == '{' || c == '}'
-		|| c == '(' || c == ')'
-		|| c == '[' || c == ']'; 
+		|| c == '(' || c == ')';
 }
 
 constexpr bool isComment(const char* s, const char* end) noexcept {
