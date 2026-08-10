@@ -1,6 +1,7 @@
 <h1 align="center">HTML Macro</h1>
 <p align="center">Version 0.13</p>
 
+Moved to [codeberg.org/Hurkus/html-macro](https://codeberg.org/Hurkus/html-macro).
 
 **HTML-Macro** is a CLI tool for generating static website HTML files.
 
